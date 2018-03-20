@@ -14,10 +14,10 @@ IMAGE_ROOTFS_EXTRA_SPACE_append = "${@bb.utils.contains("DISTRO_FEATURES", "syst
 require ${PROJECTID}-image.inc
 
 #Common Required Tasks Listed
-#IMAGE_INSTALL += "hostap"
 #IMAGE_INSTALL += "wlan-qcmbr"
 #IMAGE_INSTALL += "wlan-sigmadut"
 #IMAGE_INSTALL += "wlan-myftm"
 IMAGE_INSTALL += "iw"
 IMAGE_INSTALL += "wireless-tools"
 IMAGE_INSTALL += "iperf"
+IMAGE_INSTALL += "wpa-supplicant-2.5-dev"
