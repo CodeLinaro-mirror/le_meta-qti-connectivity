@@ -99,4 +99,5 @@ else
     download_git_code ${META_FSL_GIT} ${META_FSL_REV}
     download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
     download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
+    cd ${CURDIR}
 fi

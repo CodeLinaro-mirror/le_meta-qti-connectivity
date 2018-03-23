@@ -74,7 +74,7 @@ check_machine_valid()
     fi
 }
 
-cleanall()
+buildclean()
 {
     set -x
     cd ${WORK_SPACE}/${BUILD_DIR}
@@ -96,7 +96,7 @@ rebake()
     cdbitbake $@
 }
 
-build-auto-image()
+build-imxauto-image()
 {
     cdbitbake standalone-auto-image
     if [ "$?" != "0" ]; then
@@ -109,9 +109,30 @@ build-auto-image()
 #Exec Commands:
 
 # Set default sripts and work space path
-SCRIPT_DIR="$(dirname "${BASH_SOURCE}")"
-WORK_SPACE=$(readlink -f ${SCRIPT_DIR}/../../..)
-SCRIPT_FILE=${SCRIPT_DIR}/set_bb_env.sh
+SCRIPT_FOLDER="$(dirname "${BASH_SOURCE}")"
+WORK_SPACE=$(readlink -f ${SCRIPT_FOLDER}/../../..)
+SCRIPT_FILE=${SCRIPT_FOLDER}/set_bb_env.sh
+
+case $PROJECT in
+    "QCA6574AULE221" | "")
+        {
+            if [ -z "$PROJECT" ]; then
+                echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
+            fi
+            DISTRO=fsl-imx-x11
+            export PROJECTID=QCA6574AULE221
+        } ;;
+    *)
+        {
+            echo "Invalid PROJECT, check script usage"
+            usage
+            cleanenv
+            return 1
+        } ;;
+esac
+
+# Get all required source codes.
+. ${SCRIPT_FOLDER}/extract_sourcecode.sh > /dev/null
 
 # Default MACHINE
 if [ -z "$MACHINE" ]; then
@@ -140,27 +161,6 @@ if [ -z "$DISTRO" ]; then
     DISTRO=fsl-imx-x11
 fi
 
-case $PROJECT in
-    "QCA6574AULE221" | "")
-        {
-            if [ -z "$PROJECT" ]; then
-                echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
-            fi
-            DISTRO=fsl-imx-x11
-            export PROJECTID=QCA6574AULE221
-        } ;;
-    *)
-        {
-            echo "Invalid PROJECT, check script usage"
-            usage
-            cleanenv
-            return 1
-        } ;;
-esac
-
-# Get all required source codes.
-. ${SCRIPT_DIR}/extract_sourcecode.sh > /dev/null
-
 . ${WORK_SPACE}/sources/poky/oe-init-build-env ${BUILD_DIR} > /dev/null
 
 # Generate the local.conf based on the Yocto defaults
@@ -184,7 +184,7 @@ else
 fi
 
 # Update bblayers.conf
-. ${WORK_SPACE}/${SCRIPT_DIR}/update_bblayers.sh ${PROJECTID}
+. ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
 
 cleanenv
 
@@ -197,6 +197,6 @@ Welcome to Freescale Community BSP with QTI Connectivity Product
 
 You can now run commands to build image:
 
-    build-auto-image
+    build-imxauto-image
 
 EOF
