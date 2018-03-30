@@ -84,7 +84,7 @@ cat >> ${BBLAYERS_CONF} <<EOF
 
 ##QTI Yocto Connecetivity layer
 BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity "
-#BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity-prop "
+BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity-prop "
 EOF
 
 case $1 in
