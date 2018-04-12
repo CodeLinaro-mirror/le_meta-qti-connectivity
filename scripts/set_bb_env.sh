@@ -186,6 +186,9 @@ fi
 # Update bblayers.conf
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
 
+#Fix KW build
+patch -p 1 -d ${WORK_SPACE}/sources/poky/  < ${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
+
 cleanenv
 
 # Export specific parameters for Yocto
