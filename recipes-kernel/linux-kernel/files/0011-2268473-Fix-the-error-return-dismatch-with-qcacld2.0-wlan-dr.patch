@@ -1,0 +1,31 @@
+From b6fb324a499e91239627e051c7002a64438ca7a3 Mon Sep 17 00:00:00 2001
+From: Qun Zhang <qunz@codeaurora.org>
+Date: Tue, 17 Apr 2018 18:40:32 +0800
+Subject: [PATCH 11/11] Fix the error return dismatch with qcacld2.0 wlan
+ driver
+
+Fix the error return dismatch due to the match return of
+cnss_wlan_query_oob_status() on qcacld2.0 driver is -EINVAL now.
+
+Change-Id: I2ce9296baf6c933ec081167e57ac390b72da587e
+Signed-off-by: Qun Zhang <qunz@codeaurora.org>
+---
+ drivers/net/wireless/cnss/cnss_sdio.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/cnss/cnss_sdio.c b/drivers/net/wireless/cnss/cnss_sdio.c
+index 0e9bdd5..817a88b 100644
+--- a/drivers/net/wireless/cnss/cnss_sdio.c
++++ b/drivers/net/wireless/cnss/cnss_sdio.c
+@@ -1140,7 +1140,7 @@ int cnss_sdio_wlan_register_driver(struct cnss_sdio_wlan_driver *driver)
+  */
+ int cnss_wlan_query_oob_status(void)
+ {
+-	return -ENOSYS;
++	return -EINVAL;
+ }
+ EXPORT_SYMBOL(cnss_wlan_query_oob_status);
+ 
+-- 
+1.9.1
+
