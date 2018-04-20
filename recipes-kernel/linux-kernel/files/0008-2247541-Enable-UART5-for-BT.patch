@@ -1,0 +1,36 @@
+From 1cae09a25d52b02cc56c905576f7f792a4721f68 Mon Sep 17 00:00:00 2001
+From: Ying Wu <yingwu@codeaurora.org>
+Date: Mon, 2 Apr 2018 17:24:07 +0800
+Subject: [PATCH 08/11] Enable UART5 for BT
+
+Enabel UART5 in device tree
+Open CTS-RTS
+
+Change-Id: I58d618e86fb2c2d479c68e346ea50ef428d30a7f
+Signed-off-by: Ying Wu <yingwu@codeaurora.org>
+---
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index 1f9f7a4..5fd0dde 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -1019,6 +1019,14 @@
+ 	status = "okay";
+ };
+ 
++
++&uart5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart5_1>;
++	fsl,uart-has-rtscts;
++	status = "okay";
++};
++
+ &usbh1 {
+ 	vbus-supply = <&reg_usb_h1_vbus>;
+ 	status = "okay";
+-- 
+1.9.1
+
