@@ -1,0 +1,30 @@
+From 3d22f705e69e33c1c178fc0cd5f4a7a3485be602 Mon Sep 17 00:00:00 2001
+From: Zhaoyang Liu <zhaoyang@codeaurora.org>
+Date: Mon, 19 Mar 2018 17:38:51 +0800
+Subject: [PATCH 07/11] Remove PCI host controller driver dependency
+
+Remove PCI_MSI_IRQ_DOMAIN dependency in pci host controller
+driver configuration. WLAN PCI device can only use PCI
+legacy interrupt now.
+
+Change-Id: Ideb1527fcc47b0531f1caf1b017428724c8f8d3b
+Signed-off-by: Zhaoyang Liu <zhaoyang@codeaurora.org>
+---
+ drivers/pci/host/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/pci/host/Kconfig b/drivers/pci/host/Kconfig
+index abe803c..4496021 100644
+--- a/drivers/pci/host/Kconfig
++++ b/drivers/pci/host/Kconfig
+@@ -63,7 +63,6 @@ config PCI_EXYNOS
+ config PCI_IMX6
+ 	bool "Freescale i.MX6 PCIe controller"
+ 	depends on SOC_IMX6Q || SOC_IMX6SX || SOC_IMX7D
+-	depends on PCI_MSI_IRQ_DOMAIN
+ 	select PCIEPORTBUS
+ 	select PCIE_DW
+ 
+-- 
+1.9.1
+
