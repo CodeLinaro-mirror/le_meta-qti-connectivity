@@ -27,6 +27,7 @@ do_configure() {
 	install -m 0644 ${WORKDIR}/supplicantconf ${S}/wpa_supplicant/.config
 	sed  -i -e 's/\-I\/usr\/include\/libnl3//g' ${S}/src/drivers/drivers.mk
 	sed  -i -e 's/\-I\/usr\/include\/libnl3//g' ${S}/src/drivers/drivers.mak
+	sed  -i '$a\CONFIG_INTERWORKING=y' ${S}/hostapd/.config
 	echo "CFLAGS +=\"-I${STAGING_INCDIR}/libnl3\"" >> ${S}/hostapd/.config
 	echo "CFLAGS +=\"-I${STAGING_INCDIR}/libnl3\"" >> ${S}/wpa_supplicant/.config
 }
