@@ -1,0 +1,35 @@
+From 4e6b04252fd80810366a0d0deb0a230f3ca0b150 Mon Sep 17 00:00:00 2001
+From: Zhaoyang Liu <zhaoyang@codeaurora.org>
+Date: Wed, 2 May 2018 15:43:59 +0800
+Subject: [PATCH] cnss: add pointer null check before use
+
+Add support to check NULL pointer before using wlan_reg.
+
+Change-Id: Icfe47dea4661cd3f8b55ba9f499e497ab39362e9
+Signed-off-by: Zhaoyang Liu <zhaoyang@codeaurora.org>
+---
+ drivers/net/wireless/cnss/cnss_pci.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/cnss/cnss_pci.c b/drivers/net/wireless/cnss/cnss_pci.c
+index 26aaae6..c90045e 100644
+--- a/drivers/net/wireless/cnss/cnss_pci.c
++++ b/drivers/net/wireless/cnss/cnss_pci.c
+@@ -945,10 +945,12 @@ static int cnss_wlan_get_resources(struct platform_device *pdev)
+ err_reg_sp2t_set:
+ 	if (vreg_info->wlan_reg_sp2t)
+ 		regulator_put(vreg_info->wlan_reg_sp2t);
+-	regulator_disable(vreg_info->wlan_reg);
++	if (vreg_info->wlan_reg)
++		regulator_disable(vreg_info->wlan_reg);
+ 
+ err_reg_enable:
+-	regulator_put(vreg_info->wlan_reg);
++	if (vreg_info->wlan_reg)
++		regulator_put(vreg_info->wlan_reg);
+ 	cnss_disable_xtal_ldo(pdev);
+ 
+ err_reg_xtal_enable:
+-- 
+1.9.1
+
