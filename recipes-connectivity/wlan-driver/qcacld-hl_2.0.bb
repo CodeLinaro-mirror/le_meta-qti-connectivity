@@ -1,6 +1,6 @@
 require  qcacld-20-${PROJECTID}.inc
 
-DESCRIPTION = "Qualcomm Atheros WLAN CLD high latency driver version 2.0"
+DESCRIPTION = "Qualcomm Atheros WLAN CLD low latency driver version 2.0"
 LICENSE = "ISC"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/${LICENSE};md5=f3b90e78ea0cffb20bf5cca7947a896d"
 
@@ -14,18 +14,26 @@ S = "${WORKDIR}/wlan-opensource/qcacld-2.0"
 #inherit autotools module kernel-arch
 inherit module kernel-arch
 
-FILES_${PN}     += "lib/firmware/wlan/*"
-FILES_${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/wlan.ko"
-PROVIDES_NAME    = "kernel-module-wlan"
-RPROVIDES_${PN} += "${PROVIDES_NAME}"
+WLAN_MODULE_NAME = "wlan-tfl"
+CHIP_NAME = "qca9377"
 
-EXTRA_OEMAKE += "CONFIG_CLD_HL_SDIO_CORE=y  CONFIG_NON_QC_PLATFORM=y CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y"
+FILES_${PN}     += "lib/firmware/wlan/*"
+FILES_${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/${WLAN_MODULE_NAME}.ko"
+PROVIDES_NAME    = "kernel-module-${WLAN_MODULE_NAME}"
+RPROVIDES_${PN} += "${PROVIDES_NAME}"
+FIRMWARE_CFG_PATH = "${D}${base_libdir}/firmware/wlan/${CHIP_NAME}"
+
+EXTRA_OEMAKE += "CONFIG_CLD_HL_SDIO_CORE=y  CONFIG_NON_QC_PLATFORM=y CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y CONFIG_DUAL_SDIO_FOR_TFL=y MODNAME=${WLAN_MODULE_NAME} CHIP_NAME=${CHIP_NAME}"
+
+do_install_prepend () {
+     sed -i '/^END/i\gSoftApMaxPeers=24' ${S}/firmware_bin/WCNSS_qcom_cfg.ini
+}
 
 do_install () {
 
      module_do_install
 
-     install -d ${D}/lib/firmware/wlan/
-     install -m 644 ${S}/firmware_bin/WCNSS_cfg.dat ${D}/lib/firmware/wlan/cfg.dat
-     install -m 644 ${S}/firmware_bin/WCNSS_qcom_cfg.ini ${D}/lib/firmware/wlan/qcom_cfg.ini
+     install -d ${FIRMWARE_CFG_PATH}
+     install -m 644 ${S}/firmware_bin/WCNSS_cfg.dat ${FIRMWARE_CFG_PATH}/cfg.dat
+     install -m 644 ${S}/firmware_bin/WCNSS_qcom_cfg.ini ${FIRMWARE_CFG_PATH}/qcom_cfg.ini
 }
