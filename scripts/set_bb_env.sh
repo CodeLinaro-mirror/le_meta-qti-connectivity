@@ -50,6 +50,16 @@ usage()
     echo "    QCA6574AULE221 : QCA6574AU.LE.2.2.1 SP"
 }
 
+execute_command()
+{
+    eval "$1  > /dev/null 2>&1"
+
+    if [ ! $? -eq 0 ]; then
+        echo "Command execution failed: '$1'. Terminating..."
+        exit 1
+    fi
+}
+
 cleanenv()
 {
     unset EULA MACHINE PROJECT DISTRO
@@ -132,7 +142,7 @@ case $PROJECT in
 esac
 
 # Get all required source codes.
-. ${SCRIPT_FOLDER}/extract_sourcecode.sh > /dev/null
+. ${SCRIPT_FOLDER}/extract_sourcecode.sh
 
 # Default MACHINE
 if [ -z "$MACHINE" ]; then
@@ -187,7 +197,8 @@ fi
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
 
 #Fix KW build
-patch -p 1 -d ${WORK_SPACE}/sources/poky/  < ${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
+KW_PATCH=${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
+patch -p 1 -d ${WORK_SPACE}/sources/poky/ -N < ${KW_PATCH} > /dev/null 2>&1
 
 cleanenv
 

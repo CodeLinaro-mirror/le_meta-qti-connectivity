@@ -44,44 +44,26 @@ download_git_code()
     GIT_NAME=${GIT_URL##*/}
     SRC_DIR="${WORK_SPACE}/sources"
 
-    cd ${SRC_DIR}
-    git clone ${GIT_URL}
-    if [ "$?" != "0" ] || [ ! -d ${GIT_NAME} ]; then
-        echo "Failed to download git: ${GIT_URL}"
+    if [ -d ${SRC_DIR}/${GIT_NAME} ]; then
+        #Source Code already downloaded.
+        return 0
+    fi
+
+    execute_command "pushd ${SRC_DIR}"
+    execute_command "git clone ${GIT_URL}"
+    execute_command "popd"
+
+    if [ ! -d ${SRC_DIR}/${GIT_NAME} ]; then
+        echo "Download ${GIT_NAME} failed from ${GIT_URL}"
         return 1
     fi
+
     if [ ! -z ${GIT_REV} ]; then
-        cd ${SRC_DIR}/${GIT_NAME}
-        git checkout ${GIT_REV}
-        if [ "$?" != "0" ]; then
-            echo "Can't Checkout ${GIT_REV}"
-            return 1
-        fi
+        execute_command "pushd ${SRC_DIR}/${GIT_NAME}"
+        execute_command "git checkout ${GIT_REV}"
+        execute_command "popd"
     fi
-    cd ${CURDIR}
 }
-
-copy_source_code()
-{
-    if [ ! -d ${CURDIR}/../${FSLBSP}/sources ]; then
-        echo "No FSL BSP Source Code Dir ${FSLBSP} found"
-        return 1
-    fi
-
-    WORK_SPACE="${CURDIR}/../${FSLBSP}"
-    for DIR in ${CURDIR}/*; do
-        DIR_NAME="$(basename ${DIR})"
-        if [ ! -e ${WORK_SPACE}/sources/${DIR_NAME} ]; then
-            cp -rf ${DIR} ${WORK_SPACE}/sources/${DIR_NAME}
-        fi
-    done
-}
-
-
-
-CURDIR=`pwd`
-CURDIRNAME="$(basename ${CURDIR})"
-FSLBSP="fsl-community-bsp"
 
 META_FSL_GIT="git://git.yoctoproject.org/meta-freescale"
 META_FSL_REV="a398b50b7fc084a9e68cc3000c218d5028522a25"
@@ -92,12 +74,6 @@ META_FSL_3RD_REV="68314612e236cab1da82d72a0da62635a3523f84"
 META_FSL_DIS_GIT="git://github.com/Freescale/meta-freescale-distro"
 META_FSL_DIS_REV="cd5c7a2539f40004f74126e9fdf08254fd9a6390"
 
-
-if [ ${CURDIRNAME} == ${PROJECTID} ]; then
-    copy_source_code
-else
-    download_git_code ${META_FSL_GIT} ${META_FSL_REV}
-    download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
-    download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
-    cd ${CURDIR}
-fi
+download_git_code ${META_FSL_GIT} ${META_FSL_REV}
+download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
+download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
