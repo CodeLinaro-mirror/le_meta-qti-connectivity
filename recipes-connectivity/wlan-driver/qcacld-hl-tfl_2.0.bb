@@ -25,15 +25,10 @@ FIRMWARE_CFG_PATH = "${D}${base_libdir}/firmware/wlan/${CHIP_NAME}"
 
 EXTRA_OEMAKE += "CONFIG_CLD_HL_SDIO_CORE=y  CONFIG_NON_QC_PLATFORM=y CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y CONFIG_DUAL_SDIO_FOR_TFL=y MODNAME=${WLAN_MODULE_NAME} CHIP_NAME=${CHIP_NAME}"
 
-do_install_prepend () {
-     sed -i '/^END/i\gSoftApMaxPeers=24' ${S}/firmware_bin/WCNSS_qcom_cfg.ini
-}
-
 do_install () {
 
      module_do_install
 
      install -d ${FIRMWARE_CFG_PATH}
      install -m 644 ${S}/firmware_bin/WCNSS_cfg.dat ${FIRMWARE_CFG_PATH}/cfg.dat
-     install -m 644 ${S}/firmware_bin/WCNSS_qcom_cfg.ini ${FIRMWARE_CFG_PATH}/qcom_cfg.ini
 }

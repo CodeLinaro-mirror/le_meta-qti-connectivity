@@ -27,5 +27,4 @@ do_install () {
 
      install -d ${D}/lib/firmware/wlan/
      install -m 644 ${S}/firmware_bin/WCNSS_cfg.dat ${D}/lib/firmware/wlan/cfg.dat
-     install -m 644 ${S}/firmware_bin/WCNSS_qcom_cfg.ini ${D}/lib/firmware/wlan/qcom_cfg.ini
 }
