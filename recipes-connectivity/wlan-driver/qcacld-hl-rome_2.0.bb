@@ -15,7 +15,7 @@ S = "${WORKDIR}/wlan-opensource/qcacld-2.0"
 inherit module kernel-arch
 
 WLAN_MODULE_NAME = "wlan-sdio"
-CHIP_NAME = "qca9377"
+CHIP_NAME = "qca6574"
 
 FILES_${PN}     += "lib/firmware/wlan/*"
 FILES_${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/${WLAN_MODULE_NAME}.ko"

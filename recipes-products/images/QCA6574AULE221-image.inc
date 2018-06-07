@@ -4,4 +4,6 @@ IMAGE_INSTALL += "pciutils"
 
 IMAGE_INSTALL += "qcacld-ll"
 
-IMAGE_INSTALL += "qcacld-hl-tfl"
+#IMAGE_INSTALL += "qcacld-hl-tfl"
+
+IMAGE_INSTALL += "qcacld-hl-rome"
