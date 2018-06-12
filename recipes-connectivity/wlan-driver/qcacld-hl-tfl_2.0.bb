@@ -1,6 +1,6 @@
 require  qcacld-20-${PROJECTID}.inc
 
-DESCRIPTION = "Qualcomm Atheros WLAN CLD low latency driver version 2.0"
+DESCRIPTION = "Qualcomm Atheros WLAN CLD high latency driver version 2.0"
 LICENSE = "ISC"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/${LICENSE};md5=f3b90e78ea0cffb20bf5cca7947a896d"
 
@@ -23,7 +23,7 @@ PROVIDES_NAME    = "kernel-module-${WLAN_MODULE_NAME}"
 RPROVIDES_${PN} += "${PROVIDES_NAME}"
 FIRMWARE_CFG_PATH = "${D}${base_libdir}/firmware/wlan/${CHIP_NAME}"
 
-EXTRA_OEMAKE += "CONFIG_CLD_HL_SDIO_CORE=y  CONFIG_NON_QC_PLATFORM=y CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y CONFIG_DUAL_SDIO_FOR_TFL=y MODNAME=${WLAN_MODULE_NAME} CHIP_NAME=${CHIP_NAME}"
+EXTRA_OEMAKE += "CONFIG_CLD_HL_SDIO_CORE=y CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y MODNAME=${WLAN_MODULE_NAME} CHIP_NAME=${CHIP_NAME}"
 
 do_install () {
 
