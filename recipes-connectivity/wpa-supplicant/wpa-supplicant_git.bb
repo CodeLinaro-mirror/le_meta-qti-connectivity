@@ -12,9 +12,6 @@ FILES_${PN} += "${sbindir}/*"
 FILES_${PN} += "${libdir}/lib*.so"
 FILES_${PN}-dbg += "${sbindir}/.debug"
 
-PV = "2.5-dev"
-PR = "r0"
-
 SRC_URI = "file://wlan-opensource/wpa_supplicant_8/"
 SRC_URI += "file://hostapdconf \
             file://supplicantconf \
@@ -27,7 +24,6 @@ do_configure() {
 	install -m 0644 ${WORKDIR}/supplicantconf ${S}/wpa_supplicant/.config
 	sed  -i -e 's/\-I\/usr\/include\/libnl3//g' ${S}/src/drivers/drivers.mk
 	sed  -i -e 's/\-I\/usr\/include\/libnl3//g' ${S}/src/drivers/drivers.mak
-	sed  -i '$a\CONFIG_INTERWORKING=y' ${S}/hostapd/.config
 	echo "CFLAGS +=\"-I${STAGING_INCDIR}/libnl3\"" >> ${S}/hostapd/.config
 	echo "CFLAGS +=\"-I${STAGING_INCDIR}/libnl3\"" >> ${S}/wpa_supplicant/.config
 }

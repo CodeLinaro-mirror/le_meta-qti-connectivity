@@ -17,7 +17,7 @@ require ${PROJECTID}-image.inc
 IMAGE_INSTALL += "iw"
 IMAGE_INSTALL += "wireless-tools"
 IMAGE_INSTALL += "iperf"
-IMAGE_INSTALL += "wpa-supplicant-2.5-dev"
+IMAGE_INSTALL += "wpa-supplicant"
 IMAGE_INSTALL += "wlan-sigmadut"
 IMAGE_INSTALL += "wlan-config"
 
