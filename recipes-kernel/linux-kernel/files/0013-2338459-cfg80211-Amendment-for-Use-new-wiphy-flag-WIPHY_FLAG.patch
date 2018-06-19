@@ -1,0 +1,54 @@
+From 23394aba3fb692e4a72d7509a9b32802ed2c3ea8 Mon Sep 17 00:00:00 2001
+From: Rongjing Liao <liaor@codeaurora.org>
+Date: Wed, 13 Jun 2018 08:50:31 +0800
+Subject: [PATCH] cfg80211: Amendment for Use new wiphy flag
+ WIPHY_FLAG_DFS_OFFLOAD
+
+When flag WIPHY_FLAG_DFS_OFFLOAD is defined, the driver would handle
+all the DFS related operations. Therefore the kernel needs to ignore
+the DFS state that it uses to block the userspace calls to the driver
+through cfg80211 APIs. Also it should treat the userspace calls to
+start radar detection as a no-op.
+
+This commit is amendment for the previous commit:
+d3066e7154235dc90321952bf0fa34a59a47c60e.
+
+Change-Id: I6d82a059b63b4de6443a6549f26e757871e4689b
+CRs-Fixed: 1078935
+Signed-off-by: Amar Singhal <asinghal@codeaurora.org>
+---
+ net/wireless/chan.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/net/wireless/chan.c b/net/wireless/chan.c
+index 1da59e1..6f9122d 100644
+--- a/net/wireless/chan.c
++++ b/net/wireless/chan.c
+@@ -481,9 +481,7 @@ static bool cfg80211_get_chans_dfs_available(struct wiphy *wiphy,
+ 		if (c->flags & IEEE80211_CHAN_DISABLED)
+ 			return false;
+ 
+-		/* check for radar flags */
+-		if ((!(wiphy->flags & WIPHY_FLAG_DFS_OFFLOAD)) &&
+-		    (c->flags & IEEE80211_CHAN_RADAR) &&
++		if ((c->flags & IEEE80211_CHAN_RADAR) &&
+ 		    (c->dfs_state != NL80211_DFS_AVAILABLE))
+ 			return false;
+ 	}
+@@ -595,7 +593,12 @@ static bool cfg80211_secondary_chans_ok(struct wiphy *wiphy,
+ 
+ 	for (freq = start_freq; freq <= end_freq; freq += 20) {
+ 		c = ieee80211_get_channel(wiphy, freq);
+-		if (!c || c->flags & prohibited_flags)
++		if (!c)
++		       return false;
++	       /* check for radar flags */
++		if ((!(wiphy->flags & WIPHY_FLAG_DFS_OFFLOAD)) &&
++	           (prohibited_flags & c->flags & IEEE80211_CHAN_RADAR) &&
++	           (c->dfs_state != NL80211_DFS_AVAILABLE))
+ 			return false;
+ 	}
+ 
+-- 
+1.9.1
+
