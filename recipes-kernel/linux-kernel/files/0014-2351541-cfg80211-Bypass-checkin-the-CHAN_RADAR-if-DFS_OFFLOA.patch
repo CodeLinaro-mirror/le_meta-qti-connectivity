@@ -1,0 +1,53 @@
+From e240b50a77466a6679b4804c034c3020c366bdc0 Mon Sep 17 00:00:00 2001
+From: Rongjing Liao <liaor@codeaurora.org>
+Date: Fri, 22 Jun 2018 10:48:40 +0800
+Subject: [PATCH] cfg80211: Bypass checkin the CHAN_RADAR if DFS_OFFLOAD is
+ enabled
+
+When WIPHY_FLAG_DFS_OFFLOAD is defined, driver would take care the
+DFS related operation, hence the kernel needs to ignore the DFS
+states checking.
+
+CRs-fixed: 1080548
+Change-Id: I02fa5e3e25427c0ca474455fa2d2be9eb6ea4bd9
+Signed-off-by: Ryan Hsu <ryanhsu@codeaurora.org>
+---
+ net/wireless/chan.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/net/wireless/chan.c b/net/wireless/chan.c
+index 6f9122d..424ff50 100644
+--- a/net/wireless/chan.c
++++ b/net/wireless/chan.c
+@@ -481,7 +481,8 @@ static bool cfg80211_get_chans_dfs_available(struct wiphy *wiphy,
+ 		if (c->flags & IEEE80211_CHAN_DISABLED)
+ 			return false;
+ 
+-		if ((c->flags & IEEE80211_CHAN_RADAR) &&
++                if ((!(wiphy->flags & WIPHY_FLAG_DFS_OFFLOAD)) &&
++                    (c->flags & IEEE80211_CHAN_RADAR)  &&
+ 		    (c->dfs_state != NL80211_DFS_AVAILABLE))
+ 			return false;
+ 	}
+@@ -595,11 +596,14 @@ static bool cfg80211_secondary_chans_ok(struct wiphy *wiphy,
+ 		c = ieee80211_get_channel(wiphy, freq);
+ 		if (!c)
+ 		       return false;
++
+ 	       /* check for radar flags */
+-		if ((!(wiphy->flags & WIPHY_FLAG_DFS_OFFLOAD)) &&
+-	           (prohibited_flags & c->flags & IEEE80211_CHAN_RADAR) &&
+-	           (c->dfs_state != NL80211_DFS_AVAILABLE))
+-			return false;
++                if ((!(wiphy->flags & WIPHY_FLAG_DFS_OFFLOAD)) &&
++                    (c->flags & prohibited_flags & IEEE80211_CHAN_RADAR))
++                        return false;
++
++                if (c->flags & prohibited_flags & ~IEEE80211_CHAN_RADAR)
++                        return false;
+ 	}
+ 
+ 	return true;
+-- 
+1.9.1
+
