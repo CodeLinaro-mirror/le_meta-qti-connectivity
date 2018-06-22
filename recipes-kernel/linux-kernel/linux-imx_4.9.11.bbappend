@@ -15,6 +15,7 @@ SRC_URI += "file://0001-2221407-cfg80211-Use-new-wiphy-flag-WIPHY_FLAG_DFS_OFFLO
             file://0011-2268473-Fix-the-error-return-dismatch-with-qcacld2.0-wlan-dr.patch  \
             file://0012-2284816-cnss-add-pointer-null-check-before-use.patch \
 	    file://0013-2338459-cfg80211-Amendment-for-Use-new-wiphy-flag-WIPHY_FLAG.patch \
+	    file://0014-2351541-cfg80211-Bypass-checkin-the-CHAN_RADAR-if-DFS_OFFLOA.patch \
            "
 
 do_copy_defconfig_append () {
