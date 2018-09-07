@@ -20,6 +20,7 @@ IMAGE_INSTALL += "iperf"
 IMAGE_INSTALL += "wpa-supplicant"
 IMAGE_INSTALL += "wlan-sigmadut"
 IMAGE_INSTALL += "wlan-config"
+IMAGE_INSTALL += "rng-tools"
 
 SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/synergy-bt-proprietary')}"
 IMAGE_INSTALL += "${@base_conditional('SYNERGY_DIR_PRESENT', 'True', 'alsa-lib', '', d)}"
