@@ -93,3 +93,11 @@ case $1 in
             bblayers_for_qca6574aule221
         } ;;
 esac
+
+#Update BBMASK bbfiles
+if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf" ]; then
+    cat ${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf >> ${BBLAYERS_CONF}
+fi
+if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity-prop/conf/standalone-prop-bbmask.conf" ]; then
+    cat ${WORK_SPACE}/sources/meta-qti-connectivity-prop/conf/standalone-prop-bbmask.conf >> ${BBLAYERS_CONF}
+fi
