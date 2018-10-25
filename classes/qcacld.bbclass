@@ -23,9 +23,12 @@ FILES_${PN}     += "lib/firmware/*"
 FILES_${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/${WLAN_MODULE_NAME}.ko"
 PROVIDES_NAME    = "kernel-module-${WLAN_MODULE_NAME}"
 RPROVIDES_${PN} += "${PROVIDES_NAME}"
-PACKAGES =+ "kernel-module-${WLAN_MODULE_NAME}"
 
 EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y"
+
+do_compile_prepend() {
+    sed -in '/Werror/d' ${S}/Kbuild
+}
 
 do_install () {
      module_do_install
