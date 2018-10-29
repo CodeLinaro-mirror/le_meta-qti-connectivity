@@ -14,5 +14,5 @@ S = "${WORKDIR}/mdm-init/"
 EXTRA_OECONF = "--enable-thirdparty-wlan=yes"
 
 FILES_${PN} += "${datadir}/misc/wifi/*"
-FILES_${PN} += "${base_libdir}/firmware/wlan/*"
+FILES_${PN} += "${nonarch_base_libdir}/firmware/wlan/*"
 FILES_${PN} += "${sysconfdir}/init.d/*"
