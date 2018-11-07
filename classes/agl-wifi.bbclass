@@ -7,6 +7,4 @@ WLAN_CHIP_NAME   = "${@base_conditional('DUAL_WIFI', 'True', 'rome-cnss2', 'rome
 
 PACKAGES =+ "kernel-module-${WLAN_MODULE_NAME}"
 
-S_STRIPPED = "${WORKDIR}/packages-split/kernel-module-${WLAN_MODULE_NAME}/lib/modules/${KERNEL_VERSION}/extra"
-
 EXTRA_OEMAKE += "MODNAME=${WLAN_MODULE_NAME} CHIP_NAME=${WLAN_CHIP_NAME}"
