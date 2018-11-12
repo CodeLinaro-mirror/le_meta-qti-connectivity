@@ -1,0 +1,36 @@
+From abab30e417a7d015156187f3676561560694e782 Mon Sep 17 00:00:00 2001
+From: Qun Zhang <qunz@codeaurora.org>
+Date: Tue, 31 Jul 2018 17:28:34 +0800
+Subject: [PATCH 4/9] Enable UART5 for BT
+
+Propagation from imx-kernel.lnx.4.9
+Enabel UART5 in device tree
+Open CTS-RTS
+
+Change-Id: I11ff0a1f4f192f8b53b48142490113a66d1f0cee
+Signed-off-by: Qun Zhang <qunz@codeaurora.org>
+---
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index 44e265d..134bac9 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -984,6 +984,13 @@
+ 	status = "okay";
+ };
+ 
++&uart5 {
++       pinctrl-names = "default";
++       pinctrl-0 = <&pinctrl_uart5_1>;
++       fsl,uart-has-rtscts;
++       status = "okay";
++};
++
+ &usbh1 {
+ 	vbus-supply = <&reg_usb_h1_vbus>;
+ 	status = "okay";
+-- 
+1.9.1
+
