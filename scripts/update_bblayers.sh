@@ -63,14 +63,16 @@ bblayers_for_qca6574aule221()
 ##Freescale Yocto Project Release layer
 BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-bsp "
 BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-sdk "
-BBLAYERS += " \${BSPDIR}/sources/meta-freescale-3rdparty "
-BBLAYERS += " \${BSPDIR}/sources/meta-freescale-distro "
+BBLAYERS += " \${BSPDIR}/sources/meta-fsl-arm-extra "
+BBLAYERS += " \${BSPDIR}/sources/meta-fsl-demos "
 EOF
 
     # Support integrating community meta-freescale instead of meta-fsl-arm
     if [ -d ${WORK_SPACE}/sources/meta-freescale ]; then
         # Change settings according to environment
         echo "BBLAYERS += \" \${BSPDIR}/sources/meta-freescale \"" >> ${BBLAYERS_CONF}
+    elif [ -d ${WORK_SPACE}/sources/meta-fsl-arm ]; then
+        echo "BBLAYERS += \" \${BSPDIR}/sources/meta-fsl-arm \"" >> ${BBLAYERS_CONF}
     fi
 }
 
