@@ -65,15 +65,15 @@ download_git_code()
     fi
 }
 
-META_FSL_GIT="git://git.yoctoproject.org/meta-freescale"
-META_FSL_REV="a398b50b7fc084a9e68cc3000c218d5028522a25"
+META_FSL_ARM_GIT="git://git.yoctoproject.org/meta-fsl-arm"
+META_FSL_ARM_REV="35b8b9bd9863de208ab60e33b55f10ee43e2619b"
 
-META_FSL_3RD_GIT="git://github.com/Freescale/meta-freescale-3rdparty"
-META_FSL_3RD_REV="68314612e236cab1da82d72a0da62635a3523f84"
+META_FSL_DEMOS_GIT="git://github.com/Freescale/meta-fsl-demos"
+META_FSL_DEMOS_REV="2231e946e7a94d096394f2b2477e8184c9bbde7b"
 
-META_FSL_DIS_GIT="git://github.com/Freescale/meta-freescale-distro"
-META_FSL_DIS_REV="cd5c7a2539f40004f74126e9fdf08254fd9a6390"
+META_FSL_ARM_EXTRA_GIT="git://github.com/Freescale/meta-fsl-arm-extra"
+META_FSL_ARM_EXTRA_REV="e200df91b70da254461c59082ddd5db0a3c415a2"
 
-download_git_code ${META_FSL_GIT} ${META_FSL_REV}
-download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
-download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
+download_git_code ${META_FSL_ARM_GIT} ${META_FSL_ARM_REV}
+download_git_code ${META_FSL_DEMOS_GIT} ${META_FSL_DEMOS_REV}
+download_git_code ${META_FSL_ARM_EXTRA_GIT} ${META_FSL_ARM_EXTRA_REV}
