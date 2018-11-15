@@ -1,0 +1,481 @@
+From dec1522807eab421d809c97391abd18f4d4a5d65 Mon Sep 17 00:00:00 2001
+From: Qun Zhang <qunz@codeaurora.org>
+Date: Tue, 31 Jul 2018 17:22:45 +0800
+Subject: [PATCH 2/9] make CNSS work up for SDIO device on kernel 4.1.15
+
+Propagation from imx-kernel.lnx.4.9
+This is to let CNSS SDIO part work up on kernel 4.1.15.
+
+Change-Id: Ib4692b040121c41de0468429aac8a8e8b6f9b837
+Signed-off-by: Qun Zhang <qunz@codeaurora.org>
+---
+ arch/arm/mach-imx/mach-imx6q.c        | 14 ++++++
+ drivers/net/wireless/Kconfig          | 16 +++++++
+ drivers/net/wireless/Makefile         |  4 ++
+ drivers/net/wireless/cnss/cnss_sdio.c | 83 +++++++++++++++++++++++++++++++----
+ include/linux/qcomwlan_secif.h        |  2 +
+ 5 files changed, 111 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/mach-imx/mach-imx6q.c b/arch/arm/mach-imx/mach-imx6q.c
+index ae5c3cd..3029eb5 100644
+--- a/arch/arm/mach-imx/mach-imx6q.c
++++ b/arch/arm/mach-imx/mach-imx6q.c
+@@ -333,6 +333,20 @@ static void __init imx6q_init_machine(void)
+ 	imx6q_csi_mux_init();
+ 	cpu_is_imx6q() ?  imx6q_pm_init() : imx6dl_pm_init();
+ 	imx6q_axi_init();
++
++        {
++                struct platform_device_info cnss_sdio_devinfo = {
++                        .name = "cnss_sdio",
++                        .id = 0,
++                        .res = NULL,
++                        .num_res = 0,
++                        .data = NULL,
++                        .size_data = 0,
++                        .dma_mask = 0,
++                };
++
++                platform_device_register_full(&cnss_sdio_devinfo);
++        }
+ }
+ 
+ #define OCOTP_CFG3			0x440
+diff --git a/drivers/net/wireless/Kconfig b/drivers/net/wireless/Kconfig
+index 001e0cb..8098c1e 100644
+--- a/drivers/net/wireless/Kconfig
++++ b/drivers/net/wireless/Kconfig
+@@ -17,6 +17,21 @@ menuconfig WLAN
+ 
+ if WLAN
+ 
++config WCNSS_MEM_PRE_ALLOC
++    tristate "WCNSS pre-alloc memory support"
++        ---help---
++          Pre-allocate memory for the WLAN driver module.
++          This feature enable cld wlan driver to use pre allocated memory
++          for it's internal usage and release it to back to pre allocated pool.
++          This memory is allocated at the cold boot time.
++
++config CNSS_CRYPTO
++        tristate "Enable CNSS crypto support"
++        ---help---
++          Add crypto support for the WLAN  driver module.
++          This feature enable wlan driver to use the crypto APIs exported
++          from cnss platform driver. This crypto APIs used to generate cipher
++          key and add support for the WLAN driver module security protocol.
+ config PCMCIA_RAYCS
+ 	tristate "Aviator/Raytheon 2.4GHz wireless support"
+ 	depends on PCMCIA
+@@ -284,5 +299,6 @@ source "drivers/net/wireless/zd1211rw/Kconfig"
+ source "drivers/net/wireless/mwifiex/Kconfig"
+ source "drivers/net/wireless/cw1200/Kconfig"
+ source "drivers/net/wireless/rsi/Kconfig"
++source "drivers/net/wireless/cnss/Kconfig"
+ 
+ endif # WLAN
+diff --git a/drivers/net/wireless/Makefile b/drivers/net/wireless/Makefile
+index 144b59d..1715fbc 100644
+--- a/drivers/net/wireless/Makefile
++++ b/drivers/net/wireless/Makefile
+@@ -51,6 +51,10 @@ obj-$(CONFIG_ATH_CARDS)		+= ath/
+ 
+ obj-$(CONFIG_MAC80211_HWSIM)	+= mac80211_hwsim.o
+ 
++obj-$(CONFIG_CNSS)     += cnss/
++obj-$(CONFIG_WCNSS_MEM_PRE_ALLOC) += cnss_prealloc/
++obj-$(CONFIG_CNSS_CRYPTO)      += cnss_crypto/
++
+ obj-$(CONFIG_WL_TI)	+= ti/
+ 
+ obj-$(CONFIG_MWIFIEX)	+= mwifiex/
+diff --git a/drivers/net/wireless/cnss/cnss_sdio.c b/drivers/net/wireless/cnss/cnss_sdio.c
+index 81b960c..0e9bdd5 100644
+--- a/drivers/net/wireless/cnss/cnss_sdio.c
++++ b/drivers/net/wireless/cnss/cnss_sdio.c
+@@ -26,15 +26,21 @@
+ #include <linux/mmc/card.h>
+ #include <linux/mmc/host.h>
+ #include <linux/io.h>
++#ifdef CONFIG_MSM_SUBSYSTEM_RESTART
+ #include <soc/qcom/subsystem_restart.h>
+ #include <soc/qcom/subsystem_notif.h>
++#endif
++#ifdef CONFIG_MSM_MEMORY_DUMP
+ #include <soc/qcom/ramdump.h>
+ #include <soc/qcom/memory_dump.h>
++#endif
+ #include <net/cnss.h>
+ #include "cnss_common.h"
+ #include <linux/pm_qos.h>
++#ifdef CONFIG_MSM_BUS_SCALING
+ #include <linux/msm-bus.h>
+ #include <linux/msm-bus-board.h>
++#endif
+ #ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
+ #include <net/cnss_prealloc.h>
+ #endif
+@@ -84,15 +90,19 @@ struct cnss_sdio_info {
+ };
+ 
+ struct cnss_ssr_info {
++#ifdef CONFIG_MSM_SUBSYSTEM_RESTART
+ 	struct subsys_device *subsys;
+ 	struct subsys_desc subsysdesc;
++#endif
+ 	void *subsys_handle;
+ 	struct ramdump_device *ramdump_dev;
+ 	unsigned long ramdump_size;
+ 	void *ramdump_addr;
+ 	phys_addr_t ramdump_phys;
++#ifdef CONFIG_MSM_MEMORY_DUMP
+ 	struct msm_dump_data dump_data;
+ 	bool ramdump_dynamic;
++#endif
+ 	char subsys_name[10];
+ };
+ 
+@@ -104,7 +114,9 @@ struct cnss_wlan_pinctrl_info {
+ };
+ 
+ struct cnss_sdio_bus_bandwidth {
++#ifdef CONFIG_MSM_BUS_SCALING
+ 	struct msm_bus_scale_pdata *bus_scale_table;
++#endif
+ 	uint32_t bus_client;
+ 	int current_bandwidth_vote;
+ };
+@@ -178,7 +190,7 @@ EXPORT_SYMBOL(cnss_sdio_request_pm_qos_type);
+ 
+ int cnss_sdio_request_bus_bandwidth(int bandwidth)
+ {
+-	int ret;
++	int ret = 0;
+ 	struct cnss_sdio_bus_bandwidth *bus_bandwidth;
+ 
+ 	if (!cnss_pdata)
+@@ -193,6 +205,7 @@ int cnss_sdio_request_bus_bandwidth(int bandwidth)
+ 	case CNSS_BUS_WIDTH_LOW:
+ 	case CNSS_BUS_WIDTH_MEDIUM:
+ 	case CNSS_BUS_WIDTH_HIGH:
++#ifdef CONFIG_MSM_BUS_SCALING
+ 		ret = msm_bus_scale_client_update_request(
+ 			bus_bandwidth->bus_client, bandwidth);
+ 		if (!ret) {
+@@ -202,6 +215,7 @@ int cnss_sdio_request_bus_bandwidth(int bandwidth)
+ 			"could not set bus bandwidth %d, ret = %d\n",
+ 			 bandwidth, ret);
+ 		}
++#endif
+ 		break;
+ 	default:
+ 		pr_debug("Invalid request %d", bandwidth);
+@@ -330,7 +344,11 @@ static int cnss_get_hw_resources(struct device *dev)
+ 	return ret;
+ }
+ 
++#ifdef CONFIG_MSM_SUBSYSTEM_RESTART
+ static int cnss_sdio_shutdown(const struct subsys_desc *subsys, bool force_stop)
++#else
++static int cnss_sdio_shutdown(void *subsys, bool force_stop)
++#endif
+ {
+ 	struct cnss_sdio_info *cnss_info;
+ 	struct cnss_sdio_wlan_driver *wdrv;
+@@ -355,7 +373,11 @@ static int cnss_sdio_shutdown(const struct subsys_desc *subsys, bool force_stop)
+ 	return ret;
+ }
+ 
++#ifdef CONFIG_MSM_SUBSYSTEM_RESTART
+ static int cnss_sdio_powerup(const struct subsys_desc *subsys)
++#else
++static int cnss_sdio_powerup(void *subsys)
++#endif
+ {
+ 	struct cnss_sdio_info *cnss_info;
+ 	struct cnss_sdio_wlan_driver *wdrv;
+@@ -386,7 +408,11 @@ static int cnss_sdio_powerup(const struct subsys_desc *subsys)
+ 	return ret;
+ }
+ 
++#ifdef CONFIG_MSM_SUBSYSTEM_RESTART
+ static void cnss_sdio_crash_shutdown(const struct subsys_desc *subsys)
++#else
++static void cnss_sdio_crash_shutdown(void *subsys)
++#endif
+ {
+ 	struct cnss_sdio_info *cnss_info;
+ 	struct cnss_sdio_wlan_driver *wdrv;
+@@ -400,6 +426,7 @@ static void cnss_sdio_crash_shutdown(const struct subsys_desc *subsys)
+ 		wdrv->crash_shutdown(cnss_info->func);
+ }
+ 
++#ifdef CONFIG_MSM_MEMORY_DUMP
+ static int cnss_sdio_ramdump(int enable, const struct subsys_desc *subsys)
+ {
+ 	struct cnss_ssr_info *ssr_info;
+@@ -425,7 +452,9 @@ static int cnss_sdio_ramdump(int enable, const struct subsys_desc *subsys)
+ 		pr_err("do_ramdump failed error=%d\n", ret);
+ 	return ret;
+ }
++#endif
+ 
++#ifdef CONFIG_MSM_SUBSYSTEM_RESTART
+ static int cnss_subsys_init(void)
+ {
+ 	struct cnss_ssr_info *ssr_info;
+@@ -481,7 +510,9 @@ static void cnss_subsys_exit(void)
+ 		subsys_unregister(ssr_info->subsys);
+ 	ssr_info->subsys = NULL;
+ }
++#endif
+ 
++#ifdef CONFIG_MSM_MEMORY_DUMP
+ static int cnss_configure_dump_table(struct cnss_ssr_info *ssr_info)
+ {
+ 	struct msm_dump_entry dump_entry;
+@@ -627,6 +658,7 @@ void *cnss_sdio_get_virt_ramdump_mem(unsigned long *size)
+ 
+ 	return cnss_pdata->ssr_info.ramdump_addr;
+ }
++#endif
+ 
+ void cnss_sdio_device_self_recovery(void)
+ {
+@@ -641,11 +673,16 @@ void cnss_sdio_device_crashed(void)
+ 
+ 	if (!cnss_pdata)
+ 		return;
++
++        cnss_sdio_device_self_recovery();
++
+ 	ssr_info = &cnss_pdata->ssr_info;
++#ifdef CONFIG_MSM_SUBSYSTEM_RESTART
+ 	if (ssr_info->subsys) {
+ 		subsys_set_crash_status(ssr_info->subsys, true);
+ 		subsystem_restart_dev(ssr_info->subsys);
+ 	}
++#endif
+ }
+ 
+ static void cnss_sdio_recovery_work_handler(struct work_struct *recovery)
+@@ -676,6 +713,7 @@ int cnss_get_restart_level(void)
+ 
+ 	if (!cnss_pdata)
+ 		return CNSS_RESET_SOC;
++#ifdef CONFIG_MSM_SUBSYSTEM_RESTART
+ 	ssr_info = &cnss_pdata->ssr_info;
+ 	if (!ssr_info->subsys)
+ 		return CNSS_RESET_SOC;
+@@ -688,6 +726,8 @@ int cnss_get_restart_level(void)
+ 	default:
+ 		return CNSS_RESET_SOC;
+ 	}
++#endif
++        return CNSS_RESET_SOC;
+ }
+ EXPORT_SYMBOL(cnss_get_restart_level);
+ 
+@@ -801,7 +841,9 @@ static void cnss_sdio_set_platform_ops(struct device *dev)
+ 	pf_ops->power_up = cnss_sdio_power_up;
+ 	pf_ops->power_down = cnss_sdio_power_down;
+ 	pf_ops->device_crashed = cnss_sdio_device_crashed;
++#ifdef CONFIG_MSM_MEMORY_DUMP
+ 	pf_ops->get_virt_ramdump_mem = cnss_sdio_get_virt_ramdump_mem;
++#endif
+ 	pf_ops->device_self_recovery = cnss_sdio_device_self_recovery;
+ 	pf_ops->get_wlan_mac_address = cnss_sdio_get_wlan_mac_address;
+ 	pf_ops->set_wlan_mac_address = cnss_sdio_set_wlan_mac_address;
+@@ -866,8 +908,10 @@ static int cnss_sdio_wlan_suspend(struct device *dev)
+ 
+ 	bus_bandwidth = &cnss_pdata->bus_bandwidth;
+ 	if (bus_bandwidth->bus_client) {
++#ifdef CONFIG_MSM_BUS_SCALING
+ 		msm_bus_scale_client_update_request(
+ 			bus_bandwidth->bus_client, CNSS_BUS_WIDTH_NONE);
++#endif
+ 	}
+ 
+ 	func = cnss_pdata->cnss_sdio_info.func;
+@@ -900,9 +944,11 @@ static int cnss_sdio_wlan_resume(struct device *dev)
+ 
+ 	bus_bandwidth = &cnss_pdata->bus_bandwidth;
+ 	if (bus_bandwidth->bus_client) {
++#ifdef CONFIG_MSM_BUS_SCALING
+ 		msm_bus_scale_client_update_request(
+ 			bus_bandwidth->bus_client,
+ 			bus_bandwidth->current_bandwidth_vote);
++#endif
+ 	}
+ 
+ 	wdrv = cnss_pdata->cnss_sdio_info.wdrv;
+@@ -1016,8 +1062,10 @@ int cnss_sdio_wlan_register_driver(struct cnss_sdio_wlan_driver *driver)
+ 		 * Check memory leak in skb pre-alloc memory pool
+ 		 * Reset the skb memory pool
+ 		 */
++#ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
+ 		wcnss_skb_prealloc_check_memory_leak();
+ 		wcnss_skb_pre_alloc_reset();
++#endif
+ 		goto pinctrl_sleep;
+ 	}
+ 
+@@ -1048,8 +1096,10 @@ cnss_sdio_wlan_unregister_driver(struct cnss_sdio_wlan_driver *driver)
+ 
+ 	bus_bandwidth = &cnss_pdata->bus_bandwidth;
+ 	if (bus_bandwidth->bus_client) {
++#ifdef CONFIG_MSM_BUS_SCALING
+ 		msm_bus_scale_client_update_request(
+ 			bus_bandwidth->bus_client, CNSS_BUS_WIDTH_NONE);
++#endif
+ 	}
+ 
+ 	cnss_info = &cnss_pdata->cnss_sdio_info;
+@@ -1069,8 +1119,10 @@ cnss_sdio_wlan_unregister_driver(struct cnss_sdio_wlan_driver *driver)
+ 	 * Check memory leak in skb pre-alloc memory pool
+ 	 * Reset the skb memory pool
+ 	 */
++#ifdef CONFIG_MSM_BUS_SCALING
+ 	wcnss_skb_prealloc_check_memory_leak();
+ 	wcnss_skb_pre_alloc_reset();
++#endif
+ 
+ 	cnss_info->wdrv = NULL;
+ 	cnss_set_pinctrl_state(cnss_pdata, PINCTRL_SLEEP);
+@@ -1159,6 +1211,7 @@ static void cnss_sdio_wlan_exit(void)
+ 
+ static void cnss_sdio_deinit_bus_bandwidth(void)
+ {
++#ifdef CONFIG_MSM_BUS_SCALING
+ 	struct cnss_sdio_bus_bandwidth *bus_bandwidth;
+ 
+ 	bus_bandwidth = &cnss_pdata->bus_bandwidth;
+@@ -1167,6 +1220,7 @@ static void cnss_sdio_deinit_bus_bandwidth(void)
+ 			bus_bandwidth->bus_client, CNSS_BUS_WIDTH_NONE);
+ 		msm_bus_scale_unregister_client(bus_bandwidth->bus_client);
+ 	}
++#endif
+ }
+ 
+ static int cnss_sdio_configure_wlan_enable_regulator(void)
+@@ -1367,6 +1421,7 @@ release_pinctrl:
+ static int cnss_sdio_init_bus_bandwidth(void)
+ {
+ 	int ret = 0;
++#ifdef CONFIG_MSM_BUS_SCALING
+ 	struct cnss_sdio_bus_bandwidth *bus_bandwidth;
+ 	struct device *dev = &cnss_pdata->pdev->dev;
+ 
+@@ -1383,7 +1438,7 @@ static int cnss_sdio_init_bus_bandwidth(void)
+ 		dev_err(dev, "Failed to register with bus_scale client\n");
+ 		ret = -EINVAL;
+ 	}
+-
++#endif
+ 	return ret;
+ }
+ 
+@@ -1393,14 +1448,14 @@ static int cnss_sdio_probe(struct platform_device *pdev)
+ 	struct device *dev = &pdev->dev;
+ 	struct cnss_sdio_info *info;
+ 
+-	if (pdev->dev.of_node) {
++//	if (pdev->dev.of_node) {
+ 		cnss_pdata = devm_kzalloc(
+ 			&pdev->dev, sizeof(*cnss_pdata), GFP_KERNEL);
+ 		if (!cnss_pdata)
+ 			return -ENOMEM;
+-	} else {
+-		cnss_pdata = pdev->dev.platform_data;
+-	}
++//	} else {
++//		cnss_pdata = pdev->dev.platform_data;
++//	}
+ 
+ 	if (!cnss_pdata)
+ 		return -EINVAL;
+@@ -1449,7 +1504,7 @@ static int cnss_sdio_probe(struct platform_device *pdev)
+ 							  "qcom,skip-wlan-en-toggle");
+ 	info->cnss_hw_state = CNSS_HW_ACTIVE;
+ 
+-	cnss_sdio_tsf_init(dev, &info->cap_tsf_info);
++	//cnss_sdio_tsf_init(dev, &info->cap_tsf_info);
+ 
+ 	error = cnss_sdio_wlan_init();
+ 	if (error) {
+@@ -1457,19 +1512,23 @@ static int cnss_sdio_probe(struct platform_device *pdev)
+ 		goto err_wlan_dsrc_enable_regulator;
+ 	}
+ 
++#ifdef CONFIG_MSM_MEMORY_DUMP
+ 	error = cnss_configure_ramdump();
+ 	if (error) {
+ 		dev_err(&pdev->dev, "Failed to configure ramdump error=%d\n",
+ 			error);
+ 		goto err_ramdump_create;
+ 	}
++#endif
+ 
++#ifdef CONFIG_MSM_SUBSYSTEM_RESTART
+ 	error = cnss_subsys_init();
+ 	if (error) {
+ 		dev_err(&pdev->dev, "Failed to cnss_subsys_init error=%d\n",
+ 			error);
+ 		goto err_subsys_init;
+ 	}
++#endif
+ 
+ 	if (of_property_read_bool(
+ 		pdev->dev.of_node, "qcom,cnss-enable-bus-bandwidth")) {
+@@ -1484,9 +1543,13 @@ static int cnss_sdio_probe(struct platform_device *pdev)
+ 	return 0;
+ 
+ err_bus_bandwidth_init:
++#ifdef CONFIG_MSM_SUBSYSTEM_RESTART
+ 	cnss_subsys_exit();
++#endif
+ err_subsys_init:
++#ifdef CONFIG_MSM_MEMORY_DUMP
+ 	cnss_ramdump_cleanup();
++#endif
+ err_ramdump_create:
+ 	cnss_sdio_wlan_exit();
+ err_wlan_dsrc_enable_regulator:
+@@ -1513,8 +1576,12 @@ static int cnss_sdio_remove(struct platform_device *pdev)
+ 	cnss_sdio_tsf_deinit(tsf_info);
+ 	cnss_sdio_deinit_bus_bandwidth();
+ 	cnss_sdio_wlan_exit();
++#ifdef CONFIG_MSM_SUBSYSTEM_RESTART
+ 	cnss_subsys_exit();
++#endif
++#ifdef CONFIG_MSM_MEMORY_DUMP
+ 	cnss_ramdump_cleanup();
++#endif
+ 	cnss_put_hw_resources(info->dev);
+ 	cnss_sdio_release_resource();
+ 	cnss_pdata = NULL;
+@@ -1554,7 +1621,7 @@ static struct platform_driver cnss_sdio_driver = {
+ 	.driver = {
+ 		.name = "cnss_sdio",
+ 		.owner = THIS_MODULE,
+-		.of_match_table = cnss_sdio_dt_match,
++		//.of_match_table = cnss_sdio_dt_match,
+ 	},
+ };
+ 
+diff --git a/include/linux/qcomwlan_secif.h b/include/linux/qcomwlan_secif.h
+index 6334e3d..cb9327b 100644
+--- a/include/linux/qcomwlan_secif.h
++++ b/include/linux/qcomwlan_secif.h
+@@ -14,6 +14,8 @@
+ #define __QCOM_WLAN_SECIF_H__
+ 
+ #include <crypto/hash.h>
++#include <linux/crypto.h>
++#include <crypto/skcipher.h>
+ 
+ #define CMAC_TLEN 8 /* CMAC TLen = 64 bits (8 octets) */
+ 
+-- 
+1.9.1
+
