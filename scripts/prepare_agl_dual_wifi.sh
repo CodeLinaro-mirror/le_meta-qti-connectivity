@@ -79,6 +79,7 @@ if [ ! -f ${TARGET_IMAGE_FILE} ]; then
 fi
 
 #Update IMAGE_INSTALL_remove
+sed -i -e 's/iperf //g' ${TARGET_IMAGE_FILE}
 sed -i -e 's/wpa-supplicant qcacld-utils qcacld hostapd sigma-dut //g' ${TARGET_IMAGE_FILE}
 sed -i -e 's/ ath6kl-utils ftm//g' ${TARGET_IMAGE_FILE}
 
@@ -94,7 +95,6 @@ IMAGE_INSTALL += "qcacld-ll-dualwifi"
 IMAGE_INSTALL += "wlan-config"
 IMAGE_INSTALL += "wlan-sigmadut"
 IMAGE_INSTALL += "pciutils"
-IMAGE_INSTALL += "iperf"
 EOF
 
 if [ ! -f ${KERNEL_APPEND_FILE} ]; then
