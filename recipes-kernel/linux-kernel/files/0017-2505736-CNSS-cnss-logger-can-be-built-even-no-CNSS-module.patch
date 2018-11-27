@@ -1,0 +1,35 @@
+From 24f9caae8191dbc65fb9025f56414d0b8a674df2 Mon Sep 17 00:00:00 2001
+From: Yu Ouyang <yuo@codeaurora.org>
+Date: Thu, 8 Nov 2018 16:01:19 +0800
+Subject: [PATCH] CNSS: cnss logger can be built even no CNSS module
+
+cnss logger is needed for dual WiFi card, even no cnss confige
+
+Change-Id: I738f5b7262207ac46a8891e1c2f95cbdf4ac2815
+Signed-off-by: Yu Ouyang <yuo@codeaurora.org>
+---
+ drivers/net/wireless/Makefile      | 1 +
+ drivers/net/wireless/cnss/Makefile | 1 -
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/Makefile b/drivers/net/wireless/Makefile
+index 76cd02b..c24445d 100644
+--- a/drivers/net/wireless/Makefile
++++ b/drivers/net/wireless/Makefile
+@@ -30,3 +30,4 @@ obj-$(CONFIG_MAC80211_HWSIM)	+= mac80211_hwsim.o
+ obj-$(CONFIG_CNSS)	+= cnss/
+ obj-$(CONFIG_WCNSS_MEM_PRE_ALLOC) += cnss_prealloc/
+ obj-$(CONFIG_CNSS_CRYPTO)	+= cnss_crypto/
++obj-$(CONFIG_CNSS_LOGGER)	+= cnss/logger/
+diff --git a/drivers/net/wireless/cnss/Makefile b/drivers/net/wireless/cnss/Makefile
+index 38ad562..0fa9493 100644
+--- a/drivers/net/wireless/cnss/Makefile
++++ b/drivers/net/wireless/cnss/Makefile
+@@ -3,4 +3,3 @@
+ obj-$(CONFIG_CNSS_PCI)	+= cnss_pci.o
+ obj-$(CONFIG_CNSS_SDIO)	+= cnss_sdio.o
+ obj-$(CONFIG_CNSS)	+= cnss_common.o
+-obj-$(CONFIG_CNSS_LOGGER)	+= logger/
+-- 
+1.9.1
+
