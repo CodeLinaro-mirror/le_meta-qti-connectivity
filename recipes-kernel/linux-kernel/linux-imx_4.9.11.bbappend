@@ -14,10 +14,11 @@ SRC_URI += "file://0001-2221407-cfg80211-Use-new-wiphy-flag-WIPHY_FLAG_DFS_OFFLO
             file://0010-2264510-cfg80211-fix-build-error-about-cfg80211_roam_info.patch  \
             file://0011-2268473-Fix-the-error-return-dismatch-with-qcacld2.0-wlan-dr.patch  \
             file://0012-2284816-cnss-add-pointer-null-check-before-use.patch \
-	    file://0013-2338459-cfg80211-Amendment-for-Use-new-wiphy-flag-WIPHY_FLAG.patch \
-	    file://0014-2351541-cfg80211-Bypass-checkin-the-CHAN_RADAR-if-DFS_OFFLOA.patch \
-	    file://0015-2407178-cfg80211-Fix-use-after-free-when-process-wdev-events.patch \
-	    file://0016-2406371-CNSS-update-code-to-fix-blacklist-CR-and-compile-err.patch \
+            file://0013-2338459-cfg80211-Amendment-for-Use-new-wiphy-flag-WIPHY_FLAG.patch \
+            file://0014-2351541-cfg80211-Bypass-checkin-the-CHAN_RADAR-if-DFS_OFFLOA.patch \
+            file://0015-2407178-cfg80211-Fix-use-after-free-when-process-wdev-events.patch \
+            file://0016-2406371-CNSS-update-code-to-fix-blacklist-CR-and-compile-err.patch \
+            file://0017-2505736-CNSS-cnss-logger-can-be-built-even-no-CNSS-module.patch \
            "
 
 do_copy_defconfig_append () {
