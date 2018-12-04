@@ -193,6 +193,15 @@ else
     echo "ACCEPT_FSL_EULA = \"$EULA\"" >> conf/local.conf
 fi
 
+echo 'DISTRO_FEATURES_append = " systemd"
+' >> conf/local.conf
+
+echo 'VIRTUAL-RUNTIME_init_manager = "systemd"
+' >> conf/local.conf
+
+echo 'DISTRO_FEATURES_BACKFILL_CONSIDERED = "sysvinit"
+' >> conf/local.conf
+
 # Update bblayers.conf
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
 

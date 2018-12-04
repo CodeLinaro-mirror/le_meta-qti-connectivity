@@ -30,7 +30,7 @@
 echo 'BBLAYERS += "${BSPDIR}/sources/meta-qti-connectivity"' >>  conf/bblayers.conf
 
 echo 'export PROJECTID="QCA6574AULE221"' >> conf/bblayers.conf
-sed -i -e 's/IMAGE_ROOTFS_SIZE ?= "65536"/IMAGE_ROOTFS_SIZE ?= "131072"/g' ../sources/poky/meta/conf/bitbake.conf
+sed -i -e 's/IMAGE_ROOTFS_SIZE ??= "65536"/IMAGE_ROOTFS_SIZE ??= "131072"/g' ../sources/poky/meta/conf/bitbake.conf
 
 echo 'DISTRO_FEATURES_append = " systemd"
 ' >> conf/local.conf
@@ -51,7 +51,7 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wpa-supplicant"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-sigmadut"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-config"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "pciutils"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "qcacld-ll"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rng-tools"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "qcacld-hl-rome"
 ' >> conf/local.conf
 
