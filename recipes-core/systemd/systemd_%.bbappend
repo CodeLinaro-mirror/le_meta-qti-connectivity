@@ -13,7 +13,7 @@ do_install_append() {
   install -m 0644 ${WORKDIR}/blacklist-wlan-tfl.conf ${D}${sysconfdir}/modprobe.d/
   install -m 0644 ${WORKDIR}/systemd-rngd.service ${D}${systemd_system_unitdir}/
 
-  ln -sf ${D}${systemd_system_unitdir}/systemd-rngd.service  \
+  ln -sf ${systemd_system_unitdir}/systemd-rngd.service  \
 	 ${D}${sysconfdir}/systemd/system/multi-user.target.wants/systemd-rngd.service
 
 }
