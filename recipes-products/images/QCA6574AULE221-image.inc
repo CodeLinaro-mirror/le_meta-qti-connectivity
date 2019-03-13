@@ -4,6 +4,8 @@ IMAGE_INSTALL += "pciutils"
 
 IMAGE_INSTALL += "iputils"
 
+IMAGE_INSTALL += "bridge-utils"
+
 IMAGE_INSTALL += "qcacld-ll"
 
 #IMAGE_INSTALL += "qcacld-hl-tfl"
