@@ -4,7 +4,15 @@ KERNEL_SRC = "git://source.codeaurora.org/quic/la/kernel/msm-4.4"
 SRC_BRANCH = "LV.HB.1.1.1_rb1.46"
 SRC_TAG    = "LV.HB.1.1.1-36610-8x96.0"
 SRC_URI    = "${KERNEL_SRC};protocol=http;branch=${SRC_BRANCH};tag=${SRC_TAG}"
-SRC_URI   += "file://0001-Add-cnss2-support-for-two-PCIe-wlan-card.patch"
+SRC_URI   += "file://0001-Add-cnss2-support-for-two-PCIe-wlan-card.patch \
+              file://0002-cnss2-Support-collecting-firmware-dump-during-driver.patch \
+              file://0003-cnss2-Add-support-for-PCIe-WLAN-IPA-uc-SMMU-feature.patch \
+              file://0004-msm-ipa-Add-WLAN-FW-SSR-event.patch \
+              file://0005-cnss2-Add-API-to-check-if-WLAN-PCIe-device-is-down.patch \
+              file://0006-cnss2-Add-force-wake-support.patch \
+              file://0007-cnss2-cnss-api-update-for-genoa-pcie.patch \
+              file://0008-cnss2-Export-a-platform-API-to-force-collect-ramdump.patch \
+             "
 
 CAF_PATCH_PATH = "https://source.codeaurora.org/quic/la/kernel/msm-4.4/patch/?"
 PATCH_NAME_1   = "0001-2331561-cfg80211-NL80211_ATTR_SOCKET_OWNER-support-for-CMD_C.patch"
