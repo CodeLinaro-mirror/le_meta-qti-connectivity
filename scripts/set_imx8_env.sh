@@ -108,7 +108,8 @@ rebake()
 
 build-imxauto-image()
 {
-    cdbitbake standalone-auto-image
+    #cdbitbake standalone-auto-image
+    cdbitbake core-image-minimal
     if [ "$?" != "0" ]; then
         echo "Error run building image."
         return 1
@@ -121,7 +122,31 @@ build-imxauto-image()
 # Set default sripts and work space path
 SCRIPT_FOLDER="$(dirname "${BASH_SOURCE}")"
 WORK_SPACE=$(readlink -f ${SCRIPT_FOLDER}/../../..)
-SCRIPT_FILE=${SCRIPT_FOLDER}/set_bb_env.sh
+SCRIPT_FILE=${SCRIPT_FOLDER}/set_imx8_env.sh
+
+EULA_REMIND_LOG=" To contiune the build process, you have to set EULA=1 \n"
+
+cat  << EOF
+IMPORTANT NOTICE:
+Use of the set_imx8_env.sh script will combine some open source licensed software and/or third party licensed software
+components into the product. Redistribution and use of the open source and/or third party code
+may legally require you to comply with the terms of the open source and/or third party license(s)
+that apply to the code used and redistributed."
+
+EOF
+
+case $EULA in
+    "1")
+        ;;
+    *)
+        {
+            echo -e ${EULA_REMIND_LOG}
+            cleanenv
+            return 1
+        } ;;
+esac
+
+
 
 case $PROJECT in
     "QCA6574AULE221" | "")
@@ -129,7 +154,7 @@ case $PROJECT in
             if [ -z "$PROJECT" ]; then
                 echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
             fi
-            DISTRO=fsl-imx-x11
+            DISTRO=fsl-imx-xwayland
             export PROJECTID=QCA6574AULE221
         } ;;
     *)
@@ -143,7 +168,7 @@ esac
 
 # Default MACHINE
 if [ -z "$MACHINE" ]; then
-    MACHINE='imx6qsabresd'
+    MACHINE='imx8mqevk'
 else
     check_machine_valid
     if [ "$?" != "0" ]; then
@@ -161,14 +186,16 @@ if [ -z "$BUILD_DIR" ]; then
     BUILD_DIR='build'
 fi
 
-if [ -z "$EULA" ] || [ "$EULA" != "1" ]; then
-    EULA=0
-else
-    EULA=1
+# copy new EULA into community so setup uses latest i.MX EULA
+if [ -e "${WORK_SPACE}/sources/meta-freescale/EULA" ];then
+    rm -rf ${WORK_SPACE}/sources/meta-freescale/EULA
 fi
 
+cp ${WORK_SPACE}/sources/meta-fsl-bsp-release/imx/EULA.txt ${WORK_SPACE}/sources/meta-freescale/EULA
+
+#Default DISTRO
 if [ -z "$DISTRO" ]; then
-    DISTRO=fsl-imx-x11
+    DISTRO=fsl-imx-xwayland
 fi
 
 . ${WORK_SPACE}/sources/poky/oe-init-build-env ${BUILD_DIR} > /dev/null

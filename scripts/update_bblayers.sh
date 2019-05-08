@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#Copyright (c) 2018, The Linux Foundation. All rights reserved.
+#Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
 
 #Redistribution and use in source and binary forms, with or without
 #modification, are permitted provided that the following conditions are
@@ -41,7 +41,6 @@ export BSPDIR := "\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)) + 
 BBFILES ?= ""
 BBLAYERS = " \\
   \${BSPDIR}/sources/poky/meta \\
-  \${BSPDIR}/sources/poky/meta-yocto \\
   \\
   \${BSPDIR}/sources/meta-openembedded/meta-oe \\
   \${BSPDIR}/sources/meta-openembedded/meta-multimedia \\
@@ -55,6 +54,7 @@ BBLAYERS = " \\
 "
 EOF
 }
+
 
 bblayers_for_qca6574aule221()
 {
@@ -72,6 +72,17 @@ EOF
         # Change settings according to environment
         echo "BBLAYERS += \" \${BSPDIR}/sources/meta-freescale \"" >> ${BBLAYERS_CONF}
     fi
+
+    #Poky in imx-4.14.78-1.0.0_ga.xml only support meta-poky
+    if [ -d ${WORK_SPACE}/sources/poky/meta-poky ]; then
+	echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-poky \""  >> ${BBLAYERS_CONF}
+    fi
+
+    #Poky in imx-4.1 or imx-4.9 support meta-yocto and meta-poky
+    if [ -d ${WORK_SPACE}/sources/poky/meta-yocto ]; then
+        echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-yocto \""  >> ${BBLAYERS_CONF}
+    fi
+
 }
 
 ################################################################
@@ -80,12 +91,16 @@ EOF
 BBLAYERS_CONF=conf/bblayers.conf
 generate_common_bblayers > ${BBLAYERS_CONF}
 
+if [ $MACHINE != 'imx8mqevk' ]; then
+
 cat >> ${BBLAYERS_CONF} <<EOF
 
 ##QTI Yocto Connecetivity layer
 BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity "
 BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity-prop "
 EOF
+
+fi
 
 case $1 in
     "QCA6574AULE221")
