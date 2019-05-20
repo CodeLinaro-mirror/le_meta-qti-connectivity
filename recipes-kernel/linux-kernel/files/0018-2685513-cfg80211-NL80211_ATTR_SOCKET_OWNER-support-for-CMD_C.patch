@@ -1,0 +1,243 @@
+From 60a39a940d46ea2aef6b9cf819aa40b320ba46d9 Mon Sep 17 00:00:00 2001
+From: Andrew Zaborowski <andrew.zaborowski@intel.com>
+Date: Mon, 15 Apr 2019 18:44:58 +0800
+Subject: [PATCH 01/10] cfg80211: NL80211_ATTR_SOCKET_OWNER support for
+ CMD_CONNECT
+
+Disconnect or deauthenticate when the owning socket is closed if this
+flag is supplied to CMD_CONNECT or CMD_ASSOCIATE.  This may be used
+to ensure userspace daemon doesn't leave an unmanaged connection behind.
+
+In some situations it would be possible to account for that, to some
+degree, in the deamon restart code or in the up/down scripts without
+the use of this attribute.  But there will be systems where the daemon
+can go away for varying periods without a warning due to local resource
+management.
+
+Signed-off-by: Andrew Zaborowski <andrew.zaborowski@intel.com>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+Change-Id: Ic09ee323fc6215059d5c2572ba3e77c56addad32
+Git-commit: bd2522b168847106c1885f0319a2833bdf88bf9a
+Git-repo: git://git.kernel.org/pub/scm/linux/kernel/git/jberg/mac80211-next.git
+CRs-Fixed: 2182553
+Signed-off-by: Srinivas Dasari <dasaris@codeaurora.org>
+---
+ include/net/cfg80211.h       |  7 +++++++
+ include/uapi/linux/nl80211.h |  2 ++
+ net/wireless/core.c          |  3 +++
+ net/wireless/core.h          |  1 +
+ net/wireless/mlme.c          |  5 +++++
+ net/wireless/nl80211.c       | 26 +++++++++++++++++++++++++-
+ net/wireless/sme.c           | 33 +++++++++++++++++++++++++++++++++
+ 7 files changed, 76 insertions(+), 1 deletion(-)
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index 3c97696..82a4620 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -3766,6 +3766,9 @@ static inline struct wiphy *wiphy_new(const struct cfg80211_ops *ops,
+  * @conn: (private) cfg80211 software SME connection state machine data
+  * @connect_keys: (private) keys to set after connection is established
+  * @conn_bss_type: connecting/connected BSS type
++ * @conn_owner_nlportid: (private) connection owner socket port ID
++ * @disconnect_wk: (private) auto-disconnect work
++ * @disconnect_bssid: (private) the BSSID to use for auto-disconnect
+  * @ibss_fixed: (private) IBSS is using fixed BSSID
+  * @ibss_dfs_possible: (private) IBSS may change to a DFS channel
+  * @event_list: (private) list for internal event processing
+@@ -3797,6 +3800,10 @@ struct wireless_dev {
+ 	struct cfg80211_conn *conn;
+ 	struct cfg80211_cached_keys *connect_keys;
+ 	enum ieee80211_bss_type conn_bss_type;
++	u32 conn_owner_nlportid;
++
++	struct work_struct disconnect_wk;
++	u8 disconnect_bssid[ETH_ALEN];
+ 
+ 	struct list_head event_list;
+ 	spinlock_t event_lock;
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index d3cbe48..1bd35bf 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -1788,6 +1788,8 @@ enum nl80211_commands {
+  *	and remove functions. NAN notifications will be sent in unicast to that
+  *	socket. Without this attribute, any socket can add functions and the
+  *	notifications will be sent to the %NL80211_MCGRP_NAN multicast group.
++ *	If set during %NL80211_CMD_ASSOCIATE or %NL80211_CMD_CONNECT the
++ *	station will deauthenticate when the socket is closed.
+  *
+  * @NL80211_ATTR_TDLS_INITIATOR: flag attribute indicating the current end is
+  *	the TDLS link initiator.
+diff --git a/net/wireless/core.c b/net/wireless/core.c
+index 8201e6d..95d5088 100644
+--- a/net/wireless/core.c
++++ b/net/wireless/core.c
+@@ -1117,6 +1117,8 @@ static int cfg80211_netdev_notifier_call(struct notifier_block *nb,
+ 		     wdev->iftype == NL80211_IFTYPE_ADHOC) && !wdev->use_4addr)
+ 			dev->priv_flags |= IFF_DONT_BRIDGE;
+ 
++		INIT_WORK(&wdev->disconnect_wk, cfg80211_autodisconnect_wk);
++
+ 		nl80211_notify_iface(rdev, wdev, NL80211_CMD_NEW_INTERFACE);
+ 		break;
+ 	case NETDEV_GOING_DOWN:
+@@ -1205,6 +1207,7 @@ static int cfg80211_netdev_notifier_call(struct notifier_block *nb,
+ #ifdef CONFIG_CFG80211_WEXT
+ 			kzfree(wdev->wext.keys);
+ #endif
++			flush_work(&wdev->disconnect_wk);
+ 		}
+ 		/*
+ 		 * synchronise (so that we won't find this netdev
+diff --git a/net/wireless/core.h b/net/wireless/core.h
+index 43c34a2..f923781 100644
+--- a/net/wireless/core.h
++++ b/net/wireless/core.h
+@@ -394,6 +394,7 @@ void __cfg80211_roamed(struct wireless_dev *wdev,
+ 		       const u8 *resp_ie, size_t resp_ie_len);
+ int cfg80211_mgd_wext_connect(struct cfg80211_registered_device *rdev,
+ 			      struct wireless_dev *wdev);
++void cfg80211_autodisconnect_wk(struct work_struct *work);
+ 
+ /* SME implementation */
+ void cfg80211_conn_work(struct work_struct *work);
+diff --git a/net/wireless/mlme.c b/net/wireless/mlme.c
+index 76775a2..37bd0ca 100644
+--- a/net/wireless/mlme.c
++++ b/net/wireless/mlme.c
+@@ -345,6 +345,11 @@ int cfg80211_mlme_deauth(struct cfg80211_registered_device *rdev,
+ 	     !ether_addr_equal(wdev->current_bss->pub.bssid, bssid)))
+ 		return 0;
+ 
++	if (ether_addr_equal(wdev->disconnect_bssid, bssid) ||
++	    (wdev->current_bss &&
++	     ether_addr_equal(wdev->current_bss->pub.bssid, bssid)))
++		wdev->conn_owner_nlportid = 0;
++
+ 	return rdev_deauth(rdev, dev, &req);
+ }
+ 
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index 7a64b04..95a2d31 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -8016,8 +8016,17 @@ static int nl80211_associate(struct sk_buff *skb, struct genl_info *info)
+ 	err = nl80211_crypto_settings(rdev, info, &req.crypto, 1);
+ 	if (!err) {
+ 		wdev_lock(dev->ieee80211_ptr);
++
+ 		err = cfg80211_mlme_assoc(rdev, dev, chan, bssid,
+ 					  ssid, ssid_len, &req);
++
++		if (!err && info->attrs[NL80211_ATTR_SOCKET_OWNER]) {
++			dev->ieee80211_ptr->conn_owner_nlportid =
++				info->snd_portid;
++			memcpy(dev->ieee80211_ptr->disconnect_bssid,
++			       bssid, ETH_ALEN);
++		}
++
+ 		wdev_unlock(dev->ieee80211_ptr);
+ 	}
+ 
+@@ -8736,11 +8745,24 @@ static int nl80211_connect(struct sk_buff *skb, struct genl_info *info)
+ 	}
+ 
+ 	wdev_lock(dev->ieee80211_ptr);
++
+ 	err = cfg80211_connect(rdev, dev, &connect, connkeys,
+ 			       connect.prev_bssid);
+-	wdev_unlock(dev->ieee80211_ptr);
+ 	if (err)
+ 		kzfree(connkeys);
++
++	if (!err && info->attrs[NL80211_ATTR_SOCKET_OWNER]) {
++		dev->ieee80211_ptr->conn_owner_nlportid = info->snd_portid;
++		if (connect.bssid)
++			memcpy(dev->ieee80211_ptr->disconnect_bssid,
++			       connect.bssid, ETH_ALEN);
++		else
++			memset(dev->ieee80211_ptr->disconnect_bssid,
++			       0, ETH_ALEN);
++	}
++
++	wdev_unlock(dev->ieee80211_ptr);
++
+ 	return err;
+ }
+ 
+@@ -14423,6 +14445,8 @@ static int nl80211_netlink_notify(struct notifier_block * nb,
+ 
+ 			if (wdev->owner_nlportid == notify->portid)
+ 				schedule_destroy_work = true;
++			else if (wdev->conn_owner_nlportid == notify->portid)
++				schedule_work(&wdev->disconnect_wk);
+ 		}
+ 
+ 		spin_lock_bh(&rdev->beacon_registrations_lock);
+diff --git a/net/wireless/sme.c b/net/wireless/sme.c
+index 4b6f2c2..a083745 100644
+--- a/net/wireless/sme.c
++++ b/net/wireless/sme.c
+@@ -727,6 +727,7 @@ void __cfg80211_connect_result(struct net_device *dev, const u8 *bssid,
+ 		kzfree(wdev->connect_keys);
+ 		wdev->connect_keys = NULL;
+ 		wdev->ssid_len = 0;
++		wdev->conn_owner_nlportid = 0;
+ 		if (bss) {
+ 			cfg80211_unhold_bss(bss_from_pub(bss));
+ 			cfg80211_put_bss(wdev->wiphy, bss);
+@@ -999,6 +1000,7 @@ void __cfg80211_disconnected(struct net_device *dev, const u8 *ie,
+ 
+ 	wdev->current_bss = NULL;
+ 	wdev->ssid_len = 0;
++	wdev->conn_owner_nlportid = 0;
+ 
+ 	nl80211_send_disconnected(rdev, dev, reason, ie, ie_len, from_ap);
+ 
+@@ -1142,6 +1144,8 @@ int cfg80211_disconnect(struct cfg80211_registered_device *rdev,
+ 	kzfree(wdev->connect_keys);
+ 	wdev->connect_keys = NULL;
+ 
++	wdev->conn_owner_nlportid = 0;
++
+ 	if (wdev->conn)
+ 		err = cfg80211_sme_disconnect(wdev, reason);
+ 	else if (!rdev->ops->disconnect)
+@@ -1151,3 +1155,32 @@ int cfg80211_disconnect(struct cfg80211_registered_device *rdev,
+ 
+ 	return err;
+ }
++
++/*
++ * Used to clean up after the connection / connection attempt owner socket
++ * disconnects
++ */
++void cfg80211_autodisconnect_wk(struct work_struct *work)
++{
++	struct wireless_dev *wdev =
++		container_of(work, struct wireless_dev, disconnect_wk);
++	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
++
++	wdev_lock(wdev);
++
++	if (wdev->conn_owner_nlportid) {
++		/*
++		 * Use disconnect_bssid if still connecting and ops->disconnect
++		 * not implemented.  Otherwise we can use cfg80211_disconnect.
++		 */
++		if (rdev->ops->disconnect || wdev->current_bss)
++			cfg80211_disconnect(rdev, wdev->netdev,
++					    WLAN_REASON_DEAUTH_LEAVING, true);
++		else
++			cfg80211_mlme_deauth(rdev, wdev->netdev,
++					     wdev->disconnect_bssid, NULL, 0,
++					     WLAN_REASON_DEAUTH_LEAVING, false);
++	}
++
++	wdev_unlock(wdev);
++}
+-- 
+1.9.1
+
