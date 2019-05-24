@@ -18,7 +18,6 @@ WLAN_MODULE_NAME = "wlan-sdio"
 CHIP_NAME = "qca6574"
 
 FILES_${PN}     += "lib/firmware/wlan/*"
-FILES_${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/${WLAN_MODULE_NAME}.ko"
 PROVIDES_NAME    = "kernel-module-${WLAN_MODULE_NAME}"
 RPROVIDES_${PN} += "${PROVIDES_NAME}"
 FIRMWARE_CFG_PATH = "${D}${base_libdir}/firmware/wlan/${CHIP_NAME}"

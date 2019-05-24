@@ -91,7 +91,6 @@ EOF
 BBLAYERS_CONF=conf/bblayers.conf
 generate_common_bblayers > ${BBLAYERS_CONF}
 
-if [ $MACHINE != 'imx8mqevk' ]; then
 
 cat >> ${BBLAYERS_CONF} <<EOF
 
@@ -99,8 +98,6 @@ cat >> ${BBLAYERS_CONF} <<EOF
 BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity "
 BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity-prop "
 EOF
-
-fi
 
 case $1 in
     "QCA6574AULE221")
@@ -116,3 +113,4 @@ fi
 if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity-prop/conf/standalone-prop-bbmask.conf" ]; then
     cat ${WORK_SPACE}/sources/meta-qti-connectivity-prop/conf/standalone-prop-bbmask.conf >> ${BBLAYERS_CONF}
 fi
+

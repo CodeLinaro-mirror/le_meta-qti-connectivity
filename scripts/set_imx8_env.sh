@@ -108,8 +108,7 @@ rebake()
 
 build-imxauto-image()
 {
-    #cdbitbake standalone-auto-image
-    cdbitbake core-image-minimal
+    cdbitbake standalone-imx8auto-image
     if [ "$?" != "0" ]; then
         echo "Error run building image."
         return 1

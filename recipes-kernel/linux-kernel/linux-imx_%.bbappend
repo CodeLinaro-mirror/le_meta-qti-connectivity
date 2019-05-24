@@ -8,6 +8,31 @@ SRC_URI = "file://kernel/ \
 S = "${WORKDIR}/kernel"
 
 do_copy_defconfig_append () {
+
+case ${PV} in
+
+   "4.14.78")
+               {
+    cat >> ${WORKDIR}/defconfig <<KERNEL_EXTRACONFIGS
+CONFIG_BCMDHD=n
+CONFIG_BCMDHD_1363=n
+CONFIG_CFG80211_INTERNAL_REGDB=y
+CONFIG_CLD_LL_CORE=y
+CONFIG_ATH10K=n
+CONFIG_ATH10K_PCI=n
+CONFIG_ARCH_ALPINE=n
+CONFIG_ARCH_HISI=n
+CONFIG_ARCH_MVEBU=n
+CONFIG_ARCH_QCOM=n
+CONFIG_ARM_SMMU=n
+CONFIG_STACKTRACE=y
+CONFIG_BRIDGE=y
+CONFIG_TMPFS=y
+KERNEL_EXTRACONFIGS
+               };;
+
+   "4.9.11")
+               {
     cat >> ${WORKDIR}/defconfig <<KERNEL_EXTRACONFIGS
 CONFIG_PCI=y
 CONFIG_PCI_IMX6=y
@@ -22,4 +47,6 @@ CONFIG_CNSS_PCI=n
 CONFIG_CLD_LL_CORE=y
 CONFIG_BRIDGE=y
 KERNEL_EXTRACONFIGS
+               };;
+esac
 }
