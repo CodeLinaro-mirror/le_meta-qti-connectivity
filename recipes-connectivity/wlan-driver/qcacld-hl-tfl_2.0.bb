@@ -1,4 +1,4 @@
-require  qcacld-20-${PROJECTID}.inc
+require  qcacld-20-common.inc
 
 DESCRIPTION = "Qualcomm Atheros WLAN CLD high latency driver version 2.0"
 LICENSE = "ISC"

@@ -65,6 +65,7 @@ BBMASK.="|meta-qti-connectivity/recipes-connectivity/wlan-driver/qcacld-ll_2.0.b
 BBMASK.="|meta-qti-connectivity/recipes-connectivity/wlan-driver/qcacld-hl-rome_2.0.bb"
 BBMASK.="|meta-qti-connectivity/recipes-core/systemd/systemd_%.bbappend"
 BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"
+BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"
 BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-libc-headers/linux-libc-headers_%.bbappend"
 BBMASK.="|meta-qti-connectivity/recipes-kernel/lk/lk_git.bbappend"
 EOF

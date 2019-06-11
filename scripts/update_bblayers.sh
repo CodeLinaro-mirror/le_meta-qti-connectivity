@@ -65,6 +65,7 @@ BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-bsp "
 BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-sdk "
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale-3rdparty "
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale-distro "
+
 EOF
 
     # Support integrating community meta-freescale instead of meta-fsl-arm
@@ -85,32 +86,68 @@ EOF
 
 }
 
-################################################################
-#BBLAYERS_TEMPLATES=${WORK_SPACE}/sources/base/conf/bblayers.conf
-#Current should in BUILD_DIR
-BBLAYERS_CONF=conf/bblayers.conf
-generate_common_bblayers > ${BBLAYERS_CONF}
+generate_QCA6584AULE201_bblayers()
+{
+  cat <<EOF
 
+LCONF_VERSION = "6"
 
-cat >> ${BBLAYERS_CONF} <<EOF
+BBPATH = "\${TOPDIR}"
+export BSPDIR := "\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)) + '/../..')}"
+
+BBFILES ?= ""
+BBLAYERS = " \\
+  \${BSPDIR}/sources/poky/meta \\
+  \${BSPDIR}/sources/poky/meta-yocto \\
+  \\
+  \${BSPDIR}/sources/meta-openembedded/meta-oe \\
+  \\
+  \${BSPDIR}/sources/meta-fsl-arm \\
+  \${BSPDIR}/sources/meta-fsl-arm-extra \\
+  \${BSPDIR}/sources/meta-fsl-demos \\
+"
+
+EOF
+}
+
+bblayers_for_qti_meta()
+{
+  cat >> ${BBLAYERS_CONF} <<EOF
 
 ##QTI Yocto Connecetivity layer
 BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity "
 BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity-prop "
+
 EOF
+
+}
+
+################################################################
+#BBLAYERS_TEMPLATES=${WORK_SPACE}/sources/base/conf/bblayers.conf
+#Current should in BUILD_DIR
+BBLAYERS_CONF=conf/bblayers.conf
+
+echo '' > ${BBLAYERS_CONF}
 
 case $1 in
     "QCA6574AULE221")
         {
+            generate_common_bblayers >> ${BBLAYERS_CONF}
             bblayers_for_qca6574aule221
+            bblayers_for_qti_meta
+            echo 'BBMASK_append="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> ${BBLAYERS_CONF}
         } ;;
+    "QCA6584AULE201")
+       {
+            generate_QCA6584AULE201_bblayers >> ${BBLAYERS_CONF}
+            bblayers_for_qti_meta
+            echo 'BBMASK_append="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"' >> ${BBLAYERS_CONF}
+       } ;;
+
 esac
 
 #Update BBMASK bbfiles
 if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf" ]; then
     cat ${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf >> ${BBLAYERS_CONF}
-fi
-if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity-prop/conf/standalone-prop-bbmask.conf" ]; then
-    cat ${WORK_SPACE}/sources/meta-qti-connectivity-prop/conf/standalone-prop-bbmask.conf >> ${BBLAYERS_CONF}
 fi
 

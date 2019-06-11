@@ -123,13 +123,15 @@ SCRIPT_FOLDER="$(dirname "${BASH_SOURCE}")"
 WORK_SPACE=$(readlink -f ${SCRIPT_FOLDER}/../../..)
 SCRIPT_FILE=${SCRIPT_FOLDER}/set_bb_env.sh
 
+set -x
+
 case $PROJECT in
     "QCA6574AULE221" | "")
         {
             if [ -z "$PROJECT" ]; then
                 echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
             fi
-            DISTRO=fsl-imx-x11
+#            DISTRO=fsl-imx-x11
             export PROJECTID=QCA6574AULE221
         } ;;
     *)
@@ -152,6 +154,18 @@ else
     fi
 fi
 
+if [ -z "$DISTRO" ]; then
+    if [ -f "${WORK_SPACE}/sources/meta-fsl-bsp-release/imx/meta-sdk/conf/distro/fsl-imx-x11.conf" ]; then
+        # Project QCA6574AU.LE.2.2.1
+        DISTRO=fsl-imx-x11
+    else
+	# Project QCA6584AU.LE.2.0.1 (LK3.10.17)
+        DISTRO=poky
+        export PROJECTID=QCA6584AULE201
+        echo "Change PROJECTID to: ${PROJECTID}"
+    fi
+fi
+
 # Get all required source codes.
 . ${SCRIPT_FOLDER}/extract_sourcecode.sh
 
@@ -165,10 +179,6 @@ if [ -z "$EULA" ] || [ "$EULA" != "1" ]; then
     EULA=0
 else
     EULA=1
-fi
-
-if [ -z "$DISTRO" ]; then
-    DISTRO=fsl-imx-x11
 fi
 
 . ${WORK_SPACE}/sources/poky/oe-init-build-env ${BUILD_DIR} > /dev/null
@@ -193,17 +203,23 @@ else
     echo "ACCEPT_FSL_EULA = \"$EULA\"" >> conf/local.conf
 fi
 
-# Update bblayers.conf
+# Update bblayers.conf for PROJECT QCA6574AULE221
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
 
-#Fix KW build
-KW_PATCH=${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
-patch -p 1 -d ${WORK_SPACE}/sources/poky/ -N < ${KW_PATCH} > /dev/null 2>&1
+
+if [ $PROJECTID != "QCA6584AULE201" ]; then
+   #Fix KW build
+   KW_PATCH=${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
+   patch -p 1 -d ${WORK_SPACE}/sources/poky/ -N < ${KW_PATCH} > /dev/null 2>&1
+
+fi
 
 cleanenv
 
 # Export specific parameters for Yocto
 export BB_ENV_EXTRAWHITE="${BB_ENV_EXTRAWHITE} PROJECTID"
+
+set +x
 
 cat <<EOF
 

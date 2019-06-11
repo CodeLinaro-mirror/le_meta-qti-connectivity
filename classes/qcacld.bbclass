@@ -20,8 +20,8 @@ SRC_URI += "${@bb.utils.contains('PV', '3.0', ' file://fw-api/', '', d)}"
 S = "${WORKDIR}/qcacld-${PV}"
 
 FILES_${PN}     += "lib/firmware/*"
-PROVIDES_NAME    = "kernel-module-${WLAN_MODULE_NAME}"
-RPROVIDES_${PN} += "${PROVIDES_NAME}"
+FILES_${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/${WLAN_MODULE_NAME}.ko"
+RPROVIDES_${PN}  += "kernel-module-${WLAN_MODULE_NAME} kernel-module-${WLAN_MODULE_NAME}-${KERNEL_VERSION}"
 
 EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y CONFIG_ROME_IF=pci"
 
