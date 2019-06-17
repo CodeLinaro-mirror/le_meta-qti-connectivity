@@ -120,6 +120,11 @@ BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity-prop "
 
 EOF
 
+#Update BBMASK bbfiles
+if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf" ]; then
+    cat ${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf >> ${BBLAYERS_CONF}
+fi
+
 }
 
 ################################################################
@@ -135,19 +140,13 @@ case $1 in
             generate_common_bblayers >> ${BBLAYERS_CONF}
             bblayers_for_qca6574aule221
             bblayers_for_qti_meta
-            echo 'BBMASK_append="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> ${BBLAYERS_CONF}
+            echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> ${BBLAYERS_CONF}
         } ;;
     "QCA6584AULE201")
        {
             generate_QCA6584AULE201_bblayers >> ${BBLAYERS_CONF}
             bblayers_for_qti_meta
-            echo 'BBMASK_append="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"' >> ${BBLAYERS_CONF}
+            echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"' >> ${BBLAYERS_CONF}
        } ;;
 
 esac
-
-#Update BBMASK bbfiles
-if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf" ]; then
-    cat ${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf >> ${BBLAYERS_CONF}
-fi
-
