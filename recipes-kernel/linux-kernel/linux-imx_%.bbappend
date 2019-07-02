@@ -1,8 +1,6 @@
 SCMVERSION = "n"
 
-FILESEXTRAPATHS_prepend := "${BSPDIR}/sources:${THISDIR}/files:"
-
-SRC_URI = "file://kernel/"
+FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 SRC_URI += "file://lk-4.14/0001-2748365-cfg80211-Updated-nl80211_commands-to-be-in-sync-with.patch \
             file://lk-4.14/0002-2748366-cfg80211-nl80211-Optional-authentication-offload-to-.patch \
@@ -24,8 +22,6 @@ SRC_URI += "file://lk-4.14/0009-2748379-cfg80211-nl80211-Offload-OWE-processing-
 CAF_PATCH_PATH_REG_SELF = "https://source.codeaurora.org/quic/la/kernel/msm-4.4/patch/?"
 PATCH_NAME_REG_SELF = "reg-qcom-call-regulatory-callback-for-self-managed-hints.patch"
 SRC_URI += "${CAF_PATCH_PATH_REG_SELF}id=31e37a680dcbb02ba41d17972dba0b298cf1983d;downloadfilename=${PATCH_NAME_REG_SELF};md5sum=c79fe89b3fbc3e9b2b578a1d1dcebf0e"
-
-S = "${WORKDIR}/kernel"
 
 do_copy_defconfig_append () {
 
