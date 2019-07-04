@@ -23,7 +23,9 @@ CAF_PATCH_PATH_REG_SELF = "https://source.codeaurora.org/quic/la/kernel/msm-4.4/
 PATCH_NAME_REG_SELF = "reg-qcom-call-regulatory-callback-for-self-managed-hints.patch"
 SRC_URI += "${CAF_PATCH_PATH_REG_SELF}id=31e37a680dcbb02ba41d17972dba0b298cf1983d;downloadfilename=${PATCH_NAME_REG_SELF};md5sum=c79fe89b3fbc3e9b2b578a1d1dcebf0e"
 
-SRC_URI += "file://lk-4.14/0010-2739268-Kconfig-Add-CLD_LL_CORE-configuration-for-WLAN.patch"
+SRC_URI += "file://lk-4.14/0010-2739268-Kconfig-Add-CLD_LL_CORE-configuration-for-WLAN.patch \
+            file://lk-4.14/0011-2776447-cnss-Add-support-of-cnss-logger-module.patch \
+           "
 
 do_copy_defconfig_append () {
 
