@@ -29,6 +29,10 @@ SRC_URI += "file://0001-2221407-cfg80211-Use-new-wiphy-flag-WIPHY_FLAG_DFS_OFFLO
             file://0025-2711454-cfg80211-configure-multicast-to-unicast-for-AP-inter.patch \
             file://0026-2711472-cfg80211-Add-support-to-update-connection-parameters.patch \
             file://0027-2717214-nl80211-synchronize-kernel-two-variables-value-in-en.patch \
+            file://0028-2773827-cfg80211-Authentication-offload-to-user-space-in-AP-.patch \
+            file://0029-2773843-nl80211-Allow-set-del-pmksa-operations-for-AP.patch \
+            file://0030-2773938-cfg80211-nl80211-Offload-OWE-processing-to-user-spac.patch \
+            file://0031-2773961-nl80211-Sync-enum-variable-with-upstream-side.patch \
            "
 
 do_copy_defconfig_append () {

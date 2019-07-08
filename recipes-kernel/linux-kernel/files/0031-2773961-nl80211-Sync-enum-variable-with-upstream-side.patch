@@ -1,0 +1,42 @@
+From 43415bb92fd854d566795f31bff0274d04b5044c Mon Sep 17 00:00:00 2001
+From: Qun Zhang <qunz@codeaurora.org>
+Date: Wed, 26 Jun 2019 16:35:18 +0800
+Subject: [PATCH 5/6] nl80211: Sync enum variable with upstream side
+
+The nl80211 attribure variable should keep in sync between kernel
+and wpa_supplicant, if not, the nl80211 cmd payload message would
+fail to be parsed. Since the current kernel side nl80211 attribute
+is behind wpa_supplicat code, the WPA3 AP certification test always
+fail due to the two sides are out of sync. Hard code to sync them.
+
+Change-Id: Id68c71712f1a4af8ff27d0fb1ad3514f3a68d41d
+Signed-off-by: Qun Zhang <qunz@codeaurora.org>
+---
+ include/uapi/linux/nl80211.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index 6ff706f..c50548c 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -1144,7 +1144,7 @@ enum nl80211_commands {
+ 
+ 	NL80211_CMD_EXTERNAL_AUTH,
+ 
+-	NL80211_CMD_UPDATE_OWE_INFO,
++	NL80211_CMD_UPDATE_OWE_INFO = 135,
+ 
+ 	/* add new commands above here */
+ 
+@@ -4753,7 +4753,7 @@ enum nl80211_ext_feature_index {
+ 	NL80211_EXT_FEATURE_BEACON_RATE_LEGACY,
+ 	NL80211_EXT_FEATURE_BEACON_RATE_HT,
+ 	NL80211_EXT_FEATURE_BEACON_RATE_VHT,
+-	NL80211_EXT_FEATURE_AP_PMKSA_CACHING,
++	NL80211_EXT_FEATURE_AP_PMKSA_CACHING = 35,
+ 
+ 	/* add new features before the definition below */
+ 	NUM_NL80211_EXT_FEATURES,
+-- 
+1.9.1
+
