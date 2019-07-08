@@ -33,6 +33,7 @@ SRC_URI += "file://0001-2221407-cfg80211-Use-new-wiphy-flag-WIPHY_FLAG_DFS_OFFLO
             file://0029-2773843-nl80211-Allow-set-del-pmksa-operations-for-AP.patch \
             file://0030-2773938-cfg80211-nl80211-Offload-OWE-processing-to-user-spac.patch \
             file://0031-2773961-nl80211-Sync-enum-variable-with-upstream-side.patch \
+            file://0032-2776466-cnss-Update-logger_dispatch_skb-function.patch \
            "
 
 do_copy_defconfig_append () {
