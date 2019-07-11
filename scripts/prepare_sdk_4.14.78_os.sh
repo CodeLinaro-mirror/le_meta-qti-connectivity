@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+# Copyright (c) 2019, The Linux Foundation. All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -41,9 +41,10 @@ sed -i -e 's/IMAGE_ROOTFS_SIZE ??= "65536"/IMAGE_ROOTFS_SIZE ??= "139264"/g' ../
 
 echo  'MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "pciutils"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "qcacld-ll"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "qcacld-ll-dualwifi"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "qcacld-hl-rome"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iw"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iperf"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iperf2"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wireless-tools"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wpa-supplicant"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-sigmadut"
