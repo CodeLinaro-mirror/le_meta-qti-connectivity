@@ -1,0 +1,69 @@
+From 37a3da07002afcffedec3738785aae7a6e09cab4 Mon Sep 17 00:00:00 2001
+From: Rongjing Liao <liaor@codeaurora.org>
+Date: Fri, 28 Jun 2019 11:47:01 +0800
+Subject: [PATCH 6/6] cnss: Update logger_dispatch_skb function
+
+This change comes from cnss platform driver from msm-3.18,
+snapshot commit is c0b3f609196f63d54a5da9bd1dc9c9d02d1d15f2.
+It updates function to support user space application such as
+rttDemo and cnss_diag can work at the same time when enable
+CONFIG_CNSS_LOGGER.
+
+Change-Id: Id8a2bd1375c296a2aab6425eb40d4b28b27b945e
+Signed-off-by: Rongjing Liao <liaor@codeaurora.org>
+---
+ drivers/net/wireless/cnss/logger/nl_service.c | 38 ++++++++++++++++++++++++---
+ 1 file changed, 34 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/wireless/cnss/logger/nl_service.c b/drivers/net/wireless/cnss/logger/nl_service.c
+index 565cb3a..ce2e05c 100644
+--- a/drivers/net/wireless/cnss/logger/nl_service.c
++++ b/drivers/net/wireless/cnss/logger/nl_service.c
+@@ -104,10 +104,40 @@ static struct logger_device *logger_device_is_registered(
+  */
+ static int logger_dispatch_skb(struct sk_buff *skb)
+ {
+-	pr_info("skb_len: %d, skb_data_len: %d\n",
+-		skb->len, skb->data_len);
+-
+-	return 0;
++        struct nlmsghdr *nlh;
++        struct logger_context *ctx;
++        struct logger_device *cur;
++        struct logger_event_handler *evt;
++        int handled = 0;
++
++        ctx = logger_get_ctx();
++        if (!ctx)
++                return -ENOENT;
++
++        pr_info("skb_len: %d, skb_data_len: %d\n",
++                skb->len, skb->data_len);
++
++        if (skb->len < sizeof(struct nlmsghdr))
++                return 0;
++
++        nlh = (struct nlmsghdr *)skb->data;
++        list_for_each_entry(cur, &ctx->dev_list, list) {
++                list_for_each_entry(evt, &cur->event_list, list) {
++                        if (nlh->nlmsg_type == evt->event) {
++                                if (evt->cb) {
++                                        handled = 1;
++                                        evt->cb(skb);
++                                }
++                                /* Break inside loop, next dev */
++                                break;
++                        }
++                }
++        }
++
++        if (!handled)
++                pr_info("Not handled msg type: %d\n", nlh->nlmsg_type);
++
++        return 0;
+ }
+ 
+ /**
+-- 
+1.9.1
+
