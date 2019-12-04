@@ -37,17 +37,18 @@ umask 022
 
 usage()
 {
-    local SCRIPT_PARAMS="[EULA=<eula>] [MACHINE=<machine>] [PROJECT=<projectid>]"
+    local SCRIPT_PARAMS="[EULA=<eula>] [MACHINE=<machine>] [PROJECT=<projectid>] [KERNEL=<kernelversion>]"
     echo
     echo "script usage for QTI Standalone Auto image"
     echo "${SCRIPT_PARAMS} source ${SCRIPT_FILE} [BUILDDIR]"
-    echo "For example: PROJECT=QCA6574AULE221 source ${SCRIPT_FILE}"
+    echo "For example: PROJECT=QCA6595AULE01 source ${SCRIPT_FILE}"
     echo
     echo "EULA      :  FSL EULA, default 0 if undefined."
     echo "BUILDDIR  :  the build directory location, 'build' by default."
-    echo "MACHINE   :  Supported machines, 'imx6qsabresd' by default. reference command \$list_machines"
+    echo "MACHINE   :  Supported machines, 'imx8mqevk' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
-    echo "    QCA6574AULE221 : QCA6574AU.LE.2.2.1 SP"
+    echo "    QCA6595AULE01 : QCA6595AU.LE.0.1 SP"
+    echo "KERNEL    :  Supported kernel version: '414'(4.14), '49'(4.9)."  
 }
 
 execute_command()
@@ -146,9 +147,38 @@ case $EULA in
 esac
 
 
+case $KERNEL in
+    "49"|"")
+        {
+            if [ -z "$KERNEL" ]; then
+                echo "No $KERNEL provided, use default $KERNEL=49"
+            fi
+            export KERNEL="49"
+          
+        } ;;
+    "414")
+        {
+            export KERNEL="414"
+        } ;;
+    *)
+        {
+            echo "Not supported KERNEL, check script usage"
+            usage
+            cleanenv
+            return 1
+        } ;;
+esac
 
 case $PROJECT in
-    "QCA6574AULE221" | "")
+    "QCA6595AULE01"|"")
+        {
+            if [ -z "$PROJECT" ]; then
+                echo "No PROJECT provided, use default PROJECT=QCA6595AULE01"
+            fi
+            DISTRO=fsl-imx-xwayland
+            export PROJECTID=QCA6595AULE01
+        } ;;
+    "QCA6574AULE221")
         {
             if [ -z "$PROJECT" ]; then
                 echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
@@ -201,7 +231,12 @@ fi
 
 # Generate the local.conf based on the Yocto defaults
 # Update local.conf based on Yocto
-mv conf/local.conf conf/local.conf.sample
+#If the "set_imx8_env.sh" is run many times"
+#The "local.conf.sample" will be refreshed.
+#Fix it 2019.11.26
+if [ ! -f "conf/local.conf.sample" ]; then
+    mv conf/local.conf conf/local.conf.sample
+fi
 grep -v '^#\|^$' conf/local.conf.sample > conf/local.conf
 sed -e "s,MACHINE ??=.*,MACHINE ??= '$MACHINE',g" \
     -e "s,DISTRO ?=.*,DISTRO ?= '$DISTRO',g" \

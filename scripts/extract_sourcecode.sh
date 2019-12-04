@@ -75,7 +75,30 @@ META_FSL_DIS_GIT="git://github.com/Freescale/meta-freescale-distro"
 
 META_FSL_BROWSER_GIT="git://github.com/OSSystems/meta-browser"
 
-if [ $MACHINE == 'imx8mqevk' ]; then
+
+if [ $MACHINE == 'imx8mqevk' ]&&[ $PROJECTID == 'QCA6595AULE01' ]; then
+	if [ $KERNEL == "49" ]; then
+		META_FSL_REV="49ac225a38f6d84519798e3264f2e4d19b84f70a"
+		META_FSL_3RD_REV="1d6d5961dbf82624b28bb318b4950a64abc31d12"
+		META_FSL_DIS_REV="0ec6d7e206705702b5b534611754de0787f92b72"
+		META_FSL_BROWSER_REV="d6f9aed41c73b75a97d71bff060b03a66ee087b1"
+
+		download_git_code ${META_FSL_BROWSER_GIT} ${META_FSL_BROWSER_REV}
+		download_git_code ${META_FSL_GIT} ${META_FSL_REV}
+		download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
+		download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
+	elif [ $KERNEL == "414" ]; then
+		META_FSL_REV="407c6cf408969445031a492e2d25e0e2749582ea"
+		META_FSL_3RD_REV="88a29631809d1af0df618245430db29f2a7012b5"
+		META_FSL_DIS_REV="f7e2216e93aff14ac32728a13637a48df436b7f4"
+		META_FSL_BROWSER_REV="75640e14e325479c076b6272b646be7a239c18aa"
+		
+		download_git_code ${META_FSL_BROWSER_GIT} ${META_FSL_BROWSER_REV}
+		download_git_code ${META_FSL_GIT} ${META_FSL_REV}
+		download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
+		download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
+	fi
+elif [ $MACHINE == 'imx8mqevk' ]; then
 	META_FSL_REV="407c6cf408969445031a492e2d25e0e2749582ea"
 	META_FSL_3RD_REV="88a29631809d1af0df618245430db29f2a7012b5"
 	META_FSL_DIS_REV="f7e2216e93aff14ac32728a13637a48df436b7f4"

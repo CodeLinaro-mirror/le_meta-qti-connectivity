@@ -72,6 +72,8 @@ EOF
     if [ -d ${WORK_SPACE}/sources/meta-freescale ]; then
         # Change settings according to environment
         echo "BBLAYERS += \" \${BSPDIR}/sources/meta-freescale \"" >> ${BBLAYERS_CONF}
+        sed -e "s,meta-fsl-arm\s,meta-freescale ,g" -i ${BBLAYERS_CONF}
+        sed -e "s,\$.BSPDIR./sources/meta-fsl-arm-extra\s,,g" -i ${BBLAYERS_CONF}
     fi
 
     #Poky in imx-4.14.78-1.0.0_ga.xml only support meta-poky
@@ -84,6 +86,11 @@ EOF
         echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-yocto \""  >> ${BBLAYERS_CONF}
     fi
 
+}
+
+bblayers_for_qca6595aule01()
+{
+    bblayers_for_qca6574aule221
 }
 
 generate_QCA6584AULE201_bblayers()
@@ -135,6 +142,13 @@ BBLAYERS_CONF=conf/bblayers.conf
 echo '' > ${BBLAYERS_CONF}
 
 case $1 in
+    "QCA6595AULE01")
+        {
+            generate_common_bblayers >> ${BBLAYERS_CONF}
+            bblayers_for_qca6595aule01
+            bblayers_for_qti_meta
+            echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> ${BBLAYERS_CONF}
+        } ;;
     "QCA6574AULE221")
         {
             generate_common_bblayers >> ${BBLAYERS_CONF}
