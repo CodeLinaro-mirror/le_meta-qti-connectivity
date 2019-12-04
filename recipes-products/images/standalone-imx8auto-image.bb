@@ -28,7 +28,7 @@ IMAGE_INSTALL += "${@bb.utils.contains('SYNERGY_DIR_PRESENT', 'True', 'alsa-util
 IMAGE_INSTALL += "pciutils"
 IMAGE_INSTALL += "iputils"
 IMAGE_INSTALL += "bridge-utils"
-IMAGE_INSTALL += "qcacld-ll"
-IMAGE_INSTALL += "qcacld-ll-dualwifi"
+#IMAGE_INSTALL += "qcacld-ll"
+#IMAGE_INSTALL += "qcacld-ll-dualwifi"
 IMAGE_INSTALL += "qcacld-hl-rome"
 
