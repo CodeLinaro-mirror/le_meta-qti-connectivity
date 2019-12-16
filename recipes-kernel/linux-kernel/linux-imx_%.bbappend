@@ -1,53 +1,49 @@
 SCMVERSION = "n"
 
-FILESEXTRAPATHS_prepend := "${BSPDIR}/sources:"
+FILESEXTRAPATHS_prepend := "${BSPDIR}/sources:${THISDIR}/files:"
 
-SRC_URI = "file://kernel/ \
-          "
+MAINLINE_PRESENT = "${@os.path.exists('${BSPDIR}/sources/kernel')}"
 
-S = "${WORKDIR}/kernel"
+python __anonymous () {
 
-do_copy_defconfig_append () {
+    arry=d.getVar("PV",True).split('.')
 
-case ${PV} in
+    PV_var=arry[0]+'.'+arry[1]
 
-   "4.14.78")
-               {
-    cat >> ${WORKDIR}/defconfig <<KERNEL_EXTRACONFIGS
-CONFIG_BCMDHD=n
-CONFIG_BCMDHD_1363=n
-CONFIG_CFG80211_INTERNAL_REGDB=y
-CONFIG_CLD_LL_CORE=y
-CONFIG_ATH10K=n
-CONFIG_ATH10K_PCI=n
-CONFIG_ARCH_ALPINE=n
-CONFIG_ARCH_HISI=n
-CONFIG_ARCH_MVEBU=n
-CONFIG_ARCH_QCOM=n
-CONFIG_ARM_SMMU=n
-CONFIG_STACKTRACE=y
-CONFIG_BRIDGE=y
-CONFIG_TMPFS=y
-CONFIG_CNSS_LOGGER=y
-KERNEL_EXTRACONFIGS
-               };;
+    if (PV_var == "4.14"):
+        d.setVar("PATCH_FOLDER", "lk-4.14")
+    elif (PV_var == "4.9"):
+        d.setVar("PATCH_FOLDER", "lk-4.9")
 
-   "4.9.11")
-               {
-    cat >> ${WORKDIR}/defconfig <<KERNEL_EXTRACONFIGS
-CONFIG_PCI=y
-CONFIG_PCI_IMX6=y
-CONFIG_BCMDHD=n
-CONFIG_CFG80211_INTERNAL_REGDB=y
-CONFIG_CNSS=n
-CONFIG_CNSS_SDIO=n
-CONFIG_CNSS_LOGGER=y
-CONFIG_WCNSS_MEM_PRE_ALLOC=n
-CONFIG_CNSS_CRYPTO=n
-CONFIG_CNSS_PCI=n
-CONFIG_CLD_LL_CORE=y
-CONFIG_BRIDGE=y
-KERNEL_EXTRACONFIGS
-               };;
-esac
+    if (d.getVar("MAINLINE_PRESENT", True) == 'True'):
+        d.setVar("SRC_URI", "file://kernel/ ")
+        d.setVar("SRC_URI_append", "file://config/defconfig_${PV} ")
+        d.setVar("S", "${WORKDIR}/kernel")
+
 }
+
+SRC_URI += "file://config/defconfig_${PV}"
+
+#SRC_URI += "file://${PATCH_FOLDER}/"
+
+do_copy_defconfig_append() {
+
+    cat ${WORKDIR}/config/defconfig_${PV} >> ${WORKDIR}/defconfig
+
+}
+
+do_patch_for_kernel() {
+
+# For RB line, need to apply kernel patch
+    if [ ${MAINLINE_PRESENT} != "True" ]; then
+        PATCH_PATH="${WORKDIR}/${PATCH_FOLDER}"
+        cd ${S}
+        for i in $(ls ${PATCH_PATH})
+        do
+            git am ${PATCH_PATH}/$i
+        done
+    fi
+
+}
+
+addtask do_patch_for_kernel after do_patch before do_configure

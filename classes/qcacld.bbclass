@@ -23,7 +23,9 @@ FILES_${PN}     += "lib/firmware/*"
 FILES_${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/${WLAN_MODULE_NAME}.ko"
 RPROVIDES_${PN}  += "kernel-module-${WLAN_MODULE_NAME} kernel-module-${WLAN_MODULE_NAME}-${KERNEL_VERSION}"
 
-EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y PANIC_ON_BUG=n CONFIG_ROME_IF=pci"
+#EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y PANIC_ON_BUG=n CONFIG_ROME_IF=pci"
+
+EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y"
 
 do_compile_prepend() {
     sed -in '/Werror/d' ${S}/Kbuild

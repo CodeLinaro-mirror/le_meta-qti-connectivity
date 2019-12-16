@@ -75,7 +75,8 @@ META_FSL_DIS_GIT="git://github.com/Freescale/meta-freescale-distro"
 
 META_FSL_BROWSER_GIT="git://github.com/OSSystems/meta-browser"
 
-if [ $MACHINE == 'imx8mqevk' ]; then
+if [[ $MACHINE == 'imx8mqevk' || $MACHINE == 'imx8qxpmek' ]]; then
+	#For mainfest: imx-4.14.78-1.0.0_ga
 	META_FSL_REV="407c6cf408969445031a492e2d25e0e2749582ea"
 	META_FSL_3RD_REV="88a29631809d1af0df618245430db29f2a7012b5"
 	META_FSL_DIS_REV="f7e2216e93aff14ac32728a13637a48df436b7f4"
@@ -85,6 +86,7 @@ if [ $MACHINE == 'imx8mqevk' ]; then
 	download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
 	download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
 elif [ $PROJECTID == 'QCA6574AULE221' ]; then
+	#For manifest: imx-4.9.11-1.0.0_ga
 	META_FSL_REV="a398b50b7fc084a9e68cc3000c218d5028522a25"
 	META_FSL_3RD_REV="68314612e236cab1da82d72a0da62635a3523f84"
 	META_FSL_DIS_REV="cd5c7a2539f40004f74126e9fdf08254fd9a6390"
@@ -92,6 +94,7 @@ elif [ $PROJECTID == 'QCA6574AULE221' ]; then
 	download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
 	download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
 elif [ $PROJECTID == 'QCA6584AULE201' ]; then
+	#For manifest: imx_3.10.17_1.0.1_ga
 	META_FSL_ARM_EXTRA_REV="c95f3f8b5b347f1b3e77d2d11063207ddb7dc5ec"
 	META_FSL_DEMOS_REV="f141c7d1158b8addbd6f1ed047a1b47c2ed85f8f"
 	download_git_code ${META_FSL_3RD_GIT} ${META_FSL_ARM_EXTRA_REV}
