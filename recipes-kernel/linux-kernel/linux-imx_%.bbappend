@@ -1,17 +1,18 @@
 SCMVERSION = "n"
 
-FILESEXTRAPATHS_prepend := "${BSPDIR}/sources:"
+FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
-SRC_URI = "file://kernel/ \
+SRC_URI += "file://lk-4.9/0001-porting_cfg_patch_for_LK49.patch \
+            file://lk-4.9/0002-porting_mhi_header_for_LK49.patch \
           "
 
-S = "${WORKDIR}/kernel"
+
 
 do_copy_defconfig_append () {
 
 case ${PV} in
 
-   "4.14.78")
+   "4.9.88")
                {
     cat >> ${WORKDIR}/defconfig <<KERNEL_EXTRACONFIGS
 CONFIG_BCMDHD=n
@@ -24,11 +25,13 @@ CONFIG_ARCH_ALPINE=n
 CONFIG_ARCH_HISI=n
 CONFIG_ARCH_MVEBU=n
 CONFIG_ARCH_QCOM=n
-CONFIG_ARM_SMMU=n
+CONFIG_ARM_SMMU=y
 CONFIG_STACKTRACE=y
 CONFIG_BRIDGE=y
 CONFIG_TMPFS=y
-CONFIG_CNSS_LOGGER=y
+CONFIG_CNSS_LOGGER=n
+CONFIG_CRC_CCITT=y
+CONFIG_TYPEC_TCPM=n
 KERNEL_EXTRACONFIGS
                };;
 

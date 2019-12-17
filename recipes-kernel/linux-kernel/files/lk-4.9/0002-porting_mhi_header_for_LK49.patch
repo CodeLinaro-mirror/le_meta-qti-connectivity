@@ -1,0 +1,1379 @@
+From 84949bd608e59408bbd0ebf9d90bf5eb4860caee Mon Sep 17 00:00:00 2001
+From: Xueqiang Gong <gongx@codeaurora.org>
+Date: Thu, 12 Dec 2019 09:24:27 +0800
+Subject: [PATCH] add Header file to support MHI function at I.mx8 Kernel
+ 4.9.88
+
+porting code from project "kernel/msm-4.14", branch "LV.AU.0.0.1_rb1.12"
+all the files porting from the same place as kernel/msm-4.14
+
+Change-Id: I38e9222c9dc6c0aefbe713d3b97175f301aa47f3
+Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
+---
+ arch/arm64/boot/dts/freescale/Makefile             |   4 +-
+ .../boot/dts/freescale/fsl-imx8mq-evk-cnss.dts     | 280 +++++++++++++++++++++
+ arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi      |   1 +
+ arch/arm64/mm/dma-mapping.c                        |  54 ++++
+ drivers/pci/host/pcie-designware.h                 |   2 +-
+ fs/debugfs/inode.c                                 |  36 +++
+ include/linux/coresight-stm.h                      | 109 +++++++-
+ include/linux/debugfs.h                            |   2 +
+ include/linux/dma-mapping.h                        |  44 ++++
+ include/linux/elf.h                                |  36 +++
+ include/linux/mod_devicetable.h                    |  15 ++
+ include/linux/skbuff.h                             |  47 ++++
+ include/net/cnss2.h                                | 252 +++++++++++++++++++
+ include/net/cnss_nl.h                              | 104 ++++++++
+ include/uapi/linux/coresight-stm.h                 |  14 +-
+ include/uapi/linux/pci_regs.h                      |  16 ++
+ include/uapi/linux/qrtr.h                          |  44 ++++
+ mm/memblock.c                                      |   4 +
+ 18 files changed, 1058 insertions(+), 6 deletions(-)
+ mode change 100644 => 100755 arch/arm64/boot/dts/freescale/Makefile
+ create mode 100755 arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts
+ mode change 100644 => 100755 arch/arm64/mm/dma-mapping.c
+ mode change 100644 => 100755 drivers/pci/host/pcie-designware.h
+ mode change 100644 => 100755 fs/debugfs/inode.c
+ mode change 100644 => 100755 include/linux/coresight-stm.h
+ mode change 100644 => 100755 include/linux/debugfs.h
+ mode change 100644 => 100755 include/linux/dma-mapping.h
+ mode change 100644 => 100755 include/linux/elf.h
+ mode change 100644 => 100755 include/linux/mod_devicetable.h
+ mode change 100644 => 100755 include/linux/skbuff.h
+ create mode 100755 include/net/cnss2.h
+ create mode 100755 include/net/cnss_nl.h
+ mode change 100644 => 100755 include/uapi/linux/coresight-stm.h
+ mode change 100644 => 100755 include/uapi/linux/pci_regs.h
+ mode change 100644 => 100755 include/uapi/linux/qrtr.h
+ mode change 100644 => 100755 mm/memblock.c
+
+diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
+old mode 100644
+new mode 100755
+index 7f83f1e..1c535fa7
+--- a/arch/arm64/boot/dts/freescale/Makefile
++++ b/arch/arm64/boot/dts/freescale/Makefile
+@@ -59,8 +59,8 @@ dtb-$(CONFIG_ARCH_FSL_IMX8MQ) += fsl-imx8mq-ddr3l-arm2.dtb \
+ 				 fsl-imx8mq-evk-dual-display.dtb \
+ 				 fsl-imx8mq-evk-ak4497.dtb \
+ 				 fsl-imx8mq-evk-audio-tdm.dtb \
+-				 fsl-imx8mq-evk-drm.dtb
+-
++				 fsl-imx8mq-evk-drm.dtb \
++				 fsl-imx8mq-evk-cnss.dtb 
+ always		:= $(dtb-y)
+ subdir-y	:= $(dts-dirs)
+ clean-files	:= *.dtb
+diff --git a/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts b/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts
+new file mode 100755
+index 00000000..4ae6c96
+--- /dev/null
++++ b/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts
+@@ -0,0 +1,280 @@
++/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 and
++ * only version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++ / {
++
++	qcom,cnss-qca6390@a0000000 {
++		status = "disabled";
++	};
++
++	cnss_pcie: qcom,cnss-qca-converged {
++		compatible = "qcom,cnss-qca-converged";
++
++		qcom,converged-dt;
++		qcom,wlan-rc-num = <1>;
++		qcom,bus-type=<0>;
++		qcom,notify-modem-status;
++		qcom,msm-bus,name = "msm-cnss";
++		qcom,msm-bus,num-cases = <4>;
++		qcom,msm-bus,num-paths = <2>;
++		qcom,msm-bus,vectors-KBps =
++			<45 512 0 0>, <1 512 0 0>,
++			/* Upto 200 Mbps */
++			<45 512 41421 655360>, <1 512 41421 655360>,
++			/* Upto 400 Mbps */
++			<45 512 98572 655360>, <1 512 98572 1600000>,
++			/* Upto 800 Mbps */
++			<45 512 207108 1146880>, <1 512 207108 3124992>;
++
++		#address-cells=<1>;
++		#size-cells=<1>;
++		ranges = <0x10000000 0x10000000 0x10000000>,
++		      <0x20000000 0x20000000 0x10000>,
++		      <0xa0000000 0xa0000000 0x10000000>,
++		      <0xb0000000 0xb0000000 0x10000>;
++
++		chip_cfg@0 {
++			reg = <0x10000000 0x10000000>,
++			    <0x20000000 0x10000>;
++			reg-names = "smmu_iova_base", "smmu_iova_ipa";
++
++			supported-ids = <0x003e>;
++			wlan_vregs = "vdd-wlan";
++			qcom,vdd-wlan-info = <0 0 0 10>;
++
++			qcom,smmu-s1-enable;
++			qcom,wlan-ramdump-dynamic = <0x200000>;
++		};
++
++		chip_cfg@1 {
++			reg = <0xa0000000 0x10000000>,
++			    <0xb0000000 0x10000>;
++			reg-names = "smmu_iova_base", "smmu_iova_ipa";
++
++			supported-ids = <0x1101>;
++			wlan_vregs = "vdd-wlan-aon", "vdd-wlan-rfa1",
++				   "vdd-wlan-rfa2", "vdd-wlan-rfa3";
++			qcom,vdd-wlan-aon-info = <1055000 1055000 0 0>;
++			qcom,vdd-wlan-rfa1-info = <1370000 1370000 0 0>;
++			qcom,vdd-wlan-rfa2-info = <2040000 2040000 0 0>;
++			qcom,vdd-wlan-rfa3-info = <1900000 1900000 450000 0>;
++
++			qcom,wlan-ramdump-dynamic = <0x400000>;
++			mhi,max-channels = <30>;
++			mhi,timeout = <10000>;
++
++			mhi_channels {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				mhi_chan@0 {
++					reg = <0>;
++					label = "LOOPBACK";
++					mhi,num-elements = <32>;
++					mhi,event-ring = <1>;
++					mhi,chan-dir = <1>;
++					mhi,data-type = <0>;
++					mhi,doorbell-mode = <2>;
++					mhi,ee = <0x14>;
++				};
++
++				mhi_chan@1 {
++					reg = <1>;
++					label = "LOOPBACK";
++					mhi,num-elements = <32>;
++					mhi,event-ring = <1>;
++					mhi,chan-dir = <2>;
++					mhi,data-type = <0>;
++					mhi,doorbell-mode = <2>;
++					mhi,ee = <0x14>;
++				};
++
++				mhi_chan@4 {
++					reg = <4>;
++					label = "DIAG";
++					mhi,num-elements = <32>;
++					mhi,event-ring = <1>;
++					mhi,chan-dir = <1>;
++					mhi,data-type = <0>;
++					mhi,doorbell-mode = <2>;
++					mhi,ee = <0x14>;
++				};
++
++				mhi_chan@5 {
++					reg = <5>;
++					label = "DIAG";
++					mhi,num-elements = <32>;
++					mhi,event-ring = <1>;
++					mhi,chan-dir = <2>;
++					mhi,data-type = <0>;
++					mhi,doorbell-mode = <2>;
++					mhi,ee = <0x14>;
++				};
++
++				mhi_chan@20 {
++					reg = <20>;
++					label = "IPCR";
++					mhi,num-elements = <32>;
++					mhi,event-ring = <1>;
++					mhi,chan-dir = <1>;
++					mhi,data-type = <1>;
++					mhi,doorbell-mode = <2>;
++					mhi,ee = <0x14>;
++					mhi,auto-start;
++				};
++
++				mhi_chan@21 {
++					reg = <21>;
++					label = "IPCR";
++					mhi,num-elements = <32>;
++					mhi,event-ring = <1>;
++					mhi,chan-dir = <2>;
++					mhi,data-type = <0>;
++					mhi,doorbell-mode = <2>;
++					mhi,ee = <0x14>;
++					mhi,auto-queue;
++					mhi,auto-start;
++				};
++			};
++
++			mhi_events {
++				mhi_event@0 {
++					mhi,num-elements = <32>;
++					mhi,intmod = <1>;
++					mhi,msi = <1>;
++					mhi,priority = <1>;
++					mhi,brstmode = <2>;
++					mhi,data-type = <1>;
++				};
++
++				mhi_event@1 {
++					mhi,num-elements = <256>;
++					mhi,intmod = <1>;
++					mhi,msi = <2>;
++					mhi,priority = <1>;
++					mhi,brstmode = <2>;
++				};
++			};
++		};
++
++		chip_cfg@2 {
++			reg = <0xa0000000 0x10000000>,
++			    <0xb0000000 0x10000>;
++			reg-names = "smmu_iova_base", "smmu_iova_ipa";
++
++			supported-ids = <0x1102>;
++			wlan_vregs = "vdd-wlan-aon", "vdd-wlan-rfa1",
++				   "vdd-wlan-rfa2", "vdd-wlan-rfa3";
++			qcom,vdd-wlan-aon-info = <1055000 1055000 0 0>;
++			qcom,vdd-wlan-rfa1-info = <1370000 1370000 0 0>;
++			qcom,vdd-wlan-rfa2-info = <2040000 2040000 0 0>;
++			qcom,vdd-wlan-rfa3-info = <1900000 1900000 0 0>;
++
++			qcom,wlan-ramdump-dynamic = <0x300000>;
++			mhi,max-channels = <30>;
++			mhi,timeout = <10000>;
++			mhi,ee = <0x3>, <0x4>;
++			mhi,ee-names = "SBL", "RDDM";
++			mhi,bhie-offset = <0x0324>;
++
++			mhi_channels {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				mhi_chan@0 {
++					reg = <0>;
++					label = "LOOPBACK";
++					mhi,num-elements = <32>;
++					mhi,event-ring = <1>;
++					mhi,chan-dir = <1>;
++					mhi,data-type = <0>;
++					mhi,doorbell-mode = <2>;
++					mhi,ee = <0x14>;
++				};
++
++				mhi_chan@1 {
++					reg = <1>;
++					label = "LOOPBACK";
++					mhi,num-elements = <32>;
++					mhi,event-ring = <1>;
++					mhi,chan-dir = <2>;
++					mhi,data-type = <0>;
++					mhi,doorbell-mode = <2>;
++					mhi,ee = <0x14>;
++				};
++
++				mhi_chan@4 {
++					reg = <4>;
++					label = "DIAG";
++					mhi,num-elements = <32>;
++					mhi,event-ring = <1>;
++					mhi,chan-dir = <1>;
++					mhi,data-type = <0>;
++					mhi,doorbell-mode = <2>;
++					mhi,ee = <0x14>;
++				};
++
++				mhi_chan@5 {
++					reg = <5>;
++					label = "DIAG";
++					mhi,num-elements = <32>;
++					mhi,event-ring = <1>;
++					mhi,chan-dir = <2>;
++					mhi,data-type = <0>;
++					mhi,doorbell-mode = <2>;
++					mhi,ee = <0x14>;
++				};
++
++				mhi_chan@16 {
++					reg = <16>;
++					label = "IPCR";
++					mhi,num-elements = <32>;
++					mhi,event-ring = <1>;
++					mhi,chan-dir = <1>;
++					mhi,data-type = <1>;
++					mhi,doorbell-mode = <2>;
++					mhi,ee = <0x14>;
++					mhi,auto-start;
++				};
++
++				mhi_chan@17 {
++					reg = <17>;
++					label = "IPCR";
++					mhi,num-elements = <32>;
++					mhi,event-ring = <1>;
++					mhi,chan-dir = <2>;
++					mhi,data-type = <0>;
++					mhi,doorbell-mode = <2>;
++					mhi,ee = <0x14>;
++					mhi,auto-queue;
++					mhi,auto-start;
++				};
++			};
++
++			mhi_events {
++				mhi_event@0 {
++					mhi,num-elements = <32>;
++					mhi,intmod = <1>;
++					mhi,msi = <1>;
++					mhi,priority = <1>;
++					mhi,brstmode = <2>;
++					mhi,data-type = <1>;
++				};
++
++				mhi_event@1 {
++					mhi,num-elements = <256>;
++					mhi,intmod = <1>;
++					mhi,msi = <2>;
++					mhi,priority = <1>;
++					mhi,brstmode = <2>;
++				};
++			};
++		};
++	};
++};
+diff --git a/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi b/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi
+index 6d5d6ae..61938cf 100755
+--- a/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi
++++ b/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi
+@@ -20,6 +20,7 @@
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/pinctrl/pins-imx8mq.h>
+ #include <dt-bindings/thermal/thermal.h>
++#include "fsl-imx8mq-evk-cnss.dts"
+ 
+ / {
+ 	compatible = "fsl,imx8mq";
+diff --git a/arch/arm64/mm/dma-mapping.c b/arch/arm64/mm/dma-mapping.c
+old mode 100644
+new mode 100755
+index 28d9199..d27ae2a
+--- a/arch/arm64/mm/dma-mapping.c
++++ b/arch/arm64/mm/dma-mapping.c
+@@ -28,6 +28,7 @@
+ #include <linux/dma-contiguous.h>
+ #include <linux/vmalloc.h>
+ #include <linux/swiotlb.h>
++#include <asm/tlbflush.h>
+ #include <linux/of.h>
+ 
+ #include <asm/cacheflush.h>
+@@ -357,6 +358,57 @@ static int __swiotlb_dma_supported(struct device *hwdev, u64 mask)
+ 	return 1;
+ }
+ 
++
++static void *arm64_dma_remap(struct device *dev, void *cpu_addr,
++			dma_addr_t handle, size_t size,
++			unsigned long attrs)
++{
++	struct page *page = phys_to_page(dma_to_phys(dev, handle));
++	bool coherent = is_device_dma_coherent(dev);
++	pgprot_t prot = __get_dma_pgprot(attrs, PAGE_KERNEL, coherent);
++	unsigned long offset = handle & ~PAGE_MASK;
++	struct vm_struct *area;
++	unsigned long addr;
++
++	size = PAGE_ALIGN(size + offset);
++
++	/*
++	 * DMA allocation can be mapped to user space, so lets
++	 * set VM_USERMAP flags too.
++	 */
++	area = get_vm_area(size, VM_USERMAP);
++	if (!area)
++		return NULL;
++
++	addr = (unsigned long)area->addr;
++	area->phys_addr = __pfn_to_phys(page_to_pfn(page));
++
++	if (ioremap_page_range(addr, addr + size, area->phys_addr, prot)) {
++		vunmap((void *)addr);
++		return NULL;
++	}
++	return (void *)addr + offset;
++}
++
++static void arm64_dma_unremap(struct device *dev, void *remapped_addr,
++				size_t size)
++{
++	struct vm_struct *area;
++
++	size = PAGE_ALIGN(size);
++	remapped_addr = (void *)((unsigned long)remapped_addr & PAGE_MASK);
++
++	area = find_vm_area(remapped_addr);
++	if (!area) {
++		WARN(1, "trying to free invalid coherent area: %p\n",
++			remapped_addr);
++		return;
++	}
++	vunmap(remapped_addr);
++	flush_tlb_kernel_range((unsigned long)remapped_addr,
++			(unsigned long)(remapped_addr + size));
++}
++
+ static int __swiotlb_dma_mapping_error(struct device *hwdev, dma_addr_t addr)
+ {
+ 	if (swiotlb)
+@@ -395,6 +447,8 @@ static struct dma_map_ops swiotlb_dma_ops = {
+ 	.sync_sg_for_device = __swiotlb_sync_sg_for_device,
+ 	.dma_supported = __swiotlb_dma_supported,
+ 	.mapping_error = __swiotlb_dma_mapping_error,
++	.remap = arm64_dma_remap,
++	.unremap = arm64_dma_unremap,
+ };
+ 
+ static int __init atomic_pool_init(void)
+diff --git a/drivers/pci/host/pcie-designware.h b/drivers/pci/host/pcie-designware.h
+old mode 100644
+new mode 100755
+index 101fc5f..21585dc
+--- a/drivers/pci/host/pcie-designware.h
++++ b/drivers/pci/host/pcie-designware.h
+@@ -19,7 +19,7 @@
+  * it 32 as of now. Probably we will never need more than 32. If needed,
+  * then increment it in multiple of 32.
+  */
+-#define MAX_MSI_IRQS			32
++#define MAX_MSI_IRQS			256
+ #define MAX_MSI_CTRLS			(MAX_MSI_IRQS / 32)
+ 
+ struct pcie_port {
+diff --git a/fs/debugfs/inode.c b/fs/debugfs/inode.c
+old mode 100644
+new mode 100755
+index 3d7de9f..977da06
+--- a/fs/debugfs/inode.c
++++ b/fs/debugfs/inode.c
+@@ -248,6 +248,42 @@ static struct file_system_type debug_fs_type = {
+ };
+ MODULE_ALIAS_FS("debugfs");
+ 
++/**
++ * debugfs_lookup() - look up an existing debugfs file
++ * @name: a pointer to a string containing the name of the file to look up.
++ * @parent: a pointer to the parent dentry of the file.
++ *
++ * This function will return a pointer to a dentry if it succeeds.  If the file
++ * doesn't exist or an error occurs, %NULL will be returned.  The returned
++ * dentry must be passed to dput() when it is no longer needed.
++ *
++ * If debugfs is not enabled in the kernel, the value -%ENODEV will be
++ * returned.
++ */
++struct dentry *debugfs_lookup(const char *name, struct dentry *parent)
++{
++	struct dentry *dentry;
++
++	if (IS_ERR(parent))
++		return NULL;
++
++	if (!parent)
++		parent = debugfs_mount->mnt_root;
++
++	inode_lock(d_inode(parent));
++	dentry = lookup_one_len(name, parent, strlen(name));
++	inode_unlock(d_inode(parent));
++
++	if (IS_ERR(dentry))
++		return NULL;
++	if (!d_really_is_positive(dentry)) {
++		dput(dentry);
++		return NULL;
++	}
++	return dentry;
++}
++EXPORT_SYMBOL_GPL(debugfs_lookup);
++
+ static struct dentry *start_creating(const char *name, struct dentry *parent)
+ {
+ 	struct dentry *dentry;
+diff --git a/include/linux/coresight-stm.h b/include/linux/coresight-stm.h
+old mode 100644
+new mode 100755
+index a978bb8..8868e32
+--- a/include/linux/coresight-stm.h
++++ b/include/linux/coresight-stm.h
+@@ -1,6 +1,113 @@
++/* SPDX-License-Identifier: GPL-2.0 */
+ #ifndef __LINUX_CORESIGHT_STM_H_
+ #define __LINUX_CORESIGHT_STM_H_
+-
++#include <asm/local.h>
++#include <linux/stm.h>
++#include <linux/bitmap.h>
+ #include <uapi/linux/coresight-stm.h>
+ 
++#define BYTES_PER_CHANNEL		256
++
++enum stm_pkt_type {
++	STM_PKT_TYPE_DATA	= 0x98,
++	STM_PKT_TYPE_FLAG	= 0xE8,
++	STM_PKT_TYPE_TRIG	= 0xF8,
++};
++
++#define stm_channel_off(type, opts)	(type & ~opts)
++
++#define stm_channel_addr(drvdata, ch)	(drvdata->chs.base +	\
++					(ch * BYTES_PER_CHANNEL))
++
++#define stm_log_inv(entity_id, proto_id, data, size)			\
++	stm_trace(STM_FLAG_NONE, entity_id, proto_id, data, size)
++
++#define stm_log_inv_ts(entity_id, proto_id, data, size)			\
++	stm_trace(STM_FLAG_TIMESTAMPED, entity_id, proto_id,		\
++		  data, size)
++
++#define stm_log_gtd(entity_id, proto_id, data, size)			\
++	stm_trace(STM_FLAG_GUARANTEED, entity_id, proto_id,		\
++		  data, size)
++
++#define stm_log_gtd_ts(entity_id, proto_id, data, size)			\
++	stm_trace(STM_FLAG_GUARANTEED | STM_OPTION_TIMESTAMPED,	\
++		  entity_id, proto_id, data, size)
++
++#define stm_log(entity_id, data, size)					\
++	stm_log_inv_ts(entity_id, 0, data, size)
++
++/**
++ * struct channel_space - central management entity for extended ports
++ * @base:		memory mapped base address where channels start.
++ * @phys:		physical base address of channel region.
++ * @guaraneed:		is the channel delivery guaranteed.
++ * @bitmap:		channel info for OST packet
++ */
++struct channel_space {
++	void __iomem		*base;
++	phys_addr_t		phys;
++	unsigned long		*guaranteed;
++	unsigned long		*bitmap;
++};
++
++/**
++ * struct stm_drvdata - specifics associated to an STM component
++ * @base:		memory mapped base address for this component.
++ * @dev:		the device entity associated to this component.
++ * @atclk:		optional clock for the core parts of the STM.
++ * @csdev:		component vitals needed by the framework.
++ * @spinlock:		only one at a time pls.
++ * @chs:		the channels accociated to this STM.
++ * @entities		currently configured OST entities.
++ * @stm:		structure associated to the generic STM interface.
++ * @mode:		this tracer's mode, i.e sysFS, or disabled.
++ * @traceid:		value of the current ID for this component.
++ * @write_bytes:	Maximus bytes this STM can write at a time.
++ * @stmsper:		settings for register STMSPER.
++ * @stmspscr:		settings for register STMSPSCR.
++ * @numsp:		the total number of stimulus port support by this STM.
++ * @stmheer:		settings for register STMHEER.
++ * @stmheter:		settings for register STMHETER.
++ * @stmhebsr:		settings for register STMHEBSR.
++ * @ch_alloc_fail_count:	Number of ch allocation failures over time.
++ */
++struct stm_drvdata {
++	void __iomem		*base;
++	struct device		*dev;
++	struct clk		*atclk;
++	struct coresight_device	*csdev;
++	spinlock_t		spinlock;
++	struct channel_space	chs;
++	bool			enable;
++	struct channel_space	debug_status_chs;
++	bool			master_enable;
++	DECLARE_BITMAP(entities, OST_ENTITY_MAX);
++	struct stm_data		stm;
++	local_t			mode;
++	u8			traceid;
++	u32			write_bytes;
++	u32			stmsper;
++	u32			stmspscr;
++	u32			numsp;
++	u32			stmheer;
++	u32			stmheter;
++	u32			stmhebsr;
++	u32			ch_alloc_fail_count;
++};
++
++#ifdef CONFIG_CORESIGHT_STM
++extern int stm_trace(uint32_t flags, uint8_t entity_id, uint8_t proto_id,
++		     const void *data, uint32_t size);
++
++void stm_send(void *addr, const void *data, u32 size, u8 write_bytes);
++#else
++static inline int stm_trace(uint32_t flags, uint8_t entity_id,
++			    uint8_t proto_id, const void *data, uint32_t size)
++{
++	return 0;
++}
++static inline void stm_send(void *addr, const void *data, u32 size,
++			    u8 write_bytes) {}
++#endif
+ #endif
+diff --git a/include/linux/debugfs.h b/include/linux/debugfs.h
+old mode 100644
+new mode 100755
+index b20a094..f6c5958
+--- a/include/linux/debugfs.h
++++ b/include/linux/debugfs.h
+@@ -79,6 +79,8 @@ static const struct file_operations __fops = {				\
+ 
+ #if defined(CONFIG_DEBUG_FS)
+ 
++struct dentry *debugfs_lookup(const char *name, struct dentry *parent);
++
+ struct dentry *debugfs_create_file(const char *name, umode_t mode,
+ 				   struct dentry *parent, void *data,
+ 				   const struct file_operations *fops);
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+old mode 100644
+new mode 100755
+index 704caae..8dd2493
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -61,6 +61,17 @@
+  * allocation failure reports (similarly to __GFP_NOWARN).
+  */
+ #define DMA_ATTR_NO_WARN	(1UL << 8)
++/*
++ * DMA_ATTR_SKIP_ZEROING: Do not zero mapping.
++ */
++#define DMA_ATTR_SKIP_ZEROING		(1UL << 9)
++
++/*
++ * DMA_ATTR_PRIVILEGED: used to indicate that the buffer is fully
++ * accessible at an elevated privilege level (and ideally inaccessible or
++ * at least read-only at lesser-privileged levels).
++ */
++#define DMA_ATTR_PRIVILEGED		(1UL << 10)
+ 
+ /*
+  * A dma_addr_t can hold any valid DMA or bus address for the platform.
+@@ -120,6 +131,10 @@ struct dma_map_ops {
+ 				   enum dma_data_direction dir);
+ 	int (*mapping_error)(struct device *dev, dma_addr_t dma_addr);
+ 	int (*dma_supported)(struct device *dev, u64 mask);
++	void *(*remap)(struct device *dev, void *cpu_addr, dma_addr_t handle,
++			size_t size, unsigned long attrs);
++	void (*unremap)(struct device *dev, void *remapped_address,
++			size_t size);
+ 	int (*set_dma_mask)(struct device *dev, u64 mask);
+ #ifdef ARCH_HAS_DMA_GET_REQUIRED_MASK
+ 	u64 (*get_required_mask)(struct device *dev);
+@@ -555,6 +570,35 @@ static inline int dma_set_mask(struct device *dev, u64 mask)
+ 	return 0;
+ }
+ #endif
++static inline void *dma_remap(struct device *dev, void *cpu_addr,
++		dma_addr_t dma_handle, size_t size, unsigned long attrs)
++{
++	const struct dma_map_ops *ops = get_dma_ops(dev);
++
++	if (!ops->remap) {
++		WARN_ONCE(1, "Remap function not implemented for %pS\n",
++				ops->remap);
++		return NULL;
++	}
++
++	return ops->remap(dev, cpu_addr, dma_handle, size, attrs);
++}
++
++
++static inline void dma_unremap(struct device *dev, void *remapped_addr,
++				size_t size)
++{
++	const struct dma_map_ops *ops = get_dma_ops(dev);
++
++	if (!ops->unremap) {
++		WARN_ONCE(1, "unremap function not implemented for %pS\n",
++				ops->unremap);
++		return;
++	}
++
++	return ops->unremap(dev, remapped_addr, size);
++}
++
+ 
+ static inline u64 dma_get_mask(struct device *dev)
+ {
+diff --git a/include/linux/elf.h b/include/linux/elf.h
+old mode 100644
+new mode 100755
+index 20fa8d8..f94c9dc
+--- a/include/linux/elf.h
++++ b/include/linux/elf.h
+@@ -1,3 +1,4 @@
++/* SPDX-License-Identifier: GPL-2.0 */
+ #ifndef _LINUX_ELF_H
+ #define _LINUX_ELF_H
+ 
+@@ -29,6 +30,7 @@ extern Elf32_Dyn _DYNAMIC [];
+ #define elf_note	elf32_note
+ #define elf_addr_t	Elf32_Off
+ #define Elf_Half	Elf32_Half
++#define Elf_Word	Elf32_Word
+ 
+ #else
+ 
+@@ -39,9 +41,43 @@ extern Elf64_Dyn _DYNAMIC [];
+ #define elf_note	elf64_note
+ #define elf_addr_t	Elf64_Off
+ #define Elf_Half	Elf64_Half
++#define Elf_Word	Elf64_Word
+ 
+ #endif
+ 
++/* Generic helpers for ELF use */
++/* Return first section header */
++static inline struct elf_shdr *elf_sheader(struct elfhdr *hdr)
++{
++	return (struct elf_shdr *)((size_t)hdr + (size_t)hdr->e_shoff);
++}
++
++/* Return idx section header */
++static inline struct elf_shdr *elf_section(struct elfhdr *hdr, int idx)
++{
++	return &elf_sheader(hdr)[idx];
++}
++
++/* Return first program header */
++static inline struct elf_phdr *elf_pheader(struct elfhdr *hdr)
++{
++	return (struct elf_phdr *)((size_t)hdr + (size_t)hdr->e_phoff);
++}
++
++/* Return idx program header */
++static inline struct elf_phdr *elf_program(struct elfhdr *hdr, int idx)
++{
++	return &elf_pheader(hdr)[idx];
++}
++ 
++/* Retunr section's string table header */
++static inline char *elf_str_table(struct elfhdr *hdr)
++{
++	if (hdr->e_shstrndx == SHN_UNDEF)
++		return NULL;
++	return (char *)hdr + elf_section(hdr, hdr->e_shstrndx)->sh_offset;
++}
++
+ /* Optional callbacks to write extra ELF notes. */
+ struct file;
+ struct coredump_params;
+diff --git a/include/linux/mod_devicetable.h b/include/linux/mod_devicetable.h
+old mode 100644
+new mode 100755
+index ed84c07..7cd349f
+--- a/include/linux/mod_devicetable.h
++++ b/include/linux/mod_devicetable.h
+@@ -672,5 +672,20 @@ struct fsl_mc_device_id {
+ 	const char obj_type[16];
+ };
+ 
++#define MHI_NAME_SIZE 32
++
++/**
++ * struct mhi_device_id - MHI device identification
++ * @chan: MHI channel name
++ * @driver_data: driver data;
++ */
++
++struct mhi_device_id {
++	const char chan[MHI_NAME_SIZE];
++	kernel_ulong_t driver_data;
++};
++
++
++
+ 
+ #endif /* LINUX_MOD_DEVICETABLE_H */
+diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
+old mode 100644
+new mode 100755
+index 601dfa8..7419a64
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
+@@ -1920,6 +1920,53 @@ static inline unsigned char *__skb_put(struct sk_buff *skb, unsigned int len)
+ 	return tmp;
+ }
+ 
++static inline void *__skb_put_zero(struct sk_buff *skb, unsigned int len)
++{
++	void *tmp = __skb_put(skb, len);
++
++	memset(tmp, 0, len);
++	return tmp;
++}
++
++static inline void *__skb_put_data(struct sk_buff *skb, const void *data,
++				   unsigned int len)
++{
++	void *tmp = __skb_put(skb, len);
++
++	memcpy(tmp, data, len);
++	return tmp;
++}
++
++static inline void __skb_put_u8(struct sk_buff *skb, u8 val)
++{
++	*(u8 *)__skb_put(skb, 1) = val;
++}
++
++static inline void *skb_put_zero(struct sk_buff *skb, unsigned int len)
++{
++	void *tmp = skb_put(skb, len);
++
++	memset(tmp, 0, len);
++
++	return tmp;
++}
++
++static inline void *skb_put_data(struct sk_buff *skb, const void *data,
++				 unsigned int len)
++{
++	void *tmp = skb_put(skb, len);
++
++	memcpy(tmp, data, len);
++
++	return tmp;
++}
++
++static inline void skb_put_u8(struct sk_buff *skb, u8 val)
++{
++	*(u8 *)skb_put(skb, 1) = val;
++}
++
++
+ unsigned char *skb_push(struct sk_buff *skb, unsigned int len);
+ static inline unsigned char *__skb_push(struct sk_buff *skb, unsigned int len)
+ {
+diff --git a/include/net/cnss2.h b/include/net/cnss2.h
+new file mode 100755
+index 00000000..ec1c7cc
+--- /dev/null
++++ b/include/net/cnss2.h
+@@ -0,0 +1,252 @@
++/* Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 and
++ * only version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef _NET_CNSS2_H
++#define _NET_CNSS2_H
++
++#include <linux/pci.h>
++#include <linux/usb.h>
++
++#define CNSS_MAX_FILE_NAME		20
++#define CNSS_MAX_TIMESTAMP_LEN		32
++
++/*
++ * Temporary change for compilation, will be removed
++ * after WLAN host driver switched to use new APIs
++ */
++#define CNSS_API_WITH_DEV
++
++enum cnss_bus_width_type {
++	CNSS_BUS_WIDTH_NONE,
++	CNSS_BUS_WIDTH_IDLE,
++	CNSS_BUS_WIDTH_LOW,
++	CNSS_BUS_WIDTH_MEDIUM,
++	CNSS_BUS_WIDTH_HIGH,
++	CNSS_BUS_WIDTH_VERY_HIGH,
++};
++
++enum cnss_platform_cap_flag {
++	CNSS_HAS_EXTERNAL_SWREG = 0x01,
++	CNSS_HAS_UART_ACCESS = 0x02,
++};
++
++struct cnss_platform_cap {
++	u32 cap_flag;
++};
++
++struct cnss_fw_files {
++	char image_file[CNSS_MAX_FILE_NAME];
++	char board_data[CNSS_MAX_FILE_NAME];
++	char otp_data[CNSS_MAX_FILE_NAME];
++	char utf_file[CNSS_MAX_FILE_NAME];
++	char utf_board_data[CNSS_MAX_FILE_NAME];
++	char epping_file[CNSS_MAX_FILE_NAME];
++	char evicted_data[CNSS_MAX_FILE_NAME];
++};
++
++struct cnss_device_version {
++	u32 family_number;
++	u32 device_number;
++	u32 major_version;
++	u32 minor_version;
++};
++
++struct cnss_soc_info {
++	void __iomem *va;
++	phys_addr_t pa;
++	uint32_t chip_id;
++	uint32_t chip_family;
++	uint32_t board_id;
++	uint32_t soc_id;
++	uint32_t fw_version;
++	char fw_build_timestamp[CNSS_MAX_TIMESTAMP_LEN + 1];
++	struct cnss_device_version device_version;
++};
++
++struct cnss_wlan_runtime_ops {
++	int (*runtime_suspend)(struct pci_dev *pdev);
++	int (*runtime_resume)(struct pci_dev *pdev);
++};
++
++struct cnss_wlan_driver {
++	char *name;
++	int  (*probe)(struct pci_dev *pdev, const struct pci_device_id *id);
++	void (*remove)(struct pci_dev *pdev);
++	int (*idle_restart)(struct pci_dev *pdev,
++			    const struct pci_device_id *id);
++	int  (*idle_shutdown)(struct pci_dev *pdev);
++	int  (*reinit)(struct pci_dev *pdev, const struct pci_device_id *id);
++	void (*shutdown)(struct pci_dev *pdev);
++	void (*crash_shutdown)(struct pci_dev *pdev);
++	int  (*suspend)(struct pci_dev *pdev, pm_message_t state);
++	int  (*resume)(struct pci_dev *pdev);
++	int  (*suspend_noirq)(struct pci_dev *pdev);
++	int  (*resume_noirq)(struct pci_dev *pdev);
++	void (*modem_status)(struct pci_dev *, int state);
++	void (*update_status)(struct pci_dev *pdev, uint32_t status);
++	struct cnss_wlan_runtime_ops *runtime_ops;
++	const struct pci_device_id *id_table;
++};
++
++struct cnss_usb_wlan_driver {
++	char *name;
++	int  (*probe)(struct usb_interface *pintf, const struct usb_device_id
++		      *id);
++	void (*remove)(struct usb_interface *pintf);
++	int  (*reinit)(struct usb_interface *pintf, const struct usb_device_id
++		       *id);
++	void (*shutdown)(struct usb_interface *pintf);
++	void (*crash_shutdown)(struct usb_interface *pintf);
++	int  (*suspend)(struct usb_interface *pintf, pm_message_t state);
++	int  (*resume)(struct usb_interface *pintf);
++	int  (*reset_resume)(struct usb_interface *pintf);
++	const struct usb_device_id *id_table;
++};
++
++enum cnss_driver_status {
++	CNSS_UNINITIALIZED,
++	CNSS_INITIALIZED,
++	CNSS_LOAD_UNLOAD,
++	CNSS_RECOVERY,
++	CNSS_FW_DOWN,
++};
++
++struct cnss_ce_tgt_pipe_cfg {
++	u32 pipe_num;
++	u32 pipe_dir;
++	u32 nentries;
++	u32 nbytes_max;
++	u32 flags;
++	u32 reserved;
++};
++
++struct cnss_ce_svc_pipe_cfg {
++	u32 service_id;
++	u32 pipe_dir;
++	u32 pipe_num;
++};
++
++struct cnss_shadow_reg_cfg {
++	u16 ce_id;
++	u16 reg_offset;
++};
++
++struct cnss_shadow_reg_v2_cfg {
++	u32 addr;
++};
++
++struct cnss_rri_over_ddr_cfg {
++	u32 base_addr_low;
++	u32 base_addr_high;
++};
++
++struct cnss_wlan_enable_cfg {
++	u32 num_ce_tgt_cfg;
++	struct cnss_ce_tgt_pipe_cfg *ce_tgt_cfg;
++	u32 num_ce_svc_pipe_cfg;
++	struct cnss_ce_svc_pipe_cfg *ce_svc_cfg;
++	u32 num_shadow_reg_cfg;
++	struct cnss_shadow_reg_cfg *shadow_reg_cfg;
++	u32 num_shadow_reg_v2_cfg;
++	struct cnss_shadow_reg_v2_cfg *shadow_reg_v2_cfg;
++	bool rri_over_ddr_cfg_valid;
++	struct cnss_rri_over_ddr_cfg rri_over_ddr_cfg;
++	bool send_msi_ce;
++};
++
++enum cnss_driver_mode {
++	CNSS_MISSION,
++	CNSS_FTM,
++	CNSS_EPPING,
++	CNSS_WALTEST,
++	CNSS_OFF,
++	CNSS_CCPM,
++	CNSS_QVIT,
++	CNSS_CALIBRATION,
++};
++
++enum cnss_recovery_reason {
++	CNSS_REASON_DEFAULT,
++	CNSS_REASON_LINK_DOWN,
++	CNSS_REASON_RDDM,
++	CNSS_REASON_TIMEOUT,
++};
++
++extern int cnss_wlan_register_driver(struct cnss_wlan_driver *driver);
++extern void cnss_wlan_unregister_driver(struct cnss_wlan_driver *driver);
++extern void cnss_device_crashed(struct device *dev);
++extern int cnss_pci_link_down(struct device *dev);
++extern int cnss_pci_is_device_down(struct device *dev);
++extern void cnss_schedule_recovery(struct device *dev,
++				   enum cnss_recovery_reason reason);
++extern int cnss_self_recovery(struct device *dev,
++			      enum cnss_recovery_reason reason);
++extern int cnss_force_fw_assert(struct device *dev);
++extern int cnss_force_collect_rddm(struct device *dev);
++extern int cnss_qmi_send_get(struct device *dev);
++extern int cnss_qmi_send_put(struct device *dev);
++extern int cnss_qmi_send(struct device *dev, int type, void *cmd,
++			 int cmd_len, void *cb_ctx,
++			 int (*cb)(void *ctx, void *event, int event_len));
++extern void *cnss_get_virt_ramdump_mem(struct device *dev, unsigned long *size);
++extern int cnss_get_fw_files_for_target(struct device *dev,
++					struct cnss_fw_files *pfw_files,
++					u32 target_type, u32 target_version);
++extern int cnss_get_platform_cap(struct device *dev,
++				 struct cnss_platform_cap *cap);
++extern struct dma_iommu_mapping *cnss_smmu_get_mapping(struct device *dev);
++extern int cnss_smmu_map(struct device *dev,
++			 phys_addr_t paddr, uint32_t *iova_addr, size_t size);
++extern int cnss_get_soc_info(struct device *dev, struct cnss_soc_info *info);
++extern int cnss_request_bus_bandwidth(struct device *dev, int bandwidth);
++extern int cnss_power_up(struct device *dev);
++extern int cnss_power_down(struct device *dev);
++extern int cnss_idle_restart(struct device *dev);
++extern int cnss_idle_shutdown(struct device *dev);
++extern void cnss_request_pm_qos(struct device *dev, u32 qos_val);
++extern void cnss_remove_pm_qos(struct device *dev);
++extern void cnss_lock_pm_sem(struct device *dev);
++extern void cnss_release_pm_sem(struct device *dev);
++extern void cnss_pci_lock_reg_window(struct device *dev, unsigned long *flags);
++extern void cnss_pci_unlock_reg_window(struct device *dev,
++				       unsigned long *flags);
++extern int cnss_wlan_pm_control(struct device *dev, bool vote);
++extern int cnss_auto_suspend(struct device *dev);
++extern int cnss_auto_resume(struct device *dev);
++extern int cnss_pci_is_drv_connected(struct device *dev);
++extern int cnss_pci_force_wake_request(struct device *dev);
++extern int cnss_pci_is_device_awake(struct device *dev);
++extern int cnss_pci_force_wake_release(struct device *dev);
++extern int cnss_get_user_msi_assignment(struct device *dev, char *user_name,
++					int *num_vectors,
++					uint32_t *user_base_data,
++					uint32_t *base_vector);
++extern int cnss_get_msi_irq(struct device *dev, unsigned int vector);
++extern void cnss_get_msi_address(struct device *dev, uint32_t *msi_addr_low,
++				 uint32_t *msi_addr_high);
++extern int cnss_wlan_enable(struct device *dev,
++			    struct cnss_wlan_enable_cfg *config,
++			    enum cnss_driver_mode mode,
++			    const char *host_version);
++extern int cnss_wlan_disable(struct device *dev, enum cnss_driver_mode mode);
++extern unsigned int cnss_get_boot_timeout(struct device *dev);
++extern int cnss_athdiag_read(struct device *dev, uint32_t offset,
++			     uint32_t mem_type, uint32_t data_len,
++			     uint8_t *output);
++extern int cnss_athdiag_write(struct device *dev, uint32_t offset,
++			      uint32_t mem_type, uint32_t data_len,
++			      uint8_t *input);
++extern int cnss_set_fw_log_mode(struct device *dev, uint8_t fw_log_mode);
++extern int cnss_usb_wlan_register_driver(struct cnss_usb_wlan_driver *driver);
++extern void cnss_usb_wlan_unregister_driver(struct cnss_usb_wlan_driver *
++					    driver);
++#endif /* _NET_CNSS2_H */
+diff --git a/include/net/cnss_nl.h b/include/net/cnss_nl.h
+new file mode 100755
+index 00000000..3bafdd5
+--- /dev/null
++++ b/include/net/cnss_nl.h
+@@ -0,0 +1,104 @@
++/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 and
++ * only version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef _NET_CNSS_GENETLINK_H_
++#define _NET_CNSS_GENETLINK_H_
++
++#define CLD80211_MAX_COMMANDS 40
++#define CLD80211_MAX_NL_DATA  4096
++
++/**
++ * enum cld80211_attr - Driver/Application embeds the data in nlmsg with the
++ *			help of below attributes
++ *
++ * @CLD80211_ATTR_VENDOR_DATA: Embed all other attributes in this nested
++ *	attribute.
++ * @CLD80211_ATTR_DATA: Embed complete data in this attribute
++ * @CLD80211_ATTR_META_DATA: Embed meta data for above data. This will help
++ * wlan driver to peek into request message packet without opening up definition
++ * of complete request message.
++ *
++ * Any new message in future can be added as another attribute
++ */
++enum cld80211_attr {
++	CLD80211_ATTR_VENDOR_DATA = 1,
++	CLD80211_ATTR_DATA,
++	CLD80211_ATTR_META_DATA,
++	/* add new attributes above here */
++
++	__CLD80211_ATTR_AFTER_LAST,
++	CLD80211_ATTR_MAX = __CLD80211_ATTR_AFTER_LAST - 1
++};
++
++/**
++ * enum cld80211_multicast_groups - List of multicast groups supported
++ *
++ * @CLD80211_MCGRP_SVC_MSGS: WLAN service message will be sent to this group.
++ *	Ex: Status ind messages
++ * @CLD80211_MCGRP_HOST_LOGS: All logging related messages from driver will be
++ *	sent to this multicast group
++ * @CLD80211_MCGRP_FW_LOGS: Firmware logging messages will be sent to this group
++ * @CLD80211_MCGRP_PER_PKT_STATS: Messages related packet stats debugging infra
++ *	will be sent to this group
++ * @CLD80211_MCGRP_DIAG_EVENTS: Driver/Firmware status logging diag events will
++ *	be sent to this group
++ * @CLD80211_MCGRP_FATAL_EVENTS: Any fatal message generated in driver/firmware
++ *	will be sent to this group
++ * @CLD80211_MCGRP_OEM_MSGS: All OEM message will be sent to this group
++ *	Ex: LOWI messages
++ */
++enum cld80211_multicast_groups {
++	CLD80211_MCGRP_SVC_MSGS,
++	CLD80211_MCGRP_HOST_LOGS,
++	CLD80211_MCGRP_FW_LOGS,
++	CLD80211_MCGRP_PER_PKT_STATS,
++	CLD80211_MCGRP_DIAG_EVENTS,
++	CLD80211_MCGRP_FATAL_EVENTS,
++	CLD80211_MCGRP_OEM_MSGS,
++};
++
++/**
++ * typedef cld80211_cb - Callback to be called when an nlmsg is received with
++ *			 the registered cmd_id command from userspace
++ * @data: Payload of the message to be sent to driver
++ * @data_len: Length of the payload
++ * @cb_ctx: callback context to be returned to driver when the callback
++ *	 is called
++ * @pid: process id of the sender
++ */
++typedef void (*cld80211_cb)(const void *data, int data_len,
++			    void *cb_ctx, int pid);
++
++/**
++ * register_cld_cmd_cb() - Allows cld driver to register for commands with
++ *	callback
++ * @cmd_id: Command to be registered. Valid range [1, CLD80211_MAX_COMMANDS]
++ * @cb: Callback to be called when an nlmsg is received with cmd_id command
++ *       from userspace
++ * @cb_ctx: context provided by driver; Send this as cb_ctx of func()
++ *         to driver
++ */
++int register_cld_cmd_cb(u8 cmd_id, cld80211_cb cb, void *cb_ctx);
++
++/**
++ * deregister_cld_cmd_cb() - Allows cld driver to de-register the command it
++ *	has already registered
++ * @cmd_id: Command to be deregistered.
++ */
++int deregister_cld_cmd_cb(u8 cmd_id);
++
++/**
++ * cld80211_get_genl_family() - Returns current netlink family context
++ */
++struct genl_family *cld80211_get_genl_family(void);
++
++#endif /* _NET_CNSS_GENETLINK_H_ */
+diff --git a/include/uapi/linux/coresight-stm.h b/include/uapi/linux/coresight-stm.h
+old mode 100644
+new mode 100755
+index 7e4272c..b55b359
+--- a/include/uapi/linux/coresight-stm.h
++++ b/include/uapi/linux/coresight-stm.h
+@@ -1,9 +1,19 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
+ #ifndef __UAPI_CORESIGHT_STM_H_
+ #define __UAPI_CORESIGHT_STM_H_
+ 
+-#define STM_FLAG_TIMESTAMPED   BIT(3)
+-#define STM_FLAG_GUARANTEED    BIT(7)
++#define STM_FLAG_NONE          0x00
++#define STM_FLAG_TIMESTAMPED   0x08
++#define STM_FLAG_GUARANTEED    0x80
+ 
++#define        OST_ENTITY_NONE                 0x00
++#define        OST_ENTITY_FTRACE_EVENTS        0x01
++#define        OST_ENTITY_TRACE_PRINTK         0x02
++#define        OST_ENTITY_TRACE_MARKER         0x04
++#define        OST_ENTITY_DEV_NODE             0x08
++#define        OST_ENTITY_DIAG                 0xEE
++#define        OST_ENTITY_QVIEW                0xFE
++#define        OST_ENTITY_MAX                  0xFF
+ /*
+  * The CoreSight STM supports guaranteed and invariant timing
+  * transactions.  Guaranteed transactions are guaranteed to be
+diff --git a/include/uapi/linux/pci_regs.h b/include/uapi/linux/pci_regs.h
+old mode 100644
+new mode 100755
+index e5a2e68..2c5810a
+--- a/include/uapi/linux/pci_regs.h
++++ b/include/uapi/linux/pci_regs.h
+@@ -674,6 +674,7 @@
+ #define PCI_EXT_CAP_ID_PMUX	0x1A	/* Protocol Multiplexing */
+ #define PCI_EXT_CAP_ID_PASID	0x1B	/* Process Address Space ID */
+ #define PCI_EXT_CAP_ID_DPC	0x1D	/* Downstream Port Containment */
++#define PCI_EXT_CAP_ID_L1SS	0x1E	/* L1 PM Substates */
+ #define PCI_EXT_CAP_ID_PTM	0x1F	/* Precision Time Measurement */
+ #define PCI_EXT_CAP_ID_MAX	PCI_EXT_CAP_ID_PTM
+ 
+@@ -977,4 +978,19 @@
+ #define  PCI_PTM_CTRL_ENABLE		0x00000001  /* PTM enable */
+ #define  PCI_PTM_CTRL_ROOT		0x00000002  /* Root select */
+ 
++/* L1 PM Substates */
++#define PCI_L1SS_CAP		    4	/* capability register */
++#define  PCI_L1SS_CAP_PCIPM_L1_2	 1	/* PCI PM L1.2 Support */
++#define  PCI_L1SS_CAP_PCIPM_L1_1	 2	/* PCI PM L1.1 Support */
++#define  PCI_L1SS_CAP_ASPM_L1_2		 4	/* ASPM L1.2 Support */
++#define  PCI_L1SS_CAP_ASPM_L1_1		 8	/* ASPM L1.1 Support */
++#define  PCI_L1SS_CAP_L1_PM_SS		16	/* L1 PM Substates Support */
++#define PCI_L1SS_CTL1		    8	/* Control Register 1 */
++#define  PCI_L1SS_CTL1_PCIPM_L1_2	1	/* PCI PM L1.2 Enable */
++#define  PCI_L1SS_CTL1_PCIPM_L1_1	2	/* PCI PM L1.1 Support */
++#define  PCI_L1SS_CTL1_ASPM_L1_2	4	/* ASPM L1.2 Support */
++#define  PCI_L1SS_CTL1_ASPM_L1_1	8	/* ASPM L1.1 Support */
++#define  PCI_L1SS_CTL1_L1SS_MASK	0x0000000F
++#define PCI_L1SS_CTL2		    0xC	/* Control Register 2 */
++
+ #endif /* LINUX_PCI_REGS_H */
+diff --git a/include/uapi/linux/qrtr.h b/include/uapi/linux/qrtr.h
+old mode 100644
+new mode 100755
+index 66c0748..ad3b401
+--- a/include/uapi/linux/qrtr.h
++++ b/include/uapi/linux/qrtr.h
+@@ -1,7 +1,12 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
+ #ifndef _LINUX_QRTR_H
+ #define _LINUX_QRTR_H
+ 
+ #include <linux/socket.h>
++#include <linux/types.h>
++
++#define QRTR_NODE_BCAST	0xffffffffu
++#define QRTR_PORT_CTRL	0xfffffffeu
+ 
+ struct sockaddr_qrtr {
+ 	__kernel_sa_family_t sq_family;
+@@ -9,4 +14,43 @@ struct sockaddr_qrtr {
+ 	__u32 sq_port;
+ };
+ 
++enum qrtr_pkt_type {
++	QRTR_TYPE_DATA		= 1,
++	QRTR_TYPE_HELLO		= 2,
++	QRTR_TYPE_BYE		= 3,
++	QRTR_TYPE_NEW_SERVER	= 4,
++	QRTR_TYPE_DEL_SERVER	= 5,
++	QRTR_TYPE_DEL_CLIENT	= 6,
++	QRTR_TYPE_RESUME_TX	= 7,
++	QRTR_TYPE_EXIT          = 8,
++	QRTR_TYPE_PING          = 9,
++	QRTR_TYPE_NEW_LOOKUP	= 10,
++	QRTR_TYPE_DEL_LOOKUP	= 11,
++};
++#define QRTR_TYPE_DEL_PROC	13
++
++
++struct qrtr_ctrl_pkt {
++	__le32 cmd;
++
++	union {
++		struct {
++			__le32 service;
++			__le32 instance;
++			__le32 node;
++			__le32 port;
++		} server;
++
++		struct {
++			__le32 node;
++			__le32 port;
++		} client;
++
++		struct {
++			__le32 rsvd;
++			__le32 node;
++		} proc;
++	};
++} __packed;
++
+ #endif /* _LINUX_QRTR_H */
+diff --git a/mm/memblock.c b/mm/memblock.c
+old mode 100644
+new mode 100755
+index 42b98af..0c20ae9
+--- a/mm/memblock.c
++++ b/mm/memblock.c
+@@ -1469,6 +1469,10 @@ phys_addr_t __init_memblock memblock_end_of_DRAM(void)
+ 	return (memblock.memory.regions[idx].base + memblock.memory.regions[idx].size);
+ }
+ 
++EXPORT_SYMBOL(memblock_start_of_DRAM);
++EXPORT_SYMBOL(memblock_end_of_DRAM);
++
++
+ static phys_addr_t __init_memblock __find_max_addr(phys_addr_t limit)
+ {
+ 	phys_addr_t max_addr = (phys_addr_t)ULLONG_MAX;
+-- 
+2.7.4
+
