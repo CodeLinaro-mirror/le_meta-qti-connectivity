@@ -1,0 +1,8 @@
+DESCRIPTION = "wifi drivers qcacld-3.2"
+
+inherit qcacld
+
+WLAN_MODULE_NAME = "wlan-sdio"
+CHIP_NAME = "qca6574"
+
+EXTRA_OEMAKE += "CONFIG_CLD_HL_SDIO_CORE=y MODNAME=${WLAN_MODULE_NAME} CHIP_NAME=${CHIP_NAME}"
