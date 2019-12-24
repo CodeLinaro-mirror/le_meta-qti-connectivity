@@ -1,0 +1,136 @@
+From 920d79a0cf19ff89bce6d302e064404db42b572f Mon Sep 17 00:00:00 2001
+From: Qun Zhang <qunz@codeaurora.org>
+Date: Fri, 13 Dec 2019 14:41:17 +0800
+Subject: [PATCH] Kernel: Add pcie and device tree changes to support hasting
+ chip
+
+Add small configuations to support hasting on third platform kernel:
+1. Add device tree configuration for platform driver probe
+2. Increase maximum supported MSI number to 256
+3. Export function API
+
+Change-Id: If0ee6dc9b86c7dca44bfcfd9d681c972cbbdd8f4
+Signed-off-by: Qun Zhang <qunz@codeaurora.org>
+---
+ arch/arm64/boot/dts/freescale/fsl-imx8dx.dtsi | 26 ++++++++++++++++++++++++++
+ arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi | 26 ++++++++++++++++++++++++++
+ drivers/pci/dwc/pcie-designware.h             |  2 +-
+ fs/read_write.c                               |  1 +
+ 4 files changed, 54 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/fsl-imx8dx.dtsi b/arch/arm64/boot/dts/freescale/fsl-imx8dx.dtsi
+index fa5a9a0..021d879 100644
+--- a/arch/arm64/boot/dts/freescale/fsl-imx8dx.dtsi
++++ b/arch/arm64/boot/dts/freescale/fsl-imx8dx.dtsi
+@@ -3258,6 +3258,11 @@
+ 		compatible = "fsl,imx8qxp-ocotp", "syscon";
+ 	};
+ 
++	mhi: qcom,mhi {
++		compatible = "qcom,mhi";
++		status = "okay";
++	};
++
+ 	pcieb: pcie@0x5f010000 {
+ 		/*
+ 		 * pcieb phyx1 lane1 in default, adjust it refer to the
+@@ -3305,6 +3310,27 @@
+ 		status = "disabled";
+ 	};
+ 
++	ipc_router: qcom,ipc_router_external_modem_xprt2 {
++		compatible = "qcom,ipc_router_mhi_xprt";
++		qcom,ch-name = "IPCRTR";
++		qcom,out-chan-id = <20>;
++		qcom,in-chan-id = <21>;
++		qcom,xprt-remote = "external-wlan";
++		qcom,xprt-linkid = <1>;
++		qcom,xprt-version = <3>;
++		status = "okay";
++	};
++
++	diag_mhi: qcom,diag-mhi {
++		compatible = "qcom,diag-mhi";
++		status = "okay";
++	};
++
++	cnss2: qcom,cnss-qca6390 {
++		compatible = "qcom,cnss-qca6390";
++		status = "okay";
++	};
++
+ 	imx_ion {
+ 		compatible = "fsl,mxc-ion";
+ 		fsl,heap-id = <0>;
+diff --git a/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi b/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi
+index f4dcf7a..b7ca065 100755
+--- a/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi
++++ b/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi
+@@ -1290,6 +1290,11 @@
+ 		status = "disabled";
+ 	};
+ 
++	mhi: qcom,mhi {
++		compatible = "qcom,mhi";
++		status = "okay";
++	};
++
+ 	pcie0: pcie@0x33800000 {
+ 		compatible = "fsl,imx8mq-pcie", "snps,dw-pcie";
+ 		reg = <0x0 0x33800000 0x0 0x400000>, <0x0 0x1ff00000 0x0 0x80000>;
+@@ -1350,6 +1355,27 @@
+ 		status = "disabled";
+ 	};
+ 
++	ipc_router: qcom,ipc_router_external_modem_xprt2 {
++		compatible = "qcom,ipc_router_mhi_xprt";
++		qcom,ch-name = "IPCRTR";
++		qcom,out-chan-id = <20>;
++		qcom,in-chan-id = <21>;
++		qcom,xprt-remote = "external-wlan";
++		qcom,xprt-linkid = <1>;
++		qcom,xprt-version = <3>;
++		status = "okay";
++	};
++
++	diag_mhi: qcom,diag-mhi {
++		compatible = "qcom,diag-mhi";
++		status = "okay";
++	};
++
++	cnss2: qcom,cnss-qca6390 {
++		compatible = "qcom,cnss-qca6390";
++		status = "okay";
++	};
++
+ 	ddr_pmu0: ddr_pmu@3d800000 {
+ 		compatible = "fsl,imx8-ddr-pmu";
+ 		reg = <0x0 0x3d800000 0x0 0x400000>;
+diff --git a/drivers/pci/dwc/pcie-designware.h b/drivers/pci/dwc/pcie-designware.h
+index ef0bd7f..e9f67f2 100644
+--- a/drivers/pci/dwc/pcie-designware.h
++++ b/drivers/pci/dwc/pcie-designware.h
+@@ -110,7 +110,7 @@
+  * it 32 as of now. Probably we will never need more than 32. If needed,
+  * then increment it in multiple of 32.
+  */
+-#define MAX_MSI_IRQS			32
++#define MAX_MSI_IRQS			256
+ #define MAX_MSI_CTRLS			(MAX_MSI_IRQS / 32)
+ 
+ struct pcie_port;
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 0046d72..050dcfd 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -552,6 +552,7 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL(vfs_write);
+ 
+ static inline loff_t file_pos_read(struct file *file)
+ {
+-- 
+2.7.4
+
