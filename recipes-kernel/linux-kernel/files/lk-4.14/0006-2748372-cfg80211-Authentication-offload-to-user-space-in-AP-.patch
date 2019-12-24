@@ -1,0 +1,202 @@
+From 945bb397b49f9580169e19a64e48c0f464df6f45 Mon Sep 17 00:00:00 2001
+From: Srinivas Dasari <dasaris@codeaurora.org>
+Date: Mon, 11 Feb 2019 12:22:45 +0530
+Subject: [PATCH 6/9] cfg80211: Authentication offload to user space in AP mode
+
+commit 40cbfa90218b ("cfg80211/nl80211: Optional authentication
+offload to userspace")' introduced authentication offload to user
+space by the host drivers in station mode. This commit extends
+the same for the AP mode too.
+
+Extend NL80211_ATTR_EXTERNAL_AUTH_SUPPORT to also claim the
+support of external authentication from the user space in AP mode.
+A new flag parameter is introduced in cfg80211_ap_settings to
+intend the same while "start ap".
+
+Host driver to use NL80211_CMD_FRAME interface to transmit and
+receive the authentication frames to / from the user space.
+
+Host driver to indicate the flag NL80211_RXMGMT_FLAG_EXTERNAL_AUTH
+while sending the authentication frame to the user space. This
+intends to the user space that the driver wishes it to process
+the authentication frame for certain protocols, though it had
+initially advertised the support for SME functionality.
+
+User space shall accordingly do the authentication and indicate
+its final status through the command NL80211_CMD_EXTERNAL_AUTH.
+Allow the command even if userspace doesn't include the attribute
+NL80211_ATTR_SSID for AP interface.
+
+Host driver shall continue with the association sequence and
+indicate the STA connection status through cfg80211_new_sta.
+
+To facilitate the host drivers in AP mode for matching the pmkid
+by the stations during the association, NL80211_CMD_EXTERNAL_AUTH
+is also enhanced to include the pmkid to drivers after
+the authentication.
+This pmkid can also be used in the STA mode to include in the
+association request.
+
+Also modify nl80211_external_auth to not mandate SSID in AP mode.
+
+[remove useless nla_get_flag() usage]
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+Git-commit: fe4943702c850fa07f963eaa6f1530d9d4c2da78
+Git-repo: git://git.kernel.org/pub/scm/linux/kernel/git/jberg/mac80211-next.git
+Change-Id: I6341814aa334e25f803953fcb855a439644eb1a9
+CRs-Fixed: 2396191
+Signed-off-by: Srinivas Dasari <dasaris@codeaurora.org>
+---
+ include/net/cfg80211.h       | 15 +++++++++++++++
+ include/uapi/linux/nl80211.h | 13 +++++++++----
+ net/wireless/nl80211.c       | 25 ++++++++++++++++++-------
+ 3 files changed, 42 insertions(+), 11 deletions(-)
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index 45b08bc..8241820 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -732,6 +732,17 @@ struct cfg80211_bitrate_mask {
+ };
+ 
+ /**
++ * enum cfg80211_ap_settings_flags - AP settings flags
++ *
++ * Used by cfg80211_ap_settings
++ *
++ * @AP_SETTINGS_EXTERNAL_AUTH_SUPPORT: AP supports external authentication
++ */
++enum cfg80211_ap_settings_flags {
++	AP_SETTINGS_EXTERNAL_AUTH_SUPPORT = BIT(0),
++};
++
++/**
+  * struct cfg80211_ap_settings - AP configuration
+  *
+  * Used to configure an AP interface.
+@@ -760,6 +771,7 @@ struct cfg80211_bitrate_mask {
+  * @vht_cap: VHT capabilities (or %NULL if VHT isn't enabled)
+  * @ht_required: stations must support HT
+  * @vht_required: stations must support VHT
++ * @flags: flags, as defined in enum cfg80211_ap_settings_flags
+  */
+ struct cfg80211_ap_settings {
+ 	struct cfg80211_chan_def chandef;
+@@ -784,6 +796,7 @@ struct cfg80211_ap_settings {
+ 	const struct ieee80211_ht_cap *ht_cap;
+ 	const struct ieee80211_vht_cap *vht_cap;
+ 	bool ht_required, vht_required;
++	u32 flags;
+ };
+ 
+ /**
+@@ -2610,6 +2623,7 @@ struct cfg80211_pmk_conf {
+  *	use %WLAN_STATUS_UNSPECIFIED_FAILURE if user space cannot give you
+  *	the real status code for failures. Used only for the authentication
+  *	response command interface (user space to driver).
++ * @pmkid: The identifier to refer a PMKSA.
+  */
+ struct cfg80211_external_auth_params {
+ 	enum nl80211_external_auth_action action;
+@@ -2617,6 +2631,7 @@ struct cfg80211_external_auth_params {
+ 	struct cfg80211_ssid ssid;
+ 	unsigned int key_mgmt_suite;
+ 	u16 status;
++	const u8 *pmkid;
+ };
+ 
+ /**
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index bf1405b..e37fd33 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -2180,10 +2180,10 @@ enum nl80211_commands {
+  *     &enum nl80211_external_auth_action value). This is used with the
+  *     &NL80211_CMD_EXTERNAL_AUTH request event.
+  * @NL80211_ATTR_EXTERNAL_AUTH_SUPPORT: Flag attribute indicating that the user
+- *     space supports external authentication. This attribute shall be used
+- *     only with %NL80211_CMD_CONNECT request. The driver may offload
+- *     authentication processing to user space if this capability is indicated
+- *     in NL80211_CMD_CONNECT requests from the user space.
++ *	space supports external authentication. This attribute shall be used
++ *	with %NL80211_CMD_CONNECT and %NL80211_CMD_START_AP request. The driver
++ *	may offload authentication processing to user space if this capability
++ *	is indicated in the respective requests from the user space.
+  *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+@@ -5191,9 +5191,14 @@ enum nl80211_crit_proto_id {
+  * Used by cfg80211_rx_mgmt()
+  *
+  * @NL80211_RXMGMT_FLAG_ANSWERED: frame was answered by device/driver.
++ * @NL80211_RXMGMT_FLAG_EXTERNAL_AUTH: Host driver intends to offload
++ *	the authentication. Exclusively defined for host drivers that
++ *	advertises the SME functionality but would like the userspace
++ *	to handle certain authentication algorithms (e.g. SAE).
+  */
+ enum nl80211_rxmgmt_flags {
+ 	NL80211_RXMGMT_FLAG_ANSWERED = 1 << 0,
++	NL80211_RXMGMT_FLAG_EXTERNAL_AUTH = 1 << 1,
+ };
+ 
+ /*
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index 7cd12d5..d5e75dc 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -4066,6 +4066,9 @@ static int nl80211_start_ap(struct sk_buff *skb, struct genl_info *info)
+ 
+ 	nl80211_calculate_ap_params(&params);
+ 
++	if (info->attrs[NL80211_ATTR_EXTERNAL_AUTH_SUPPORT])
++		params.flags |= AP_SETTINGS_EXTERNAL_AUTH_SUPPORT;
++
+ 	wdev_lock(wdev);
+ 	err = rdev_start_ap(rdev, dev, &params);
+ 	if (!err) {
+@@ -12385,7 +12388,9 @@ static int nl80211_external_auth(struct sk_buff *skb, struct genl_info *info)
+ 	if (!rdev->ops->external_auth)
+ 		return -EOPNOTSUPP;
+ 
+-	if (!info->attrs[NL80211_ATTR_SSID])
++	if (!info->attrs[NL80211_ATTR_SSID] &&
++	    dev->ieee80211_ptr->iftype != NL80211_IFTYPE_AP &&
++	    dev->ieee80211_ptr->iftype != NL80211_IFTYPE_P2P_GO)
+ 		return -EINVAL;
+ 
+ 	if (!info->attrs[NL80211_ATTR_BSSID])
+@@ -12396,18 +12401,24 @@ static int nl80211_external_auth(struct sk_buff *skb, struct genl_info *info)
+ 
+ 	memset(&params, 0, sizeof(params));
+ 
+-	params.ssid.ssid_len = nla_len(info->attrs[NL80211_ATTR_SSID]);
+-	if (params.ssid.ssid_len == 0 ||
+-	    params.ssid.ssid_len > IEEE80211_MAX_SSID_LEN)
+-		return -EINVAL;
+-	memcpy(params.ssid.ssid, nla_data(info->attrs[NL80211_ATTR_SSID]),
+-	       params.ssid.ssid_len);
++	if (info->attrs[NL80211_ATTR_SSID]) {
++		params.ssid.ssid_len = nla_len(info->attrs[NL80211_ATTR_SSID]);
++		if (params.ssid.ssid_len == 0 ||
++		    params.ssid.ssid_len > IEEE80211_MAX_SSID_LEN)
++			return -EINVAL;
++		memcpy(params.ssid.ssid,
++		       nla_data(info->attrs[NL80211_ATTR_SSID]),
++		       params.ssid.ssid_len);
++	}
+ 
+ 	memcpy(params.bssid, nla_data(info->attrs[NL80211_ATTR_BSSID]),
+ 	       ETH_ALEN);
+ 
+ 	params.status = nla_get_u16(info->attrs[NL80211_ATTR_STATUS_CODE]);
+ 
++	if (info->attrs[NL80211_ATTR_PMKID])
++		params.pmkid = nla_data(info->attrs[NL80211_ATTR_PMKID]);
++
+ 	return rdev_external_auth(rdev, dev, &params);
+ }
+ 
+-- 
+1.9.1
+
