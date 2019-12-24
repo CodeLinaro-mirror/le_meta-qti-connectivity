@@ -1,0 +1,41 @@
+From d39e29b68f8377191b00edcc79f514e9449aea8d Mon Sep 17 00:00:00 2001
+From: Yuanyuan Liu <yuanliu@codeaurora.org>
+Date: Fri, 21 Jul 2017 11:04:09 -0700
+Subject: [PATCH] Kconfig: Add CLD_LL_CORE configuration for WLAN
+
+Add CLD_LL_CORE configuration for WLAN. This configuration
+enables WLAN related kernel dependencies.
+
+CRs-Fixed: 2080628
+Change-Id: Id4b7f8bb2869aff8948d90f85696d950216dddf7
+Signed-off-by: Yuanyuan Liu <yuanliu@codeaurora.org>
+---
+ drivers/net/wireless/Kconfig | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/drivers/net/wireless/Kconfig b/drivers/net/wireless/Kconfig
+index 166920a..d28cb28 100644
+--- a/drivers/net/wireless/Kconfig
++++ b/drivers/net/wireless/Kconfig
+@@ -114,4 +114,18 @@ config USB_NET_RNDIS_WLAN
+ 
+ 	  If you choose to build a module, it'll be called rndis_wlan.
+ 
++config CLD_LL_CORE
++	tristate "QTI core WLAN driver for QCA6174 chipset"
++	select NL80211_TESTMODE
++	select WEXT_CORE
++	select WEXT_PRIV
++	select WEXT_SPY
++	select WIRELESS_EXT
++	---help---
++	  This section contains the necessary modules needed to enable the
++	  core WLAN driver for QTI QCA6174 chipset.
++	  Select Y to compile the driver in order to have WLAN functionality
++	  support.
++
++
+ endif # WLAN
+-- 
+1.9.1
+
