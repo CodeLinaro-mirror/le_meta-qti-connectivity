@@ -2,7 +2,7 @@
 #The project specific tasks needs to be added in specific
 #project related include file, ${PROJECTID}-image.inc file.
 
-IMAGE_INSTALL = "packagegroup-core-boot ${ROOTFS_PKGMANAGE_BOOTSTRAP} ${CORE_IMAGE_EXTRA_INSTALL}"
+IMAGE_INSTALL = "packagegroup-core-boot ${CORE_IMAGE_EXTRA_INSTALL}"
 
 IMAGE_LINGUAS = " "
 
@@ -15,8 +15,7 @@ require ${PROJECTID}-image.inc
 
 #Common Required Tasks Listed
 IMAGE_INSTALL += "iw"
-IMAGE_INSTALL += "wireless-tools"
-IMAGE_INSTALL += "iperf"
+IMAGE_INSTALL += "iperf3"
 IMAGE_INSTALL += "wpa-supplicant"
 IMAGE_INSTALL += "wlan-sigmadut"
 IMAGE_INSTALL += "wlan-config"
