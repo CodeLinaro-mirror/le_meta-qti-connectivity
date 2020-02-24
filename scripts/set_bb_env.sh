@@ -41,13 +41,13 @@ usage()
     echo
     echo "script usage for QTI Standalone Auto image"
     echo "${SCRIPT_PARAMS} source ${SCRIPT_FILE} [BUILDDIR]"
-    echo "For example: PROJECT=QCA6574AULE221 source ${SCRIPT_FILE}"
+    echo "For example: PROJECT=QCA6584AULE201 source ${SCRIPT_FILE}"
     echo
     echo "EULA      :  FSL EULA, default 0 if undefined."
     echo "BUILDDIR  :  the build directory location, 'build' by default."
     echo "MACHINE   :  Supported machines, 'imx6qsabresd' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
-    echo "    QCA6574AULE221 : QCA6574AU.LE.2.2.1 SP"
+    echo "    QCA6584AULE201 : QCA6584AU.LE.2.0.1 SP"
 }
 
 execute_command()
@@ -122,17 +122,27 @@ build-imxauto-image()
 SCRIPT_FOLDER="$(dirname "${BASH_SOURCE}")"
 WORK_SPACE=$(readlink -f ${SCRIPT_FOLDER}/../../..)
 SCRIPT_FILE=${SCRIPT_FOLDER}/set_bb_env.sh
+PACKAGE_CLASSES="package_rpm"
 
 set -x
 
+cat  << EOF
+IMPORTANT NOTICE:
+Use of the set_bb_env.sh script will combine some open source licensed software and/or third party licensed software
+components into the product. Redistribution and use of the open source and/or third party code
+may legally require you to comply with the terms of the open source and/or third party license(s)
+that apply to the code used and redistributed."
+
+EOF
+
 case $PROJECT in
-    "QCA6574AULE221" | "")
+    "QCA6584AULE201" | "")
         {
             if [ -z "$PROJECT" ]; then
-                echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
+                echo "No PROJECT provided, use default PROJECT=QCA6584AULE201"
             fi
 #            DISTRO=fsl-imx-x11
-            export PROJECTID=QCA6574AULE221
+            export PROJECTID=QCA6584AULE201
         } ;;
     *)
         {
@@ -155,15 +165,7 @@ else
 fi
 
 if [ -z "$DISTRO" ]; then
-    if [ -f "${WORK_SPACE}/sources/meta-fsl-bsp-release/imx/meta-sdk/conf/distro/fsl-imx-x11.conf" ]; then
-        # Project QCA6574AU.LE.2.2.1
-        DISTRO=fsl-imx-x11
-    else
-	# Project QCA6584AU.LE.2.0.1 (LK3.10.17)
-        DISTRO=poky
-        export PROJECTID=QCA6584AULE201
-        echo "Change PROJECTID to: ${PROJECTID}"
-    fi
+    DISTRO=fsl-imx-x11
 fi
 
 # Get all required source codes.
@@ -189,6 +191,7 @@ mv conf/local.conf conf/local.conf.sample
 grep -v '^#\|^$' conf/local.conf.sample > conf/local.conf
 sed -e "s,MACHINE ??=.*,MACHINE ??= '$MACHINE',g" \
     -e "s,DISTRO ?=.*,DISTRO ?= '$DISTRO',g" \
+    -e "s,PACKAGE_CLASSES ?=.*,PACKAGE_CLASSES ?= '$PACKAGE_CLASSES',g" \
     -i conf/local.conf
 
 if grep -q '^DL_DIR ?=' conf/local.conf; then
