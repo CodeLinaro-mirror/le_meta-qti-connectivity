@@ -22,7 +22,7 @@ Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
  include/linux/elf.h                                |  36 +++
  include/linux/mod_devicetable.h                    |  15 ++
  include/linux/skbuff.h                             |  47 ++++
- include/net/cnss2.h                                | 252 +++++++++++++++++++
+ include/net/cnss2.h                                | 254 +++++++++++++++++++
  include/net/cnss_nl.h                              | 104 ++++++++
  include/uapi/linux/coresight-stm.h                 |  14 +-
  include/uapi/linux/pci_regs.h                      |  16 ++
@@ -1056,6 +1056,8 @@ index 00000000..ec1c7cc
 +extern int cnss_wlan_register_driver(struct cnss_wlan_driver *driver);
 +extern void cnss_wlan_unregister_driver(struct cnss_wlan_driver *driver);
 +extern void cnss_device_crashed(struct device *dev);
++extern int cnss_pci_prevent_l1(struct device *dev);
++extern void cnss_pci_allow_l1(struct device *dev);
 +extern int cnss_pci_link_down(struct device *dev);
 +extern int cnss_pci_is_device_down(struct device *dev);
 +extern void cnss_schedule_recovery(struct device *dev,
