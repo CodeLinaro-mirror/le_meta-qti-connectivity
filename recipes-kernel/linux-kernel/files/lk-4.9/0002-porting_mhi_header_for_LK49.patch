@@ -869,7 +869,7 @@ new file mode 100755
 index 00000000..ec1c7cc
 --- /dev/null
 +++ b/include/net/cnss2.h
-@@ -0,0 +1,252 @@
+@@ -0,0 +1,254 @@
 +/* Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
 + *
 + * This program is free software; you can redistribute it and/or modify
