@@ -1,0 +1,186 @@
+From ef362b410c202f263e46867d1ba2221db87695bc Mon Sep 17 00:00:00 2001
+From: Qun Zhang <qunz@codeaurora.org>
+Date: Mon, 17 Jun 2019 14:31:43 +0800
+Subject: [PATCH 7/9] cfg80211: Sync nl80211 commands/feature with upstream
+
+Update header for nl80211 nl80211_ext_feature_index and
+nl80211_commands enum from master branch of upstream repoistory
+git://git.kernel.org/pub/scm/linux/kernel/git/jberg/mac80211-next.git
+which includes the following changes (with changes to extract
+"enum" value change only):
+2d23d0736e3 nl80211: add OCE scan and capability flags
+65026002d69 nl80211: add an option to allow MFP without requiring it
+5037a00992e nl80211: Introduce scan flags to emphasize requested scan
+behavior
+13cf6dec93e cfg80211/nl80211: add DFS offload flag
+2576a9ace47 nl80211: Implement TX of control port frames
+9c06602b1b9 cfg80211: clarify frames covered by average ACK signal report
+52539ca89f3 cfg80211: Expose TXQ stats and parameters to userspace
+2e076f19909 nl80211: add scan features for improved scan privac
+2b815b04dfe nl80211: Add CAN_REPLACE_PTK0 API
+81e54d08d9d cfg80211: support FTM responder configuration/statistics
+36647055b37 cfg80211: Add airtime statistics and settings
+466b9936bf9 cfg80211: Add support to notify station's opmode change to
+userspace
+6a671a50f81 nl80211: Add CMD_CONTROL_PORT_FRAME API
+9bb7e0f24e7 cfg80211: add peer measurement with FTM initiator API
+30c63115e20 nl80211: Add support to notify radar event info received from
+STA
+
+CRs-Fixed: 2471564
+Change-Id: I7b7b39c5c13f8e626521aa73e7f0032551631bf9
+Signed-off-by: Qun Zhang <qunz@codeaurora.org>
+---
+ include/uapi/linux/nl80211.h | 108 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 108 insertions(+)
+
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index e37fd33..371829a 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -11,6 +11,7 @@
+  * Copyright 2008 Jouni Malinen <jouni.malinen@atheros.com>
+  * Copyright 2008 Colin McCabe <colin@cozybit.com>
+  * Copyright 2015-2017	Intel Deutschland GmbH
++ * Copyright (C) 2018 Intel Corporation
+  *
+  * Permission to use, copy, modify, and/or distribute this software for any
+  * purpose with or without fee is hereby granted, provided that the above
+@@ -1013,6 +1014,43 @@
+  *	user space through the connect result as the user space would have
+  *	initiated the connection through the connect request.
+  *
++ * @NL80211_CMD_STA_OPMODE_CHANGED: An event that notify station's
++ *	ht opmode or vht opmode changes using any of %NL80211_ATTR_SMPS_MODE,
++ *	%NL80211_ATTR_CHANNEL_WIDTH,%NL80211_ATTR_NSS attributes with its
++ *	address(specified in %NL80211_ATTR_MAC).
++ *
++ * @NL80211_CMD_GET_FTM_RESPONDER_STATS: Retrieve FTM responder statistics, in
++ *	the %NL80211_ATTR_FTM_RESPONDER_STATS attribute.
++ *
++ * @NL80211_CMD_PEER_MEASUREMENT_START: start a (set of) peer measurement(s)
++ *	with the given parameters, which are encapsulated in the nested
++ *	%NL80211_ATTR_PEER_MEASUREMENTS attribute. Optionally, MAC address
++ *	randomization may be enabled and configured by specifying the
++ *	%NL80211_ATTR_MAC and %NL80211_ATTR_MAC_MASK attributes.
++ *	If a timeout is requested, use the %NL80211_ATTR_TIMEOUT attribute.
++ *	A u64 cookie for further %NL80211_ATTR_COOKIE use is is returned in
++ *	the netlink extended ack message.
++ *
++ *	To cancel a measurement, close the socket that requested it.
++ *
++ *	Measurement results are reported to the socket that requested the
++ *	measurement using @NL80211_CMD_PEER_MEASUREMENT_RESULT when they
++ *	become available, so applications must ensure a large enough socket
++ *	buffer size.
++ *
++ *	Depending on driver support it may or may not be possible to start
++ *	multiple concurrent measurements.
++ * @NL80211_CMD_PEER_MEASUREMENT_RESULT: This command number is used for the
++ *	result notification from the driver to the requesting socket.
++ * @NL80211_CMD_PEER_MEASUREMENT_COMPLETE: Notification only, indicating that
++ *	the measurement completed, using the measurement cookie
++ *	(%NL80211_ATTR_COOKIE).
++ *
++ * @NL80211_CMD_NOTIFY_RADAR: Notify the kernel that a radar signal was
++ *	detected and reported by a neighboring device on the channel
++ *	indicated by %NL80211_ATTR_WIPHY_FREQ and other attributes
++ *	determining the width and type.
++ *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -1221,6 +1259,18 @@ enum nl80211_commands {
+ 
+ 	NL80211_CMD_EXTERNAL_AUTH,
+ 
++	NL80211_CMD_STA_OPMODE_CHANGED,
++
++	NL80211_CMD_CONTROL_PORT_FRAME,
++
++	NL80211_CMD_GET_FTM_RESPONDER_STATS,
++
++	NL80211_CMD_PEER_MEASUREMENT_START,
++	NL80211_CMD_PEER_MEASUREMENT_RESULT,
++	NL80211_CMD_PEER_MEASUREMENT_COMPLETE,
++
++	NL80211_CMD_NOTIFY_RADAR,
++
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+@@ -4965,6 +5015,47 @@ enum nl80211_feature_flags {
+  *	handshake with 802.1X in station mode (will pass EAP frames to the host
+  *	and accept the set_pmk/del_pmk commands), doing it in the host might not
+  *	be supported.
++ * @NL80211_EXT_FEATURE_FILS_MAX_CHANNEL_TIME: Driver is capable of overriding
++ *	the max channel attribute in the FILS request params IE with the
++ *	actual dwell time.
++ * @NL80211_EXT_FEATURE_ACCEPT_BCAST_PROBE_RESP: Driver accepts broadcast probe
++ *	response
++ * @NL80211_EXT_FEATURE_OCE_PROBE_REQ_HIGH_TX_RATE: Driver supports sending
++ *	the first probe request in each channel at rate of at least 5.5Mbps.
++ * @NL80211_EXT_FEATURE_OCE_PROBE_REQ_DEFERRAL_SUPPRESSION: Driver supports
++ *	probe request tx deferral and suppression
++ * @NL80211_EXT_FEATURE_MFP_OPTIONAL: Driver supports the %NL80211_MFP_OPTIONAL
++ *	value in %NL80211_ATTR_USE_MFP.
++ * @NL80211_EXT_FEATURE_LOW_SPAN_SCAN: Driver supports low span scan.
++ * @NL80211_EXT_FEATURE_LOW_POWER_SCAN: Driver supports low power scan.
++ * @NL80211_EXT_FEATURE_HIGH_ACCURACY_SCAN: Driver supports high accuracy scan.
++ * @NL80211_EXT_FEATURE_DFS_OFFLOAD: HW/driver will offload DFS actions.
++ *	Device or driver will do all DFS-related actions by itself,
++ *	informing user-space about CAC progress, radar detection event,
++ *	channel change triggered by radar detection event.
++ *	No need to start CAC from user-space, no need to react to
++ *	"radar detected" event.
++ * @NL80211_EXT_FEATURE_CONTROL_PORT_OVER_NL80211: Driver supports sending and
++ *	receiving control port frames over nl80211 instead of the netdevice.
++ * @NL80211_EXT_FEATURE_DATA_ACK_SIGNAL_SUPPORT: This Driver support data ack
++ *	rssi if firmware support, this flag is to intimate about ack rssi
++ *	support to nl80211.
++ * @NL80211_EXT_FEATURE_TXQS: Driver supports FQ-CoDel-enabled intermediate
++ *	TXQs.
++ * @NL80211_EXT_FEATURE_SCAN_RANDOM_SN: Driver/device supports randomizing the
++ *	SN in probe request frames if requested by %NL80211_SCAN_FLAG_RANDOM_SN.
++ * @NL80211_EXT_FEATURE_SCAN_MIN_PREQ_CONTENT: Driver/device can omit all data
++ *	except for supported rates from the probe request content if requested
++ *	by the %NL80211_SCAN_FLAG_MIN_PREQ_CONTENT flag.
++ * @NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER: Driver supports enabling fine
++ *	timing measurement responder role.
++ * @NL80211_EXT_FEATURE_CAN_REPLACE_PTK0: Driver/device confirm that they are
++ *	able to rekey an in-use key correctly. Userspace must not rekey PTK keys
++ *	if this flag is not set. Ignoring this can leak clear text packets and/or
++ *	freeze the connection.
++ * @NL80211_EXT_FEATURE_AIRTIME_FAIRNESS: Driver supports getting airtime
++ *	fairness for transmitted packets and has enabled airtime fairness
++ *	scheduling.
+  *
+  * @NUM_NL80211_EXT_FEATURES: number of extended features.
+  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
+@@ -4987,6 +5078,23 @@ enum nl80211_ext_feature_index {
+ 	NL80211_EXT_FEATURE_FILS_SK_OFFLOAD,
+ 	NL80211_EXT_FEATURE_4WAY_HANDSHAKE_STA_PSK,
+ 	NL80211_EXT_FEATURE_4WAY_HANDSHAKE_STA_1X,
++	NL80211_EXT_FEATURE_FILS_MAX_CHANNEL_TIME,
++	NL80211_EXT_FEATURE_ACCEPT_BCAST_PROBE_RESP,
++	NL80211_EXT_FEATURE_OCE_PROBE_REQ_HIGH_TX_RATE,
++	NL80211_EXT_FEATURE_OCE_PROBE_REQ_DEFERRAL_SUPPRESSION,
++	NL80211_EXT_FEATURE_MFP_OPTIONAL,
++	NL80211_EXT_FEATURE_LOW_SPAN_SCAN,
++	NL80211_EXT_FEATURE_LOW_POWER_SCAN,
++	NL80211_EXT_FEATURE_HIGH_ACCURACY_SCAN,
++	NL80211_EXT_FEATURE_DFS_OFFLOAD,
++	NL80211_EXT_FEATURE_CONTROL_PORT_OVER_NL80211,
++	NL80211_EXT_FEATURE_DATA_ACK_SIGNAL_SUPPORT,
++	NL80211_EXT_FEATURE_TXQS,
++	NL80211_EXT_FEATURE_SCAN_RANDOM_SN,
++	NL80211_EXT_FEATURE_SCAN_MIN_PREQ_CONTENT,
++	NL80211_EXT_FEATURE_CAN_REPLACE_PTK0,
++	NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER,
++	NL80211_EXT_FEATURE_AIRTIME_FAIRNESS,
+ 
+ 	/* add new features before the definition below */
+ 	NUM_NL80211_EXT_FEATURES,
+-- 
+1.9.1
+
