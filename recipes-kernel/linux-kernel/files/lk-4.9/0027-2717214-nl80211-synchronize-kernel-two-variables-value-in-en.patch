@@ -1,0 +1,37 @@
+From 9fca991c68d8851a50e120d53682b65b61a999db Mon Sep 17 00:00:00 2001
+From: Qun Zhang <qunz@codeaurora.org>
+Date: Mon, 13 May 2019 15:47:19 +0800
+Subject: [PATCH 10/10] nl80211: synchronize kernel two variables value in enum
+ nl80211_attrs with wpa_supplicant side
+
+The nl80211 attribure variable should keep in sync between kernel
+and wpa_supplicant, if not, the nl80211 cmd payload message would
+fail to be parsed. Since the current kernel side nl80211 attribute
+is behind wpa_supplicat code, the WPA3 certification test always
+fail due to the two sides are out of sync. Hard code to sync them.
+
+Change-Id: Ie3236e6b440b3697c431aeec12f8dcb83f9cabb8
+Signed-off-by: Qun Zhang <qunz@codeaurora.org>
+---
+ include/uapi/linux/nl80211.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index de18ea2..4dc3624 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -2426,9 +2426,9 @@ enum nl80211_attrs {
+ 
+ 	NL80211_ATTR_MULTICAST_TO_UNICAST_ENABLED,
+ 
+-	NL80211_ATTR_BSSID,
++	NL80211_ATTR_BSSID = 245,
+ 
+-	NL80211_ATTR_EXTERNAL_AUTH_ACTION,
++	NL80211_ATTR_EXTERNAL_AUTH_ACTION = 260,
+ 	NL80211_ATTR_EXTERNAL_AUTH_SUPPORT,
+ 
+ 	/* add attributes here, update the policy in nl80211.c */
+-- 
+1.9.1
+
