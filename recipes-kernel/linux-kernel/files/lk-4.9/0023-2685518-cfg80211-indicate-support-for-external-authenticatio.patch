@@ -1,0 +1,33 @@
+From 64ab680cefc59609f13b05a76c927aef42caf91d Mon Sep 17 00:00:00 2001
+From: Srinivas Dasari <dasaris@codeaurora.org>
+Date: Wed, 7 Mar 2018 19:38:31 +0530
+Subject: [PATCH 06/10] cfg80211: indicate support for external authentication
+
+Define macro to indicate backport support for
+external authentication where authentication can be
+offloaded to userspace in specific cases such as SAE.
+
+Change-Id: Ib253b303e82f583f61bc13d14c8d491d5ea2af15
+CRs-Fixed: 2182553
+Signed-off-by: Srinivas Dasari <dasaris@codeaurora.org>
+---
+ include/net/cfg80211.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index 63c437e..3496204 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -24,6 +24,9 @@
+ #include <linux/net.h>
+ #include <net/regulatory.h>
+ 
++/* Indicate backport support for external authentication*/
++#define CFG80211_EXTERNAL_AUTH_SUPPORT 1
++
+ /**
+  * DOC: Introduction
+  *
+-- 
+1.9.1
+

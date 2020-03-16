@@ -1,0 +1,36 @@
+From b6b708e445ed1d80652a930af9e93db88d2caf90 Mon Sep 17 00:00:00 2001
+From: Srinivas Dasari <dasaris@codeaurora.org>
+Date: Tue, 16 Apr 2019 13:35:59 +0800
+Subject: [PATCH 04/10] nl80211: Free connkeys on external authentication
+ failure
+
+The failure scenario while processing
+NL80211_ATTR_EXTERNAL_AUTH_SUPPORT does not free
+the connkeys. This commit addresses the same.
+Signed-off-by: Srinivas Dasari <dasaris@codeaurora.org>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+Git-commit: 2f0605a697f4b9f5b1c1571c7ec6a16df4dc2616
+Git-repo: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+Change-Id: I7aee3db35f617df9f652184a084941e42cf539c7
+CRs-Fixed: 2375721
+Signed-off-by: Liangwei Dong <liangwei@codeaurora.org>
+Signed-off-by: Min Liu <minliu@codeaurora.org>
+---
+ net/wireless/nl80211.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index 288f489..5c417a07 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -8747,6 +8747,7 @@ static int nl80211_connect(struct sk_buff *skb, struct genl_info *info)
+ 
+ 	if (nla_get_flag(info->attrs[NL80211_ATTR_EXTERNAL_AUTH_SUPPORT])) {
+ 		if (!info->attrs[NL80211_ATTR_SOCKET_OWNER]) {
++			kzfree(connkeys);
+ 			return -EINVAL;
+ 		}
+ 		connect.flags |= CONNECT_REQ_EXTERNAL_AUTH_SUPPORT;
+-- 
+1.9.1
+
