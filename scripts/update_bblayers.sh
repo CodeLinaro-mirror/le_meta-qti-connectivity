@@ -58,7 +58,7 @@ EOF
 }
 
 
-bblayers_for_qca6574aule221()
+bblayers_for_fsl_meta()
 {
     cat >> ${BBLAYERS_CONF} <<EOF
 
@@ -67,47 +67,31 @@ BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-bsp "
 BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-sdk "
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale-3rdparty "
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale-distro "
-
-EOF
-
-    # Support integrating community meta-freescale instead of meta-fsl-arm
-    if [ -d ${WORK_SPACE}/sources/meta-freescale ]; then
-        # Change settings according to environment
-        echo "BBLAYERS += \" \${BSPDIR}/sources/meta-freescale \"" >> ${BBLAYERS_CONF}
-    fi
-
-    #Poky in imx-4.14.78-1.0.0_ga.xml only support meta-poky
-    if [ -d ${WORK_SPACE}/sources/poky/meta-poky ]; then
-	echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-poky \""  >> ${BBLAYERS_CONF}
-    fi
-
-    #Poky in imx-4.1 or imx-4.9 support meta-yocto and meta-poky
-    if [ -d ${WORK_SPACE}/sources/poky/meta-yocto ]; then
-        echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-yocto \""  >> ${BBLAYERS_CONF}
-    fi
-
-}
-
-generate_QCA6584AULE201_bblayers()
-{
-    # Meta layer for imx-4.19.35-1.1.0
-    cat >> ${BBLAYERS_CONF} <<EOF
-
-BBLAYERS += " \${BSPDIR}/sources/poky/meta-poky "
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale "
-BBLAYERS += " \${BSPDIR}/sources/meta-freescale-3rdparty "
-BBLAYERS += " \${BSPDIR}/sources/meta-freescale-distro "
-BBLAYERS += " \${BSPDIR}/sources/meta-rust "
-BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-bsp "
-BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-sdk "
-BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-ml "
 
 EOF
+
+    case ${KERNELVERSION} in
+        "4.1" | "4.9")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-yocto \""  >> ${BBLAYERS_CONF}
+            ;;
+        "4.14")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-poky \""  >> ${BBLAYERS_CONF}
+            ;;
+        "4.19")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-poky \""  >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-rust \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-ml \"" >> ${BBLAYERS_CONF}
+            ;;
+        *)
+            echo "Not supported kernel version ${KERNELVERSION}"
+            ;;
+    esac
 }
 
 bblayers_for_qti_meta()
 {
-  cat >> ${BBLAYERS_CONF} <<EOF
+    cat >> ${BBLAYERS_CONF} <<EOF
 
 ##QTI Yocto Connecetivity layer
 BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity "
@@ -115,11 +99,16 @@ BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity-prop "
 
 EOF
 
-#Update BBMASK bbfiles
-if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf" ]; then
-    cat ${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf >> ${BBLAYERS_CONF}
-fi
+    #Update BBMASK bbfiles
+    if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf" ]; then
+        cat ${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf >> ${BBLAYERS_CONF}
+    fi
 
+    echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> ${BBLAYERS_CONF}
+
+    if [ "${KERNELVERSION}" == "4.19" ]; then
+        echo 'BBMASK.="|meta-qti-connectivity/recipes-core/busybox/busybox_%.bbappend"' >> ${BBLAYERS_CONF}
+    fi
 }
 
 ################################################################
@@ -128,24 +117,10 @@ fi
 BBLAYERS_CONF=conf/bblayers.conf
 
 echo '' > ${BBLAYERS_CONF}
+if [ "${KERNELVERSION}" == "4.19" ]; then
+    LCONF_VER=7
+fi
 
-case $1 in
-    "QCA6574AULE221")
-        {
-            generate_common_bblayers
-            bblayers_for_qca6574aule221
-            bblayers_for_qti_meta
-            echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> ${BBLAYERS_CONF}
-        } ;;
-    "QCA6584AULE201")
-       {
-            LCONF_VER=7
-            generate_common_bblayers
-            generate_QCA6584AULE201_bblayers
-            bblayers_for_qti_meta
-            echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"' >> ${BBLAYERS_CONF}
-            echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> ${BBLAYERS_CONF}
-            echo 'BBMASK.="|meta-qti-connectivity/recipes-core/busybox/busybox_%.bbappend"' >> ${BBLAYERS_CONF}
-       } ;;
-
-esac
+generate_common_bblayers
+bblayers_for_fsl_meta
+bblayers_for_qti_meta

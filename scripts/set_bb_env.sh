@@ -84,6 +84,20 @@ check_machine_valid()
     fi
 }
 
+get_bsp_kernel_version()
+{
+   local BBFILE=""
+   local DIR=${WORK_SPACE}/sources/meta-fsl-bsp-release
+
+   if [ ! -d ${DIR} ]; then
+       echo "bsp dir not exist"
+       return 1
+   fi
+
+   BBFILE="$(find ${DIR} -name "linux-imx_*.bb")"
+   KERNELVERSION="$(echo ${BBFILE##*linux-imx_} | awk -F '.' 'BEGIN{OFS="."}{print $1,$2}')"
+}
+
 buildclean()
 {
     set -x
@@ -168,6 +182,13 @@ if [ -z "$DISTRO" ]; then
     DISTRO=fsl-imx-x11
 fi
 
+# Get current BSP kernel version
+get_bsp_kernel_version
+if [ -z "${KERNELVERSION}" ]; then
+    echo "Can't find linux kernel bbfile, use 4.14 by default"
+    KERNELVERSION="4.14"
+fi
+
 # Get all required source codes.
 . ${SCRIPT_FOLDER}/extract_sourcecode.sh
 
@@ -206,21 +227,29 @@ else
     echo "ACCEPT_FSL_EULA = \"$EULA\"" >> conf/local.conf
 fi
 
-# Update bblayers.conf for PROJECT QCA6574AULE221
-. ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
-
-
-if [ $PROJECTID != "QCA6584AULE201" ]; then
-   #Fix KW build
-   KW_PATCH=${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
-   patch -p 1 -d ${WORK_SPACE}/sources/poky/ -N < ${KW_PATCH} > /dev/null 2>&1
-
+# Export specific parameters for Yocto
+if grep -q 'PROJECTID' conf/local.conf; then
+    sed -e "s/^PROJECTID\s*=.*/PROJECTID = \"$PROJECTID\"/g" -i conf/local.conf
+else
+    echo "PROJECTID = \"$PROJECTID\"" >> conf/local.conf
 fi
 
-cleanenv
+if grep -q 'KERNELVERSION' conf/local.conf; then
+   sed -e "s/^KERNELVERSION\s*=.*/KERNELVERSION = \"$KERNELVERSION\"/g" -i conf/local.conf
+else
+   echo "KERNELVERSION = \"$KERNELVERSION\"" >> conf/local.conf
+fi
 
-# Export specific parameters for Yocto
-export BB_ENV_EXTRAWHITE="${BB_ENV_EXTRAWHITE} PROJECTID"
+#Fix KW build
+if [ "${KERNELVERSION}" == "4.9" ] || [ "${KERNELVERSION}" == "4.14" ]; then
+    KW_PATCH=${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
+    patch -p 1 -d ${WORK_SPACE}/sources/poky/ -N < ${KW_PATCH} > /dev/null 2>&1
+fi
+
+# Update bblayers.conf for PROJECT QCA6574AULE221
+. ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh
+
+cleanenv
 
 set +x
 

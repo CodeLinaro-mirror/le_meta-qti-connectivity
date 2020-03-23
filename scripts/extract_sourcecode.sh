@@ -68,33 +68,34 @@ download_git_code()
 }
 
 META_FSL_GIT="git://git.yoctoproject.org/meta-freescale"
-
 META_FSL_3RD_GIT="git://github.com/Freescale/meta-freescale-3rdparty"
-
 META_FSL_DIS_GIT="git://github.com/Freescale/meta-freescale-distro"
 
-if [[ $MACHINE == 'imx8mqevk' || $MACHINE == 'imx8qxpmek' ]]; then
-	#For mainfest: imx-4.14.78-1.0.0_ga
-	META_FSL_REV="407c6cf408969445031a492e2d25e0e2749582ea"
-	META_FSL_3RD_REV="88a29631809d1af0df618245430db29f2a7012b5"
-	META_FSL_DIS_REV="f7e2216e93aff14ac32728a13637a48df436b7f4"
-	download_git_code ${META_FSL_GIT} ${META_FSL_REV}
-	download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
-	download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
-elif [ $PROJECTID == 'QCA6574AULE221' ]; then
-	#For manifest: imx-4.9.11-1.0.0_ga
-	META_FSL_REV="a398b50b7fc084a9e68cc3000c218d5028522a25"
-	META_FSL_3RD_REV="68314612e236cab1da82d72a0da62635a3523f84"
-	META_FSL_DIS_REV="cd5c7a2539f40004f74126e9fdf08254fd9a6390"
-	download_git_code ${META_FSL_GIT} ${META_FSL_REV}
-	download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
-	download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
-elif [ $PROJECTID == 'QCA6584AULE201' ]; then
-	#For manifest: imx-4.19.35-1.1.0
+case ${KERNELVERSION} in
+    "4.9")
+        #For manifest: imx-4.9.11-1.0.0_ga
+        META_FSL_REV="a398b50b7fc084a9e68cc3000c218d5028522a25"
+        META_FSL_3RD_REV="68314612e236cab1da82d72a0da62635a3523f84"
+        META_FSL_DIS_REV="cd5c7a2539f40004f74126e9fdf08254fd9a6390"
+        ;;
+    "4.14")
+        #For mainfest: imx-4.14.78-1.0.0_ga
+        META_FSL_REV="407c6cf408969445031a492e2d25e0e2749582ea"
+        META_FSL_3RD_REV="88a29631809d1af0df618245430db29f2a7012b5"
+        META_FSL_DIS_REV="f7e2216e93aff14ac32728a13637a48df436b7f4"
+        ;;
+    "4.19")
+        #For manifest: imx-4.19.35-1.1.0.xml
         META_FSL_REV="2142f7ded1b3115ccc21f7575fd83e2376247193"
         META_FSL_3RD_REV="da422478d38e744283bcf61123c4a526396c7030"
         META_FSL_DIS_REV="d4e77ea682fa10d0d54a723b3d3099c44fc5e95c"
-        download_git_code ${META_FSL_GIT} ${META_FSL_REV}
-        download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
-        download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
-fi
+        ;;
+    *)
+        echo "Not supported kernel version ${KERNELVERSION}"
+        return 1
+        ;;
+esac
+
+download_git_code ${META_FSL_GIT} ${META_FSL_REV}
+download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
+download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
