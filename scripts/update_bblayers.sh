@@ -30,10 +30,12 @@
 
 # This script tries to update conf/bblayers.conf for different project.
 
+LCONF_VER=6
+
 generate_common_bblayers()
 {
-    cat <<EOF
-LCONF_VERSION = "6"
+    cat >> ${BBLAYERS_CONF} <<EOF
+LCONF_VERSION = "${LCONF_VER}"
 
 BBPATH = "\${TOPDIR}"
 export BSPDIR := "\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)) + '/../..')}"
@@ -88,24 +90,17 @@ EOF
 
 generate_QCA6584AULE201_bblayers()
 {
-  cat <<EOF
+    # Meta layer for imx-4.19.35-1.1.0
+    cat >> ${BBLAYERS_CONF} <<EOF
 
-LCONF_VERSION = "6"
-
-BBPATH = "\${TOPDIR}"
-export BSPDIR := "\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)) + '/../..')}"
-
-BBFILES ?= ""
-BBLAYERS = " \\
-  \${BSPDIR}/sources/poky/meta \\
-  \${BSPDIR}/sources/poky/meta-yocto \\
-  \\
-  \${BSPDIR}/sources/meta-openembedded/meta-oe \\
-  \\
-  \${BSPDIR}/sources/meta-fsl-arm \\
-  \${BSPDIR}/sources/meta-fsl-arm-extra \\
-  \${BSPDIR}/sources/meta-fsl-demos \\
-"
+BBLAYERS += " \${BSPDIR}/sources/poky/meta-poky "
+BBLAYERS += " \${BSPDIR}/sources/meta-freescale "
+BBLAYERS += " \${BSPDIR}/sources/meta-freescale-3rdparty "
+BBLAYERS += " \${BSPDIR}/sources/meta-freescale-distro "
+BBLAYERS += " \${BSPDIR}/sources/meta-rust "
+BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-bsp "
+BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-sdk "
+BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-ml "
 
 EOF
 }
@@ -137,16 +132,20 @@ echo '' > ${BBLAYERS_CONF}
 case $1 in
     "QCA6574AULE221")
         {
-            generate_common_bblayers >> ${BBLAYERS_CONF}
+            generate_common_bblayers
             bblayers_for_qca6574aule221
             bblayers_for_qti_meta
             echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> ${BBLAYERS_CONF}
         } ;;
     "QCA6584AULE201")
        {
-            generate_QCA6584AULE201_bblayers >> ${BBLAYERS_CONF}
+            LCONF_VER=7
+            generate_common_bblayers
+            generate_QCA6584AULE201_bblayers
             bblayers_for_qti_meta
             echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"' >> ${BBLAYERS_CONF}
+            echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> ${BBLAYERS_CONF}
+            echo 'BBMASK.="|meta-qti-connectivity/recipes-core/busybox/busybox_%.bbappend"' >> ${BBLAYERS_CONF}
        } ;;
 
 esac
