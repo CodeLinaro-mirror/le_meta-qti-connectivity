@@ -15,11 +15,14 @@ require ${PROJECTID}-image.inc
 
 #Common Required Tasks Listed
 IMAGE_INSTALL += "iw"
-IMAGE_INSTALL += "iperf3"
+IMAGE_INSTALL += "iperf2"
 IMAGE_INSTALL += "wpa-supplicant"
 IMAGE_INSTALL += "wlan-sigmadut"
 IMAGE_INSTALL += "wlan-config"
 IMAGE_INSTALL += "rng-tools"
+
+#From kernel version 4.19, wirelese-tools is no longer supported by BSP.
+IMAGE_INSTALL += "${@oe.utils.version_less_or_equal('KERNELVERSION', '4.18', 'wireless-tools', '', d)}"
 
 SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/synergy-bt-proprietary')}"
 IMAGE_INSTALL += "${@bb.utils.contains('SYNERGY_DIR_PRESENT', 'True', 'alsa-lib', '', d)}"
