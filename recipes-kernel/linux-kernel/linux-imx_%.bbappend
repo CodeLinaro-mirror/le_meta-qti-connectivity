@@ -4,6 +4,7 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 SRC_URI += "file://lk-4.9/0001-porting_cfg_patch_for_LK49.patch \
             file://lk-4.9/0002-porting_mhi_header_for_LK49.patch \
+	    file://lk-4.9/0003-cfg80211-Add-flags-to-support-WPA3-STA-AP-function.patch \
           "
 
 
