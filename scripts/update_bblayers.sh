@@ -56,6 +56,36 @@ EOF
 }
 
 
+bblayers_for_fsl_meta()
+{
+    cat >> ${BBLAYERS_CONF} <<EOF
+
+##Freescale Yocto Project Release layer
+BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-bsp "
+BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-sdk "
+BBLAYERS += " \${BSPDIR}/sources/meta-freescale-3rdparty "
+BBLAYERS += " \${BSPDIR}/sources/meta-freescale-distro "
+BBLAYERS += " \${BSPDIR}/sources/meta-freescale "
+EOF
+
+    case ${KERNELVERSION} in
+        "4.9")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-poky \""  >> ${BBLAYERS_CONF}
+            ;;
+        "4.14")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-poky \""  >> ${BBLAYERS_CONF}
+            ;;
+        "4.19")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-poky \""  >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-rust \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-ml \"" >> ${BBLAYERS_CONF}
+            ;;
+        *)
+            echo "Not supported kernel version ${KERNELVERSION}"
+            ;;
+        esac
+}
+
 bblayers_for_qca6574aule221()
 {
     cat >> ${BBLAYERS_CONF} <<EOF
@@ -90,7 +120,7 @@ EOF
 
 bblayers_for_qca6595aule01()
 {
-    bblayers_for_qca6574aule221
+    bblayers_for_fsl_meta
 }
 
 generate_QCA6584AULE201_bblayers()
