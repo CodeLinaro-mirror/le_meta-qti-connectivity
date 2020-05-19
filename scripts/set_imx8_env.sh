@@ -100,6 +100,21 @@ get_bsp_kernel_version()
 }
 
 
+
+get_bsp_wpa_supplicant()
+{
+      WPA_SUPP_BBFILE=""
+      local DIR=${WORK_SPACE}/sources/meta-fsl-bsp-release
+
+      if [ ! -d ${DIR} ]; then
+          echo "bsp dir not exist"
+          return 1
+      fi
+
+      WPA_SUPP_BBFILE="$(find ${DIR} -name "wpa-supplicant_*.bbappend")"
+      echo "${WPA_SUPP_BBFILE}"
+}
+
 buildclean()
 {
     set -x
@@ -274,6 +289,12 @@ fi
 if [ "${KERNELVERSION}" == "4.9" ] || [ "${KERNELVERSION}" == "4.14" ]; then
     KW_PATCH=${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
     patch -p 1 -d ${WORK_SPACE}/sources/poky/ -N < ${KW_PATCH} > /dev/null 2>&1
+fi
+
+#Fix 2020.05.19 for 4.14.98
+get_bsp_wpa_supplicant
+if [ -f "${WPA_SUPP_BBFILE}" ]; then
+    mv ${WPA_SUPP_BBFILE} ${WPA_SUPP_BBFILE}.orig
 fi
 
 cleanenv
