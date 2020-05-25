@@ -1,0 +1,50 @@
+From 4c286c436c0cb0debc141991d3bdc127154484c6 Mon Sep 17 00:00:00 2001
+From: Srinivas Dasari <dasaris@codeaurora.org>
+Date: Thu, 6 Jun 2019 13:56:37 +0800
+Subject: [PATCH 1/9] cfg80211: Updated nl80211_commands to be in sync with
+ upstream
+
+Update nl80211_commands to be in sync with upstream.
+This is needed to add new commands.
+
+Change-Id: Ib6b71e3f66560b035377c7bc0c115490b04f5c4f
+CRs-Fixed: 2182553
+Signed-off-by: Srinivas Dasari <dasaris@codeaurora.org>
+---
+ include/uapi/linux/nl80211.h | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index f41ea5a..7a29ee5 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -982,6 +982,15 @@
+  * @NL80211_CMD_DEL_PMK: For offloaded 4-Way handshake, delete the previously
+  *	configured PMK for the authenticator address identified by
+  *	&NL80211_ATTR_MAC.
++ * @NL80211_CMD_PORT_AUTHORIZED: An event that indicates that the 4 way
++ *	handshake was completed successfully by the driver. The BSSID is
++ *	specified with &NL80211_ATTR_MAC. Drivers that support 4 way handshake
++ *	offload should send this event after indicating 802.11 association with
++ *	&NL80211_CMD_CONNECT or &NL80211_CMD_ROAM. If the 4 way handshake failed
++ *	&NL80211_CMD_DISCONNECT should be indicated instead.
++ *
++ * @NL80211_CMD_RELOAD_REGDB: Request that the regdb firmware file is reloaded.
++ *
+  *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+@@ -1185,6 +1194,10 @@ enum nl80211_commands {
+ 	NL80211_CMD_SET_PMK,
+ 	NL80211_CMD_DEL_PMK,
+ 
++	NL80211_CMD_PORT_AUTHORIZED,
++
++	NL80211_CMD_RELOAD_REGDB,
++
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+-- 
+2.7.4
+

@@ -1,0 +1,84 @@
+From 347f7bb9ec2e89941b64405082463ae446356288 Mon Sep 17 00:00:00 2001
+From: Liangwei Dong <liangwei@codeaurora.org>
+Date: Fri, 18 Jan 2019 16:54:38 +0530
+Subject: [PATCH 8/9] nl80211: Allow set/del pmksa operations for AP
+
+Host drivers may offload authentication to the user space
+through the commit ("cfg80211: Authentication offload to
+user space in AP mode").
+
+This interface can be used to implement SAE by having the
+userspace do authentication/PMKID key derivation and driver
+handle the association.
+
+A step ahead, this interface can get further optimized if the
+PMKID is passed to the host driver and also have it respond to
+the association request by the STA on a valid PMKID.
+
+This commit enables the userspace to pass the PMKID to the host
+drivers through the set/del pmksa operations in AP mode.
+
+Set/Del pmksa is now restricted to STA/P2P client mode only and
+thus the drivers might not expect them in any other(AP) mode.
+
+This commit also introduces a feature flag
+NL80211_EXT_FEATURE_AP_PMKSA_CACHING (johannes: renamed) to
+maintain the backward compatibility of such an expectation by
+the host drivers. These operations are allowed in AP mode only
+when the drivers advertize the capability through this flag.
+
+Signed-off-by: Liangwei Dong <liangwei@codeaurora.org>
+[rename flag to NL80211_EXT_FEATURE_AP_PMKSA_CACHING]
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+Git-repo: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+Git-commit: 6c900360e7c0df6a4846ac97d7b548d72cd801b0
+CRs-Fixed: 2396953
+Change-Id: I967ec287edb1c685614e965fe67a32e35035ff11
+Signed-off-by: Srinivas Dasari <dasaris@codeaurora.org>
+Signed-off-by: Min Liu <minliu@codeaurora.org>
+---
+ include/uapi/linux/nl80211.h | 4 ++++
+ net/wireless/nl80211.c       | 5 ++++-
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index 371829a..7e327ed 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -5057,6 +5057,9 @@ enum nl80211_feature_flags {
+  *	fairness for transmitted packets and has enabled airtime fairness
+  *	scheduling.
+  *
++ * @NL80211_EXT_FEATURE_AP_PMKSA_CACHING: Driver/device supports PMKSA caching
++ *	(set/del PMKSA operations) in AP mode.
++ *
+  * @NUM_NL80211_EXT_FEATURES: number of extended features.
+  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
+  */
+@@ -5095,6 +5098,7 @@ enum nl80211_ext_feature_index {
+ 	NL80211_EXT_FEATURE_CAN_REPLACE_PTK0,
+ 	NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER,
+ 	NL80211_EXT_FEATURE_AIRTIME_FAIRNESS,
++	NL80211_EXT_FEATURE_AP_PMKSA_CACHING,
+ 
+ 	/* add new features before the definition below */
+ 	NUM_NL80211_EXT_FEATURES,
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index 3cae16f..ccca801 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -9208,7 +9208,10 @@ static int nl80211_setdel_pmksa(struct sk_buff *skb, struct genl_info *info)
+ 	}
+ 
+ 	if (dev->ieee80211_ptr->iftype != NL80211_IFTYPE_STATION &&
+-	    dev->ieee80211_ptr->iftype != NL80211_IFTYPE_P2P_CLIENT)
++	    dev->ieee80211_ptr->iftype != NL80211_IFTYPE_P2P_CLIENT &&
++	    !(dev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP &&
++	      wiphy_ext_feature_isset(&rdev->wiphy,
++				      NL80211_EXT_FEATURE_AP_PMKSA_CACHING)))
+ 		return -EOPNOTSUPP;
+ 
+ 	switch (info->genlhdr->cmd) {
+-- 
+2.7.4
+

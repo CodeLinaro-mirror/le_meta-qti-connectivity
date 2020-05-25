@@ -1,0 +1,48 @@
+From fcf5893b7472d559b83ed3e4d4f481803ad36d3f Mon Sep 17 00:00:00 2001
+From: Srinivas Dasari <dasaris@qti.qualcomm.com>
+Date: Thu, 25 Jan 2018 17:13:39 +0200
+Subject: [PATCH 4/9] nl80211: Allow SAE Authentication for NL80211_CMD_CONNECT
+
+This commit allows SAE Authentication for NL80211_CMD_CONNECT
+interface, provided host driver advertises the support.
+
+Host drivers may offload the SAE authentication to user space
+through NL80211_CMD_EXTERNAL_AUTH interface and thus expect
+the user space to advertise support to handle offload through
+NL80211_ATTR_EXTERNAL_AUTH_SUPPORT in NL80211_CMD_CONNECT
+request. Such drivers should reject the connect request on no
+offload support from user space.
+
+Signed-off-by: Srinivas Dasari <dasaris@qti.qualcomm.com>
+Signed-off-by: Jouni Malinen <jouni@qca.qualcomm.com>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+Git-commit: 10773a7c09b327d02144c7d181e6544b7015ffc7
+Git-repo: git://git.kernel.org/pub/scm/linux/kernel/git/jberg/mac80211-next.git
+CRs-Fixed: 2262200
+Change-Id: I41b49228e88b32a35323c4dc8fa98e507a8a971d
+Signed-off-by: Srinivas Dasari <dasaris@codeaurora.org>
+---
+ net/wireless/nl80211.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index 928d5e6..59402d8 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -3865,9 +3865,10 @@ static bool nl80211_valid_auth_type(struct cfg80211_registered_device *rdev,
+ 			return false;
+ 		return true;
+ 	case NL80211_CMD_CONNECT:
+-		/* SAE not supported yet */
+-		if (auth_type == NL80211_AUTHTYPE_SAE)
++		if (!(rdev->wiphy.features & NL80211_FEATURE_SAE) &&
++		    auth_type == NL80211_AUTHTYPE_SAE)
+ 			return false;
++
+ 		/* FILS with SK PFS or PK not supported yet */
+ 		if (auth_type == NL80211_AUTHTYPE_FILS_SK_PFS ||
+ 		    auth_type == NL80211_AUTHTYPE_FILS_PK)
+-- 
+2.7.4
+
