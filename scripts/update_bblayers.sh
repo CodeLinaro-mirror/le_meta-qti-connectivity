@@ -56,6 +56,36 @@ EOF
 }
 
 
+bblayers_for_fsl_meta()
+{
+    cat >> ${BBLAYERS_CONF} <<EOF
+
+##Freescale Yocto Project Release layer
+BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-bsp "
+BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-sdk "
+BBLAYERS += " \${BSPDIR}/sources/meta-freescale-3rdparty "
+BBLAYERS += " \${BSPDIR}/sources/meta-freescale-distro "
+BBLAYERS += " \${BSPDIR}/sources/meta-freescale "
+EOF
+
+    case ${KERNELVERSION} in
+        "4.9")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-poky \""  >> ${BBLAYERS_CONF}
+            ;;
+        "4.14")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-poky \""  >> ${BBLAYERS_CONF}
+            ;;
+        "4.19")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-poky \""  >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-rust \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-ml \"" >> ${BBLAYERS_CONF}
+            ;;
+        *)
+            echo "Not supported kernel version ${KERNELVERSION}"
+            ;;
+        esac
+}
+
 bblayers_for_qca6574aule221()
 {
     cat >> ${BBLAYERS_CONF} <<EOF
@@ -90,7 +120,7 @@ EOF
 
 bblayers_for_qca6595aule01()
 {
-    bblayers_for_qca6574aule221
+    bblayers_for_fsl_meta
 }
 
 generate_QCA6584AULE201_bblayers()
@@ -117,9 +147,26 @@ BBLAYERS = " \\
 EOF
 }
 
+KERNEL49="4.9"
+KERNEL414="4.14"
+EXCLUDE_KERNEL=""
+get_kernel_bbapend()
+{
+      EX_KERNEL_BBFILE=""
+      local DIR=${WORK_SPACE}/sources/meta-qti-connectivity/recipes-kernel/linux-kernel
+
+      if [ ! -d ${DIR} ]; then
+          echo "kernel dir not exist"
+          return 1
+      fi
+
+      EX_KERNEL_BBFILE="$(ls ${DIR} |grep "linux-imx_${EXCLUDE_KERNEL}"|grep "bbappend")"
+}
+
+
 bblayers_for_qti_meta()
 {
-  cat >> ${BBLAYERS_CONF} <<EOF
+    cat >> ${BBLAYERS_CONF} <<EOF
 
 ##QTI Yocto Connecetivity layer
 BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity "
@@ -127,10 +174,30 @@ BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity-prop "
 
 EOF
 
-#Update BBMASK bbfiles
-if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf" ]; then
-    cat ${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf >> ${BBLAYERS_CONF}
-fi
+    #Update BBMASK bbfiles
+    if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf" ]; then
+        cat ${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf >> ${BBLAYERS_CONF}
+    fi
+
+    case ${KERNELVERSION} in
+        "4.9")
+            EXCLUDE_KERNEL=${KERNEL414}
+            get_kernel_bbapend
+            if [ ["${EX_KERNEL_BBFILE}" != ""] ]; then
+                echo "BBMASK.=\"|meta-qti-connectivity/recipes-kernel/linux-kernel/${EX_KERNEL_BBFILE}\"" >> ${BBLAYERS_CONF}
+            fi
+            ;;
+        "4.14")
+            EXCLUDE_KERNEL=${KERNEL49}
+            get_kernel_bbapend
+            if [ ["${EX_KERNEL_BBFILE}" != ""] ]; then
+                echo "BBMASK.=\"|meta-qti-connectivity/recipes-kernel/linux-kernel/${EX_KERNEL_BBFILE}\"" >> ${BBLAYERS_CONF}
+            fi
+            ;;
+        *)
+            echo "Not supported kernel version ${KERNELVERSION}"
+            ;;
+        esac
 
 }
 

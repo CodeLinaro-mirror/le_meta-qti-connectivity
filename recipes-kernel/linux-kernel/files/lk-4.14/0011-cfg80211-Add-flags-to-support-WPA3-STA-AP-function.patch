@@ -1,0 +1,42 @@
+From 05aebb8a085d81561abf3486fe322ad1505f0148 Mon Sep 17 00:00:00 2001
+From: Xueqiang Gong <gongx@codeaurora.org>
+Date: Mon, 11 May 2020 17:16:13 +0800
+Subject: [PATCH 2/3] cfg80211: Add flags to support WPA3 STA/AP function
+
+To support WPA3 STA/AP function, add the releated compilation flags.
+Add CFG80211_USER_HINT_CELL_BASE_SELF_MANAGED to fix warning issue
+when get/set regdb.
+
+Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
+---
+ include/net/cfg80211.h | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+ mode change 100644 => 100755 include/net/cfg80211.h
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+old mode 100644
+new mode 100755
+index b05521d..67374e5
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -24,6 +24,17 @@
+ #include <linux/net.h>
+ #include <net/regulatory.h>
+ 
++/* Indicate backport support for processing user cell base hint */
++#define CFG80211_USER_HINT_CELL_BASE_SELF_MANAGED 1
++/* Indicate backport support for external authentication*/
++#define CFG80211_EXTERNAL_AUTH_SUPPORT 1
++/* Indicate backport support for external authentication in AP mode */
++#define CFG80211_EXTERNAL_AUTH_AP_SUPPORT 1
++
++/* Indicate backport support for DH IE creation/update*/
++#define CFG80211_EXTERNAL_DH_UPDATE_SUPPORT 1
++
++
+ /**
+  * DOC: Introduction
+  *
+-- 
+2.7.4
+

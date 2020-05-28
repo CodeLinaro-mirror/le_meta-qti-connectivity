@@ -48,7 +48,6 @@ usage()
     echo "MACHINE   :  Supported machines, 'imx8mqevk' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
     echo "    QCA6595AULE01 : QCA6595AU.LE.0.1 SP"
-    echo "KERNEL    :  Supported kernel version: '414'(4.14), '49'(4.9)."  
 }
 
 execute_command()
@@ -83,6 +82,37 @@ check_machine_valid()
         list_machines
         return 1
     fi
+}
+
+
+get_bsp_kernel_version()
+{
+      local BBFILE=""
+      local DIR=${WORK_SPACE}/sources/meta-fsl-bsp-release
+
+      if [ ! -d ${DIR} ]; then
+          echo "bsp dir not exist"
+          return 1
+      fi
+
+      BBFILE="$(find ${DIR} -name "linux-imx_*.bb")"
+      KERNELVERSION="$(echo ${BBFILE##*linux-imx_} | awk -F '.' 'BEGIN{OFS="."}{print $1,$2}')"
+}
+
+
+
+get_bsp_wpa_supplicant()
+{
+      WPA_SUPP_BBFILE=""
+      local DIR=${WORK_SPACE}/sources/meta-fsl-bsp-release
+
+      if [ ! -d ${DIR} ]; then
+          echo "bsp dir not exist"
+          return 1
+      fi
+
+      WPA_SUPP_BBFILE="$(find ${DIR} -name "wpa-supplicant_*.bbappend")"
+      echo "${WPA_SUPP_BBFILE}"
 }
 
 buildclean()
@@ -147,28 +177,6 @@ case $EULA in
 esac
 
 
-case $KERNEL in
-    "49"|"")
-        {
-            if [ -z "$KERNEL" ]; then
-                echo "No $KERNEL provided, use default $KERNEL=49"
-            fi
-            export KERNEL="49"
-          
-        } ;;
-    "414")
-        {
-            export KERNEL="414"
-        } ;;
-    *)
-        {
-            echo "Not supported KERNEL, check script usage"
-            usage
-            cleanenv
-            return 1
-        } ;;
-esac
-
 case $PROJECT in
     "QCA6595AULE01"|"")
         {
@@ -204,6 +212,13 @@ else
         cleanenv
         return 1
     fi
+fi
+
+#Get current BSP kernel version
+get_bsp_kernel_version
+if [ -z "${KERNELVERSION}" ]; then
+    echo "Can't find linux kernel bbfile, use 4.14 by default"
+    KERNELVERSION="4.14"
 fi
 
 # Get all required source codes.
@@ -254,12 +269,33 @@ else
     echo "ACCEPT_FSL_EULA = \"$EULA\"" >> conf/local.conf
 fi
 
+# Export specific parameters for Yocto
+if grep -q 'PROJECTID' conf/local.conf; then
+    sed -e "s/^PROJECTID\s*=.*/PROJECTID = \"$PROJECTID\"/g" -i conf/local.conf
+else
+    echo "PROJECTID = \"$PROJECTID\"" >> conf/local.conf
+fi
+
+if grep -q 'KERNELVERSION' conf/local.conf; then
+    sed -e "s/^KERNELVERSION\s*=.*/KERNELVERSION = \"$KERNELVERSION\"/g" -i conf/local.conf
+else
+    echo "KERNELVERSION = \"$KERNELVERSION\"" >> conf/local.conf
+fi
+
 # Update bblayers.conf
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
 
 #Fix KW build
-KW_PATCH=${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
-patch -p 1 -d ${WORK_SPACE}/sources/poky/ -N < ${KW_PATCH} > /dev/null 2>&1
+if [ "${KERNELVERSION}" == "4.9" ] || [ "${KERNELVERSION}" == "4.14" ]; then
+    KW_PATCH=${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
+    patch -p 1 -d ${WORK_SPACE}/sources/poky/ -N < ${KW_PATCH} > /dev/null 2>&1
+fi
+
+#Fix 2020.05.19 for 4.14.98
+get_bsp_wpa_supplicant
+if [ -f "${WPA_SUPP_BBFILE}" ]; then
+    mv ${WPA_SUPP_BBFILE} ${WPA_SUPP_BBFILE}.orig
+fi
 
 cleanenv
 

@@ -17,7 +17,6 @@ PROVIDES_NAME    = "kernel-module-wlan-cnss-core"
 RPROVIDES_${PN} += "${PROVIDES_NAME}"
 
 
-EXTRA_OEMAKE += "CONFIG_KERNEL_49=y"
 
 do_install () {
      module_do_install

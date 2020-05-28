@@ -1,69 +1,61 @@
-From 84949bd608e59408bbd0ebf9d90bf5eb4860caee Mon Sep 17 00:00:00 2001
+From 8d5bee9a3eefcfdf57af5c0296ed4cb126952c19 Mon Sep 17 00:00:00 2001
 From: Xueqiang Gong <gongx@codeaurora.org>
-Date: Thu, 12 Dec 2019 09:24:27 +0800
-Subject: [PATCH] add Header file to support MHI function at I.mx8 Kernel
- 4.9.88
+Date: Mon, 11 May 2020 17:42:08 +0800
+Subject: [PATCH 3/3] imx-kernel.lnx.4.14.98: change  file to support building
+ wlan-cnss-core driver
 
-porting code from project "kernel/msm-4.14", branch "LV.AU.0.0.1_rb1.12"
-all the files porting from the same place as kernel/msm-4.14
+porting code from project msm-4.14, update head file and dts file to support building wlan-cnss-core driver
 
-Change-Id: I38e9222c9dc6c0aefbe713d3b97175f301aa47f3
+Change-Id: I0b999f6ee0bb72de72a4b1a87ecea423254fc02a
 Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
 ---
- arch/arm64/boot/dts/freescale/Makefile             |   4 +-
+ arch/arm64/boot/dts/freescale/Makefile             |   3 +-
  .../boot/dts/freescale/fsl-imx8mq-evk-cnss.dts     | 280 +++++++++++++++++++++
  arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi      |   1 +
- arch/arm64/mm/dma-mapping.c                        |  54 ++++
- drivers/pci/host/pcie-designware.h                 |   2 +-
- fs/debugfs/inode.c                                 |  36 +++
- include/linux/coresight-stm.h                      | 109 +++++++-
- include/linux/debugfs.h                            |   2 +
- include/linux/dma-mapping.h                        |  44 ++++
- include/linux/elf.h                                |  36 +++
+ arch/arm64/mm/dma-mapping.c                        |  53 ++++
+ drivers/pci/dwc/pcie-designware.h                  |   2 +-
+ include/linux/coresight-stm.h                      | 108 +++++++-
+ include/linux/dma-mapping.h                        |  39 ++-
+ include/linux/elf.h                                |  33 +++
  include/linux/mod_devicetable.h                    |  15 ++
- include/linux/skbuff.h                             |  47 ++++
  include/net/cnss2.h                                | 254 +++++++++++++++++++
  include/net/cnss_nl.h                              | 104 ++++++++
- include/uapi/linux/coresight-stm.h                 |  14 +-
- include/uapi/linux/pci_regs.h                      |  16 ++
- include/uapi/linux/qrtr.h                          |  44 ++++
+ include/uapi/linux/coresight-stm.h                 |  13 +-
+ include/uapi/linux/qrtr.h                          |  42 ++++
  mm/memblock.c                                      |   4 +
- 18 files changed, 1058 insertions(+), 6 deletions(-)
+ net/core/skbuff.c                                  |   1 +
+ 15 files changed, 946 insertions(+), 6 deletions(-)
  mode change 100644 => 100755 arch/arm64/boot/dts/freescale/Makefile
  create mode 100755 arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts
  mode change 100644 => 100755 arch/arm64/mm/dma-mapping.c
- mode change 100644 => 100755 drivers/pci/host/pcie-designware.h
- mode change 100644 => 100755 fs/debugfs/inode.c
+ mode change 100644 => 100755 drivers/pci/dwc/pcie-designware.h
  mode change 100644 => 100755 include/linux/coresight-stm.h
- mode change 100644 => 100755 include/linux/debugfs.h
  mode change 100644 => 100755 include/linux/dma-mapping.h
  mode change 100644 => 100755 include/linux/elf.h
  mode change 100644 => 100755 include/linux/mod_devicetable.h
- mode change 100644 => 100755 include/linux/skbuff.h
  create mode 100755 include/net/cnss2.h
  create mode 100755 include/net/cnss_nl.h
  mode change 100644 => 100755 include/uapi/linux/coresight-stm.h
- mode change 100644 => 100755 include/uapi/linux/pci_regs.h
  mode change 100644 => 100755 include/uapi/linux/qrtr.h
  mode change 100644 => 100755 mm/memblock.c
+ mode change 100644 => 100755 net/core/skbuff.c
 
 diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
 old mode 100644
 new mode 100755
-index 7f83f1e..1c535fa7
+index 6691873..fb8881c
 --- a/arch/arm64/boot/dts/freescale/Makefile
 +++ b/arch/arm64/boot/dts/freescale/Makefile
-@@ -59,8 +59,8 @@ dtb-$(CONFIG_ARCH_FSL_IMX8MQ) += fsl-imx8mq-ddr3l-arm2.dtb \
- 				 fsl-imx8mq-evk-dual-display.dtb \
- 				 fsl-imx8mq-evk-ak4497.dtb \
- 				 fsl-imx8mq-evk-audio-tdm.dtb \
--				 fsl-imx8mq-evk-drm.dtb
--
-+				 fsl-imx8mq-evk-drm.dtb \
+@@ -126,7 +126,8 @@ dtb-$(CONFIG_ARCH_FSL_IMX8MQ) += fsl-imx8mq-ddr3l-arm2.dtb \
+ 				 fsl-imx8mq-evk-root.dtb \
+ 				 fsl-imx8mq-evk-inmate.dtb \
+ 				 fsl-imx8mq-evk-dp.dtb \
+-				 fsl-imx8mq-evk-edp.dtb
++				 fsl-imx8mq-evk-edp.dtb \
 +				 fsl-imx8mq-evk-cnss.dtb 
- always		:= $(dtb-y)
- subdir-y	:= $(dts-dirs)
- clean-files	:= *.dtb
+ dtb-$(CONFIG_ARCH_FSL_IMX8MM) += fsl-imx8mm-evk.dtb \
+ 				 fsl-imx8mm-evk-drm.dtb \
+ 				 fsl-imx8mm-evk-ak4497.dtb \
 diff --git a/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts b/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts
 new file mode 100755
 index 00000000..4ae6c96
@@ -351,7 +343,7 @@ index 00000000..4ae6c96
 +	};
 +};
 diff --git a/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi b/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi
-index 6d5d6ae..61938cf 100755
+index a1d1004..c4bdd2b 100755
 --- a/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi
 +++ b/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi
 @@ -20,6 +20,7 @@
@@ -365,18 +357,10 @@ index 6d5d6ae..61938cf 100755
 diff --git a/arch/arm64/mm/dma-mapping.c b/arch/arm64/mm/dma-mapping.c
 old mode 100644
 new mode 100755
-index 28d9199..d27ae2a
+index 7015d3e..bb63371
 --- a/arch/arm64/mm/dma-mapping.c
 +++ b/arch/arm64/mm/dma-mapping.c
-@@ -28,6 +28,7 @@
- #include <linux/dma-contiguous.h>
- #include <linux/vmalloc.h>
- #include <linux/swiotlb.h>
-+#include <asm/tlbflush.h>
- #include <linux/of.h>
- 
- #include <asm/cacheflush.h>
-@@ -357,6 +358,57 @@ static int __swiotlb_dma_supported(struct device *hwdev, u64 mask)
+@@ -367,6 +367,57 @@ static int __swiotlb_dma_supported(struct device *hwdev, u64 mask)
  	return 1;
  }
  
@@ -434,7 +418,7 @@ index 28d9199..d27ae2a
  static int __swiotlb_dma_mapping_error(struct device *hwdev, dma_addr_t addr)
  {
  	if (swiotlb)
-@@ -395,6 +447,8 @@ static struct dma_map_ops swiotlb_dma_ops = {
+@@ -405,6 +456,8 @@ static struct dma_map_ops swiotlb_dma_ops = {
  	.sync_sg_for_device = __swiotlb_sync_sg_for_device,
  	.dma_supported = __swiotlb_dma_supported,
  	.mapping_error = __swiotlb_dma_mapping_error,
@@ -443,13 +427,13 @@ index 28d9199..d27ae2a
  };
  
  static int __init atomic_pool_init(void)
-diff --git a/drivers/pci/host/pcie-designware.h b/drivers/pci/host/pcie-designware.h
+diff --git a/drivers/pci/dwc/pcie-designware.h b/drivers/pci/dwc/pcie-designware.h
 old mode 100644
 new mode 100755
-index 101fc5f..21585dc
---- a/drivers/pci/host/pcie-designware.h
-+++ b/drivers/pci/host/pcie-designware.h
-@@ -19,7 +19,7 @@
+index ef0bd7f..e9f67f2
+--- a/drivers/pci/dwc/pcie-designware.h
++++ b/drivers/pci/dwc/pcie-designware.h
+@@ -110,7 +110,7 @@
   * it 32 as of now. Probably we will never need more than 32. If needed,
   * then increment it in multiple of 32.
   */
@@ -457,64 +441,15 @@ index 101fc5f..21585dc
 +#define MAX_MSI_IRQS			256
  #define MAX_MSI_CTRLS			(MAX_MSI_IRQS / 32)
  
- struct pcie_port {
-diff --git a/fs/debugfs/inode.c b/fs/debugfs/inode.c
-old mode 100644
-new mode 100755
-index 3d7de9f..977da06
---- a/fs/debugfs/inode.c
-+++ b/fs/debugfs/inode.c
-@@ -248,6 +248,42 @@ static struct file_system_type debug_fs_type = {
- };
- MODULE_ALIAS_FS("debugfs");
- 
-+/**
-+ * debugfs_lookup() - look up an existing debugfs file
-+ * @name: a pointer to a string containing the name of the file to look up.
-+ * @parent: a pointer to the parent dentry of the file.
-+ *
-+ * This function will return a pointer to a dentry if it succeeds.  If the file
-+ * doesn't exist or an error occurs, %NULL will be returned.  The returned
-+ * dentry must be passed to dput() when it is no longer needed.
-+ *
-+ * If debugfs is not enabled in the kernel, the value -%ENODEV will be
-+ * returned.
-+ */
-+struct dentry *debugfs_lookup(const char *name, struct dentry *parent)
-+{
-+	struct dentry *dentry;
-+
-+	if (IS_ERR(parent))
-+		return NULL;
-+
-+	if (!parent)
-+		parent = debugfs_mount->mnt_root;
-+
-+	inode_lock(d_inode(parent));
-+	dentry = lookup_one_len(name, parent, strlen(name));
-+	inode_unlock(d_inode(parent));
-+
-+	if (IS_ERR(dentry))
-+		return NULL;
-+	if (!d_really_is_positive(dentry)) {
-+		dput(dentry);
-+		return NULL;
-+	}
-+	return dentry;
-+}
-+EXPORT_SYMBOL_GPL(debugfs_lookup);
-+
- static struct dentry *start_creating(const char *name, struct dentry *parent)
- {
- 	struct dentry *dentry;
+ struct pcie_port;
 diff --git a/include/linux/coresight-stm.h b/include/linux/coresight-stm.h
 old mode 100644
 new mode 100755
-index a978bb8..8868e32
+index 74714b5..8868e32
 --- a/include/linux/coresight-stm.h
 +++ b/include/linux/coresight-stm.h
-@@ -1,6 +1,113 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
+@@ -1,7 +1,113 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
  #ifndef __LINUX_CORESIGHT_STM_H_
  #define __LINUX_CORESIGHT_STM_H_
 -
@@ -628,28 +563,13 @@ index a978bb8..8868e32
 +			    u8 write_bytes) {}
 +#endif
  #endif
-diff --git a/include/linux/debugfs.h b/include/linux/debugfs.h
-old mode 100644
-new mode 100755
-index b20a094..f6c5958
---- a/include/linux/debugfs.h
-+++ b/include/linux/debugfs.h
-@@ -79,6 +79,8 @@ static const struct file_operations __fops = {				\
- 
- #if defined(CONFIG_DEBUG_FS)
- 
-+struct dentry *debugfs_lookup(const char *name, struct dentry *parent);
-+
- struct dentry *debugfs_create_file(const char *name, umode_t mode,
- 				   struct dentry *parent, void *data,
- 				   const struct file_operations *fops);
 diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
 old mode 100644
 new mode 100755
-index 704caae..8dd2493
+index 7bf3b99..41bc231
 --- a/include/linux/dma-mapping.h
 +++ b/include/linux/dma-mapping.h
-@@ -61,6 +61,17 @@
+@@ -62,13 +62,17 @@
   * allocation failure reports (similarly to __GFP_NOWARN).
   */
  #define DMA_ATTR_NO_WARN	(1UL << 8)
@@ -657,17 +577,18 @@ index 704caae..8dd2493
 + * DMA_ATTR_SKIP_ZEROING: Do not zero mapping.
 + */
 +#define DMA_ATTR_SKIP_ZEROING		(1UL << 9)
-+
-+/*
-+ * DMA_ATTR_PRIVILEGED: used to indicate that the buffer is fully
-+ * accessible at an elevated privilege level (and ideally inaccessible or
-+ * at least read-only at lesser-privileged levels).
-+ */
+ 
+ /*
+  * DMA_ATTR_PRIVILEGED: used to indicate that the buffer is fully
+  * accessible at an elevated privilege level (and ideally inaccessible or
+  * at least read-only at lesser-privileged levels).
+  */
+-#define DMA_ATTR_PRIVILEGED		(1UL << 9)
 +#define DMA_ATTR_PRIVILEGED		(1UL << 10)
  
  /*
   * A dma_addr_t can hold any valid DMA or bus address for the platform.
-@@ -120,6 +131,10 @@ struct dma_map_ops {
+@@ -128,6 +132,10 @@ struct dma_map_ops {
  				   enum dma_data_direction dir);
  	int (*mapping_error)(struct device *dev, dma_addr_t dma_addr);
  	int (*dma_supported)(struct device *dev, u64 mask);
@@ -675,10 +596,10 @@ index 704caae..8dd2493
 +			size_t size, unsigned long attrs);
 +	void (*unremap)(struct device *dev, void *remapped_address,
 +			size_t size);
- 	int (*set_dma_mask)(struct device *dev, u64 mask);
  #ifdef ARCH_HAS_DMA_GET_REQUIRED_MASK
  	u64 (*get_required_mask)(struct device *dev);
-@@ -555,6 +570,35 @@ static inline int dma_set_mask(struct device *dev, u64 mask)
+ #endif
+@@ -584,6 +592,35 @@ static inline int dma_set_mask(struct device *dev, u64 mask)
  	return 0;
  }
  #endif
@@ -717,27 +638,10 @@ index 704caae..8dd2493
 diff --git a/include/linux/elf.h b/include/linux/elf.h
 old mode 100644
 new mode 100755
-index 20fa8d8..f94c9dc
+index e3649b3..f94c9dc
 --- a/include/linux/elf.h
 +++ b/include/linux/elf.h
-@@ -1,3 +1,4 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
- #ifndef _LINUX_ELF_H
- #define _LINUX_ELF_H
- 
-@@ -29,6 +30,7 @@ extern Elf32_Dyn _DYNAMIC [];
- #define elf_note	elf32_note
- #define elf_addr_t	Elf32_Off
- #define Elf_Half	Elf32_Half
-+#define Elf_Word	Elf32_Word
- 
- #else
- 
-@@ -39,9 +41,43 @@ extern Elf64_Dyn _DYNAMIC [];
- #define elf_note	elf64_note
- #define elf_addr_t	Elf64_Off
- #define Elf_Half	Elf64_Half
-+#define Elf_Word	Elf64_Word
+@@ -45,6 +45,39 @@ extern Elf64_Dyn _DYNAMIC [];
  
  #endif
  
@@ -780,10 +684,10 @@ index 20fa8d8..f94c9dc
 diff --git a/include/linux/mod_devicetable.h b/include/linux/mod_devicetable.h
 old mode 100644
 new mode 100755
-index ed84c07..7cd349f
+index 1c2e8d6..c31bc0d
 --- a/include/linux/mod_devicetable.h
 +++ b/include/linux/mod_devicetable.h
-@@ -672,5 +672,20 @@ struct fsl_mc_device_id {
+@@ -687,5 +687,20 @@ struct fsl_mc_device_id {
  	const char obj_type[16];
  };
  
@@ -804,69 +708,9 @@ index ed84c07..7cd349f
 +
  
  #endif /* LINUX_MOD_DEVICETABLE_H */
-diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-old mode 100644
-new mode 100755
-index 601dfa8..7419a64
---- a/include/linux/skbuff.h
-+++ b/include/linux/skbuff.h
-@@ -1920,6 +1920,53 @@ static inline unsigned char *__skb_put(struct sk_buff *skb, unsigned int len)
- 	return tmp;
- }
- 
-+static inline void *__skb_put_zero(struct sk_buff *skb, unsigned int len)
-+{
-+	void *tmp = __skb_put(skb, len);
-+
-+	memset(tmp, 0, len);
-+	return tmp;
-+}
-+
-+static inline void *__skb_put_data(struct sk_buff *skb, const void *data,
-+				   unsigned int len)
-+{
-+	void *tmp = __skb_put(skb, len);
-+
-+	memcpy(tmp, data, len);
-+	return tmp;
-+}
-+
-+static inline void __skb_put_u8(struct sk_buff *skb, u8 val)
-+{
-+	*(u8 *)__skb_put(skb, 1) = val;
-+}
-+
-+static inline void *skb_put_zero(struct sk_buff *skb, unsigned int len)
-+{
-+	void *tmp = skb_put(skb, len);
-+
-+	memset(tmp, 0, len);
-+
-+	return tmp;
-+}
-+
-+static inline void *skb_put_data(struct sk_buff *skb, const void *data,
-+				 unsigned int len)
-+{
-+	void *tmp = skb_put(skb, len);
-+
-+	memcpy(tmp, data, len);
-+
-+	return tmp;
-+}
-+
-+static inline void skb_put_u8(struct sk_buff *skb, u8 val)
-+{
-+	*(u8 *)skb_put(skb, 1) = val;
-+}
-+
-+
- unsigned char *skb_push(struct sk_buff *skb, unsigned int len);
- static inline unsigned char *__skb_push(struct sk_buff *skb, unsigned int len)
- {
 diff --git a/include/net/cnss2.h b/include/net/cnss2.h
 new file mode 100755
-index 00000000..ec1c7cc
+index 00000000..f9db2db
 --- /dev/null
 +++ b/include/net/cnss2.h
 @@ -0,0 +1,254 @@
@@ -1237,11 +1081,10 @@ index 00000000..3bafdd5
 diff --git a/include/uapi/linux/coresight-stm.h b/include/uapi/linux/coresight-stm.h
 old mode 100644
 new mode 100755
-index 7e4272c..b55b359
+index aac550a..b55b359
 --- a/include/uapi/linux/coresight-stm.h
 +++ b/include/uapi/linux/coresight-stm.h
-@@ -1,9 +1,19 @@
-+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
+@@ -2,9 +2,18 @@
  #ifndef __UAPI_CORESIGHT_STM_H_
  #define __UAPI_CORESIGHT_STM_H_
  
@@ -1262,60 +1105,22 @@ index 7e4272c..b55b359
  /*
   * The CoreSight STM supports guaranteed and invariant timing
   * transactions.  Guaranteed transactions are guaranteed to be
-diff --git a/include/uapi/linux/pci_regs.h b/include/uapi/linux/pci_regs.h
-old mode 100644
-new mode 100755
-index e5a2e68..2c5810a
---- a/include/uapi/linux/pci_regs.h
-+++ b/include/uapi/linux/pci_regs.h
-@@ -674,6 +674,7 @@
- #define PCI_EXT_CAP_ID_PMUX	0x1A	/* Protocol Multiplexing */
- #define PCI_EXT_CAP_ID_PASID	0x1B	/* Process Address Space ID */
- #define PCI_EXT_CAP_ID_DPC	0x1D	/* Downstream Port Containment */
-+#define PCI_EXT_CAP_ID_L1SS	0x1E	/* L1 PM Substates */
- #define PCI_EXT_CAP_ID_PTM	0x1F	/* Precision Time Measurement */
- #define PCI_EXT_CAP_ID_MAX	PCI_EXT_CAP_ID_PTM
- 
-@@ -977,4 +978,19 @@
- #define  PCI_PTM_CTRL_ENABLE		0x00000001  /* PTM enable */
- #define  PCI_PTM_CTRL_ROOT		0x00000002  /* Root select */
- 
-+/* L1 PM Substates */
-+#define PCI_L1SS_CAP		    4	/* capability register */
-+#define  PCI_L1SS_CAP_PCIPM_L1_2	 1	/* PCI PM L1.2 Support */
-+#define  PCI_L1SS_CAP_PCIPM_L1_1	 2	/* PCI PM L1.1 Support */
-+#define  PCI_L1SS_CAP_ASPM_L1_2		 4	/* ASPM L1.2 Support */
-+#define  PCI_L1SS_CAP_ASPM_L1_1		 8	/* ASPM L1.1 Support */
-+#define  PCI_L1SS_CAP_L1_PM_SS		16	/* L1 PM Substates Support */
-+#define PCI_L1SS_CTL1		    8	/* Control Register 1 */
-+#define  PCI_L1SS_CTL1_PCIPM_L1_2	1	/* PCI PM L1.2 Enable */
-+#define  PCI_L1SS_CTL1_PCIPM_L1_1	2	/* PCI PM L1.1 Support */
-+#define  PCI_L1SS_CTL1_ASPM_L1_2	4	/* ASPM L1.2 Support */
-+#define  PCI_L1SS_CTL1_ASPM_L1_1	8	/* ASPM L1.1 Support */
-+#define  PCI_L1SS_CTL1_L1SS_MASK	0x0000000F
-+#define PCI_L1SS_CTL2		    0xC	/* Control Register 2 */
-+
- #endif /* LINUX_PCI_REGS_H */
 diff --git a/include/uapi/linux/qrtr.h b/include/uapi/linux/qrtr.h
 old mode 100644
 new mode 100755
-index 66c0748..ad3b401
+index 5d9aab1..ad3b401
 --- a/include/uapi/linux/qrtr.h
 +++ b/include/uapi/linux/qrtr.h
-@@ -1,7 +1,12 @@
-+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
- #ifndef _LINUX_QRTR_H
- #define _LINUX_QRTR_H
- 
+@@ -5,10 +5,52 @@
  #include <linux/socket.h>
-+#include <linux/types.h>
-+
+ #include <linux/types.h>
+ 
 +#define QRTR_NODE_BCAST	0xffffffffu
 +#define QRTR_PORT_CTRL	0xfffffffeu
- 
++
  struct sockaddr_qrtr {
  	__kernel_sa_family_t sq_family;
-@@ -9,4 +14,43 @@ struct sockaddr_qrtr {
+ 	__u32 sq_node;
  	__u32 sq_port;
  };
  
@@ -1362,10 +1167,10 @@ index 66c0748..ad3b401
 diff --git a/mm/memblock.c b/mm/memblock.c
 old mode 100644
 new mode 100755
-index 42b98af..0c20ae9
+index e81d12c..7d0f12e
 --- a/mm/memblock.c
 +++ b/mm/memblock.c
-@@ -1469,6 +1469,10 @@ phys_addr_t __init_memblock memblock_end_of_DRAM(void)
+@@ -1467,6 +1467,10 @@ phys_addr_t __init_memblock memblock_end_of_DRAM(void)
  	return (memblock.memory.regions[idx].base + memblock.memory.regions[idx].size);
  }
  
@@ -1376,6 +1181,17 @@ index 42b98af..0c20ae9
  static phys_addr_t __init_memblock __find_max_addr(phys_addr_t limit)
  {
  	phys_addr_t max_addr = (phys_addr_t)ULLONG_MAX;
+diff --git a/net/core/skbuff.c b/net/core/skbuff.c
+old mode 100644
+new mode 100755
+index 873032d..2545bcd
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -5473,3 +5473,4 @@ void skb_condense(struct sk_buff *skb)
+ 	 */
+ 	skb->truesize = SKB_TRUESIZE(skb_end_offset(skb));
+ }
++EXPORT_SYMBOL(skb_condense);
 -- 
 2.7.4
 
