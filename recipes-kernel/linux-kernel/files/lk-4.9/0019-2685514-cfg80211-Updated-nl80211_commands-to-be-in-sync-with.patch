@@ -1,0 +1,60 @@
+From d517720dcfe6db48d6b516df3ba3325cb04f2b90 Mon Sep 17 00:00:00 2001
+From: Srinivas Dasari <dasaris@codeaurora.org>
+Date: Wed, 7 Feb 2018 18:30:01 +0530
+Subject: [PATCH 02/10] cfg80211: Updated nl80211_commands to be in sync with
+ upstream
+
+Update nl80211_commands to be in sync with upstream.
+This is needed to add new commands.
+
+Change-Id: Ib6b71e3f66560b035377c7bc0c115490b04f5c4f
+CRs-Fixed: 2182553
+Signed-off-by: Srinivas Dasari <dasaris@codeaurora.org>
+---
+ include/uapi/linux/nl80211.h | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index 1bd35bf..34b03242 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -874,6 +874,22 @@
+  *	This will contain a %NL80211_ATTR_NAN_MATCH nested attribute and
+  *	%NL80211_ATTR_COOKIE.
+  *
++ * @NL80211_CMD_SET_PMK: For offloaded 4-Way handshake, set the PMK or PMK-R0
++ *     for the given authenticator address (specified with &NL80211_ATTR_MAC).
++ *     When &NL80211_ATTR_PMKR0_NAME is set, &NL80211_ATTR_PMK specifies the
++ *     PMK-R0, otherwise it specifies the PMK.
++ * @NL80211_CMD_DEL_PMK: For offloaded 4-Way handshake, delete the previously
++ *     configured PMK for the authenticator address identified by
++ *     &NL80211_ATTR_MAC.
++ * @NL80211_CMD_PORT_AUTHORIZED: An event that indicates that the 4 way
++ *     handshake was completed successfully by the driver. The BSSID is
++ *     specified with &NL80211_ATTR_MAC. Drivers that support 4 way handshake
++ *     offload should send this event after indicating 802.11 association with
++ *     &NL80211_CMD_CONNECT or &NL80211_CMD_ROAM. If the 4 way handshake failed
++ *     &NL80211_CMD_DISCONNECT should be indicated instead.
++ *
++ * @NL80211_CMD_RELOAD_REGDB: Request that the regdb firmware file is reloaded.
++ *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -1069,6 +1085,13 @@ enum nl80211_commands {
+ 	NL80211_CMD_CHANGE_NAN_CONFIG,
+ 	NL80211_CMD_NAN_MATCH,
+ 
++	NL80211_CMD_SET_PMK,
++	NL80211_CMD_DEL_PMK,
++
++	NL80211_CMD_PORT_AUTHORIZED,
++
++	NL80211_CMD_RELOAD_REGDB,
++
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+-- 
+1.9.1
+
