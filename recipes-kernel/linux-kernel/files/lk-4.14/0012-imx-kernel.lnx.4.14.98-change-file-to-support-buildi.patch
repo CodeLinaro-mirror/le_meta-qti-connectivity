@@ -18,7 +18,7 @@ Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
  include/linux/dma-mapping.h                        |  39 ++-
  include/linux/elf.h                                |  33 +++
  include/linux/mod_devicetable.h                    |  15 ++
- include/net/cnss2.h                                | 254 +++++++++++++++++++
+ include/net/cnss2.h                                | 255 +++++++++++++++++++
  include/net/cnss_nl.h                              | 104 ++++++++
  include/uapi/linux/coresight-stm.h                 |  13 +-
  include/uapi/linux/qrtr.h                          |  42 ++++
