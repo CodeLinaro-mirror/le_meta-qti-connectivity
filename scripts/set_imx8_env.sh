@@ -115,6 +115,19 @@ get_bsp_wpa_supplicant()
       echo "${WPA_SUPP_BBFILE}"
 }
 
+get_bsp_synergy_tool()
+{
+    SYNERGY_TOOL_BBFILE=""
+    local DIR=${WORK_SPACE}/sources/meta-openembedded/meta-oe/recipes-support
+
+    if [ ! -d ${DIR} ]; then
+        echo "the synergy tool dir not exist"
+        return 1
+    fi
+    SYNERGY_TOOL_BBFILE="$(find ${DIR} -name "synergy*.bb")"
+    echo "${SYNERGY_TOOL_BBFILE}"
+}
+
 buildclean()
 {
     set -x
@@ -295,6 +308,12 @@ fi
 get_bsp_wpa_supplicant
 if [ -f "${WPA_SUPP_BBFILE}" ]; then
     mv ${WPA_SUPP_BBFILE} ${WPA_SUPP_BBFILE}.orig
+fi
+
+# Avoid the BSP synergy tool conflict with Synergy Bluetooth Lite bb file
+get_bsp_synergy_tool
+if [ -f "${SYNERGY_TOOL_BBFILE}" ]; then
+   mv ${SYNERGY_TOOL_BBFILE} ${SYNERGY_TOOL_BBFILE}-BSPtool
 fi
 
 cleanenv
