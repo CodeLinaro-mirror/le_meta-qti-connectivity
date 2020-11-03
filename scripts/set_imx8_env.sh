@@ -217,8 +217,10 @@ case $PROJECT in
 esac
 
 # Default MACHINE
-if [ -z "$MACHINE" ]; then
+if [[ -z "$MACHINE" || $MACHINE == "imx8mqevk" ]]; then
     MACHINE='imx8mqevk'
+elif [ "$MACHINE" == "imx8qxpmek" ]; then
+    MACHINE='imx8qxpmek'
 else
     check_machine_valid
     if [ "$?" != "0" ]; then
