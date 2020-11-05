@@ -13,6 +13,7 @@ Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
  arch/arm64/boot/dts/freescale/Makefile             |   4 +-
  .../boot/dts/freescale/fsl-imx8mq-evk-cnss.dts     | 280 +++++++++++++++++++++
  arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi      |   1 +
+ arch/arm64/boot/dts/freescale/fsl-imx8mq-evk.dts   |   2 +-
  arch/arm64/mm/dma-mapping.c                        |  54 ++++
  drivers/pci/host/pcie-designware.h                 |   2 +-
  fs/debugfs/inode.c                                 |  36 +++
@@ -28,24 +29,10 @@ Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
  include/uapi/linux/pci_regs.h                      |  16 ++
  include/uapi/linux/qrtr.h                          |  44 ++++
  mm/memblock.c                                      |   4 +
- 18 files changed, 1058 insertions(+), 6 deletions(-)
- mode change 100644 => 100755 arch/arm64/boot/dts/freescale/Makefile
+ 18 files changed, 1059 insertions(+), 7 deletions(-)
  create mode 100755 arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts
- mode change 100644 => 100755 arch/arm64/mm/dma-mapping.c
- mode change 100644 => 100755 drivers/pci/host/pcie-designware.h
- mode change 100644 => 100755 fs/debugfs/inode.c
- mode change 100644 => 100755 include/linux/coresight-stm.h
- mode change 100644 => 100755 include/linux/debugfs.h
- mode change 100644 => 100755 include/linux/dma-mapping.h
- mode change 100644 => 100755 include/linux/elf.h
- mode change 100644 => 100755 include/linux/mod_devicetable.h
- mode change 100644 => 100755 include/linux/skbuff.h
  create mode 100755 include/net/cnss2.h
  create mode 100755 include/net/cnss_nl.h
- mode change 100644 => 100755 include/uapi/linux/coresight-stm.h
- mode change 100644 => 100755 include/uapi/linux/pci_regs.h
- mode change 100644 => 100755 include/uapi/linux/qrtr.h
- mode change 100644 => 100755 mm/memblock.c
 
 diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
 old mode 100644
@@ -362,6 +349,19 @@ index 6d5d6ae..61938cf 100755
  
  / {
  	compatible = "fsl,imx8mq";
+diff --git a/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk.dts b/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk.dts
+index a3e6ccc..2c83341 100644
+--- a/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk.dts
++++ b/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk.dts
+@@ -60,7 +60,7 @@
+ 
+ 	modem_reset: modem-reset {
+ 		compatible = "gpio-reset";
+-		reset-gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
++		reset-gpios = <&gpio3 5 GPIO_ACTIVE_HIGH>;
+ 		reset-delay-us = <2000>;
+ 		reset-post-delay-ms = <40>;
+ 		#reset-cells = <0>;
 diff --git a/arch/arm64/mm/dma-mapping.c b/arch/arm64/mm/dma-mapping.c
 old mode 100644
 new mode 100755
