@@ -253,6 +253,10 @@ if grep -q 'KERNELVERSION' conf/local.conf; then
    sed -e "s/^KERNELVERSION\s*=.*/KERNELVERSION = \"$KERNELVERSION\"/g" -i conf/local.conf
 else
    echo "KERNELVERSION = \"$KERNELVERSION\"" >> conf/local.conf
+
+BZIP_BBFILE=${WORK_SPACE}/sources/poky/meta/recipes-extended/bzip2/bzip2_1.0.6.bb
+if grep -q 'SRC_URI = "http:' ${BZIP_BBFILE}; then
+    sed -i -e 's/SRC_URI = "http:/SRC_URI = "https:/g' ${BZIP_BBFILE}
 fi
 
 # Update bblayers.conf
