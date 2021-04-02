@@ -193,6 +193,12 @@ else
     echo "ACCEPT_FSL_EULA = \"$EULA\"" >> conf/local.conf
 fi
 
+BZIP_BBFILE=${WORK_SPACE}/sources/poky/meta/recipes-extended/bzip2/bzip2_1.0.6.bb
+BZIP_NEW_URL="https://downloads.yoctoproject.org/mirror/sources/\${BP}.tar.gz"
+if grep -q 'SRC_URI = "http:' ${BZIP_BBFILE}; then
+    sed -i -e "s,SRC_URI = .*,SRC_URI = \"${BZIP_NEW_URL} \\\,g" ${BZIP_BBFILE}
+fi
+
 # Update bblayers.conf
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
 
