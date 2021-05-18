@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+#Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
 
 #Redistribution and use in source and binary forms, with or without
 #modification, are permitted provided that the following conditions are
@@ -86,16 +86,21 @@ check_machine_valid()
 
 get_bsp_kernel_version()
 {
-   local BBFILE=""
-   local DIR=${WORK_SPACE}/sources/meta-fsl-bsp-release
+    local BBFILE
+    local DIR
 
-   if [ ! -d ${DIR} ]; then
-       echo "bsp dir not exist"
-       return 1
-   fi
+    DIR=${WORK_SPACE}/sources/meta-fsl-bsp-release
+    if [ -d ${WORK_SPACE}/sources/meta-imx ]; then
+        DIR=${WORK_SPACE}/sources/meta-imx
+    fi
 
-   BBFILE="$(find ${DIR} -name "linux-imx_*.bb")"
-   KERNELVERSION="$(echo ${BBFILE##*linux-imx_} | awk -F '.' 'BEGIN{OFS="."}{print $1,$2}')"
+    if [ ! -d ${DIR} ]; then
+        echo "bsp dir not exist"
+        return 1
+    fi
+
+    BBFILE="$(find ${DIR} -name "linux-imx_*.bb")"
+    KERNELVERSION="$(echo ${BBFILE##*linux-imx_} | awk -F '.' 'BEGIN{OFS="."}{print $1,$2}')"
 }
 
 buildclean()
@@ -152,9 +157,6 @@ EOF
 case $PROJECT in
     "QCA6584AULE201" | "")
         {
-            if [ -z "$PROJECT" ]; then
-                echo "No PROJECT provided, use default PROJECT=QCA6584AULE201"
-            fi
 #            DISTRO=fsl-imx-x11
             export PROJECTID=QCA6584AULE201
         } ;;
@@ -185,8 +187,8 @@ fi
 # Get current BSP kernel version
 get_bsp_kernel_version
 if [ -z "${KERNELVERSION}" ]; then
-    echo "Can't find linux kernel bbfile, use 4.14 by default"
-    KERNELVERSION="4.14"
+    echo "Can't find linux kernel bbfile, use 5.4 by default"
+    KERNELVERSION="5.4"
 fi
 
 # Get all required source codes.
@@ -232,12 +234,6 @@ if grep -q 'PROJECTID' conf/local.conf; then
     sed -e "s/^PROJECTID\s*=.*/PROJECTID = \"$PROJECTID\"/g" -i conf/local.conf
 else
     echo "PROJECTID = \"$PROJECTID\"" >> conf/local.conf
-fi
-
-BZIP_BBFILE=${WORK_SPACE}/sources/poky/meta/recipes-extended/bzip2/bzip2_1.0.6.bb
-BZIP_NEW_URL="https://downloads.yoctoproject.org/mirror/sources/\${BP}.tar.gz"
-if grep -q 'SRC_URI = "http:' ${BZIP_BBFILE}; then
-    sed -i -e "s,SRC_URI = .*,SRC_URI = \"${BZIP_NEW_URL} \\\,g" ${BZIP_BBFILE}
 fi
 
 if grep -q 'KERNELVERSION' conf/local.conf; then

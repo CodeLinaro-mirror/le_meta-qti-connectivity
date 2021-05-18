@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+#Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
 
 #Redistribution and use in source and binary forms, with or without
 #modification, are permitted provided that the following conditions are
@@ -60,11 +60,17 @@ EOF
 
 bblayers_for_fsl_meta()
 {
+    local FSL_BSP_DIR="meta-imx"
+
+    if [[ "${KERNELVERSION}" < "5.4" ]]; then
+        FSL_BSP_DIR="meta-fsl-bsp-release/imx"
+    fi
+
     cat >> ${BBLAYERS_CONF} <<EOF
 
 ##Freescale Yocto Project Release layer
-BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-bsp "
-BBLAYERS += " \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-sdk "
+BBLAYERS += " \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-bsp "
+BBLAYERS += " \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-sdk "
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale-3rdparty "
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale-distro "
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale "
@@ -75,13 +81,17 @@ EOF
         "4.1" | "4.9")
             echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-yocto \""  >> ${BBLAYERS_CONF}
             ;;
+        "5.4")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-clang \"" >> ${BBLAYERS_CONF}
+            ;&
+            # Fall through
+        "4.19")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-rust \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-ml \"" >> ${BBLAYERS_CONF}
+            ;&
+            # Fall through
         "4.14")
             echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-poky \""  >> ${BBLAYERS_CONF}
-            ;;
-        "4.19")
-            echo "BBLAYERS += \" \${BSPDIR}/sources/poky/meta-poky \""  >> ${BBLAYERS_CONF}
-            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-rust \"" >> ${BBLAYERS_CONF}
-            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-fsl-bsp-release/imx/meta-ml \"" >> ${BBLAYERS_CONF}
             ;;
         *)
             echo "Not supported kernel version ${KERNELVERSION}"

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+#Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
 
 #Redistribution and use in source and binary forms, with or without
 #modification, are permitted provided that the following conditions are
@@ -89,6 +89,12 @@ case ${KERNELVERSION} in
         META_FSL_REV="2142f7ded1b3115ccc21f7575fd83e2376247193"
         META_FSL_3RD_REV="da422478d38e744283bcf61123c4a526396c7030"
         META_FSL_DIS_REV="d4e77ea682fa10d0d54a723b3d3099c44fc5e95c"
+        ;;
+    "5.4")
+        #For manifest: imx-5.4.70-2.3.2.xml
+        META_FSL_REV="14f1a630a47375432f93c556927b879b51d84c4e"
+        META_FSL_3RD_REV="dbcc686f52c3c84db8cb86aa8973a4e373651b98"
+        META_FSL_DIS_REV="ca27d12e4964d1336e662bcc60184bbff526c857"
         ;;
     *)
         echo "Not supported kernel version ${KERNELVERSION}"
