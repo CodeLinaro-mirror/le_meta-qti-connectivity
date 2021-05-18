@@ -297,6 +297,10 @@ else
     echo "KERNELVERSION = \"$KERNELVERSION\"" >> conf/local.conf
 fi
 
+if grep -q 'SRC_URI = "http:' ../sources/poky/meta/recipes-extended/bzip2/bzip2_1.0.6.bb; then
+    sed -i -e 's/SRC_URI = "http:/SRC_URI = "https:/g' ../sources/poky/meta/recipes-extended/bzip2/bzip2_1.0.6.bb
+fi
+
 # Update bblayers.conf
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
 
