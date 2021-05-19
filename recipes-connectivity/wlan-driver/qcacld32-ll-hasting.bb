@@ -1,6 +1,6 @@
-DESCRIPTION = "wifi drivers qcacld-3.2 for hasting chip"
+DESCRIPTION = "Qualcomm Technologies, Inc. WLAN CLD low latency driver version 3.0 for Hasting"
 
-inherit qcacld
+inherit qcacld-30-common
 
 WLAN_MODULE_NAME = "wlan-hasting"
 
