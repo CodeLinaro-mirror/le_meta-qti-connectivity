@@ -18,7 +18,7 @@ SRC_URI += "file://config/defconfig_${PV}"
 SRC_URI += "file://${PATCH_FOLDER}/"
 
 do_copy_defconfig_append() {
-    cat ${WORKDIR}/config/defconfig_${PV} >> ${WORKDIR}/defconfig
+    cat ${WORKDIR}/config/defconfig_${PV} >> ${B}/.config
 }
 
 do_patch_for_kernel() {
