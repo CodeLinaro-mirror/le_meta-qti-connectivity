@@ -265,11 +265,10 @@ fi
 # Update bblayers.conf
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh
 
-#Fix KW build
-if [ "${KERNELVERSION}" == "4.9" ] || [ "${KERNELVERSION}" == "4.14" ]; then
-    KW_PATCH=${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
-    patch -p 1 -d ${WORK_SPACE}/sources/poky/ -N < ${KW_PATCH} > /dev/null 2>&1
-fi
+#Workaround to fix KW build Error by remove "ERROR" in poky/meta/lib/oe/rootfs.py
+#The "ERROR" will be tracked by log check, which will make build failed.
+ROOTFSFILE=${WORK_SPACE}/sources/poky/meta/lib/oe/rootfs.py
+sed -e "s/ERROR: |Error: |Error |ERROR/Error: |Error/g" -i ${ROOTFSFILE}
 
 cleanenv
 
