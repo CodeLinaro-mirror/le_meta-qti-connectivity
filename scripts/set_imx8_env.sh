@@ -68,14 +68,14 @@ cleanenv()
 list_machines()
 {
     echo "Supported Machines by this BSP:"
-    echo; ls ${WORK_SPACE}/sources/*/conf/machine/*.conf | \
+    echo; ls ${WORK_SPACE}/sources/*/conf/machine/*.conf  ${WORK_SPACE}/sources/meta-imx/*/conf/machine/*.conf| \
     sed s/\.conf//g | sed -r 's/^.+\///' | xargs -I% echo -e "\t%"
     echo
 }
 
 check_machine_valid()
 {
-    local MACHINES=`ls -1 ${WORK_SPACE}/sources/*/conf/machine`
+    local MACHINES=`ls -1 ${WORK_SPACE}/sources/*/conf/machine ${WORK_SPACE}/sources/meta-imx/*/conf/machine`
     local VALID_MACHINE=`echo -e "${MACHINES}" | grep ${MACHINE}.conf$ | wc -l`
     if [ "$VALID_MACHINE" = "0" ]; then
         echo -e "\nThe MACHINE=$MACHINE is not supported by this build setup"
