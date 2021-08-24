@@ -1,4 +1,4 @@
-# Copyright (c) 2020, The Linux Foundation. All rights reserved.
+# Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -30,16 +30,21 @@
 
 get_bsp_kernel_version()
 {
-   local BBFILE=""
-   local DIR=${WORK_SPACE}/sources/meta-fsl-bsp-release
+    local BBFILE
+    local DIR
 
-   if [ ! -d ${DIR} ]; then
-       echo "bsp dir not exist"
-       return 1
-   fi
+    DIR=${WORK_SPACE}/sources/meta-fsl-bsp-release
+    if [ -d ${WORK_SPACE}/sources/meta-imx ]; then
+        DIR=${WORK_SPACE}/sources/meta-imx
+    fi
 
-   BBFILE="$(find ${DIR} -name "linux-imx_*.bb")"
-   KERNELVERSION="$(echo ${BBFILE##*linux-imx_} | awk -F '.' 'BEGIN{OFS="."}{print $1,$2}')"
+    if [ ! -d ${DIR} ]; then
+        echo "bsp dir not exist"
+        return 1
+    fi
+
+    BBFILE="$(find ${DIR} -name "linux-imx_*.bb")"
+    KERNELVERSION="$(echo ${BBFILE##*linux-imx_} | awk -F '.' 'BEGIN{OFS="."}{print $1,$2}')"
 }
 
 
@@ -50,13 +55,13 @@ SCRIPT_FOLDER="$(dirname "${BASH_SOURCE}")"
 WORK_SPACE=$(readlink -f ${SCRIPT_FOLDER}/../../..)
 
 # Update BBLayers in bblayers.conf
-echo 'BBLAYERS += " ${BSPDIR}/sources/meta-qti-connectivity "' >>  conf/bblayers.conf
-echo 'BBMASK ="meta-qti-connectivity/recipes-products/images/automotive-connx-image.bb"
-BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-msm-4.4_git.bbappend"
-BBMASK.="|meta-qti-connectivity/recipes-kernel/lk/lk_git.bbappend"
-BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-libc-headers/linux-libc-headers_%.bbappend"
-BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"
-' >> conf/bblayers.conf
+echo 'BBLAYERS += " ${BSPDIR}/sources/meta-qti-connectivity "' >> conf/bblayers.conf
+#Update BBMASK bbfiles
+if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf" ]; then
+    cat ${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf >> conf/bblayers.conf
+fi
+echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> conf/bblayers.conf
+
 
 sed -i -e 's/IMAGE_ROOTFS_SIZE ??= "65536"/IMAGE_ROOTFS_SIZE ??= "139264"/g' ../sources/poky/meta/conf/bitbake.conf
 
@@ -75,41 +80,40 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "bridge-utils"
 # Use PROJECTID for specific package, will optimize this part.
 PROJECTID=$1
 if [ -z "${PROJECTID}" ]; then
-    echo "No PROJECT provided, use default PROJECT=QCA6584AULE201"
-    PROJECTID=QCA6584AULE201
+    echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
+    PROJECTID="QCA6574AULE221"
 fi
 
 case ${PROJECTID} in
+    "QCA6574AULE221")
+        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-rome\"" >> conf/local.conf
+        ;;
     "QCA6584AULE201")
-        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld-hl-rome\"" >> conf/local.conf
+        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld20-hl-rome\"" >> conf/local.conf
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-dsrc\"" >> conf/local.conf
         ;;
     "QCA6574AULE26")
-        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld-ll\"" >> conf/local.conf
-        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld-ll-dualwifi\"" >> conf/local.conf
+        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-rome\"" >> conf/local.conf
+        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-rome-cnss2\"" >> conf/local.conf
         ;;
     "QCA6696LE01")
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf
-        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld-ll-hasting\"" >> conf/local.conf
+        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-hasting\"" >> conf/local.conf
         ;;
 esac
 
 get_bsp_kernel_version
 if [ -z "${KERNELVERSION}" ]; then
-    echo "Can't find linux kernel bbfile, use 4.14 by default"
-    KERNELVERSION="4.14"
+    echo "Can't find linux kernel bbfile, use 5.4 by default"
+    KERNELVERSION="5.4"
 fi
 
-# wirless-tools only available with kernel version less than 4.19
-if [ `echo "$KERNELVERSION < 4.19" | bc` != "0" ]; then
+# wirless-tools only available with specific package
+WIRELESS_TOOL="$(find ${WORK_SPACE}/sources -name "wireless-tools*.bb")"
+if [ ! -z "${WIRELESS_TOOL}" ]; then
     echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wireless-tools\"" >> conf/local.conf
 fi
 
-# Export specific parameters for Yocto in local.conf
-if [ "${PROJECTID}" != "QCA6584AULE201" ]; then
-    #Use default PROJECTID in Yocto environment for non-dsrc
-    PROJECTID=QCA6574AULE221
-fi
 echo "PROJECTID = \"$PROJECTID\"" >> conf/local.conf
 echo "KERNELVERSION = \"$KERNELVERSION\"" >> conf/local.conf
 
