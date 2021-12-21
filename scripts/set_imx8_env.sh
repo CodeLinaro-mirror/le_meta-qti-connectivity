@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+#Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
 
 #Redistribution and use in source and binary forms, with or without
 #modification, are permitted provided that the following conditions are
@@ -68,20 +68,39 @@ cleanenv()
 list_machines()
 {
     echo "Supported Machines by this BSP:"
-    echo; ls ${WORK_SPACE}/sources/*/conf/machine/*.conf | \
+    echo; ls ${WORK_SPACE}/sources/*/conf/machine/*.conf  ${WORK_SPACE}/sources/meta-imx/*/conf/machine/*.conf| \
     sed s/\.conf//g | sed -r 's/^.+\///' | xargs -I% echo -e "\t%"
     echo
 }
 
 check_machine_valid()
 {
-    local MACHINES=`ls -1 ${WORK_SPACE}/sources/*/conf/machine`
+    local MACHINES=`ls -1 ${WORK_SPACE}/sources/*/conf/machine ${WORK_SPACE}/sources/meta-imx/*/conf/machine`
     local VALID_MACHINE=`echo -e "${MACHINES}" | grep ${MACHINE}.conf$ | wc -l`
     if [ "$VALID_MACHINE" = "0" ]; then
         echo -e "\nThe MACHINE=$MACHINE is not supported by this build setup"
         list_machines
         return 1
     fi
+}
+
+get_bsp_kernel_version()
+{
+    local BBFILE
+    local DIR
+
+    DIR=${WORK_SPACE}/sources/meta-fsl-bsp-release
+    if [ -d ${WORK_SPACE}/sources/meta-imx ]; then
+        DIR=${WORK_SPACE}/sources/meta-imx
+    fi
+
+    if [ ! -d ${DIR} ]; then
+        echo "bsp dir not exist"
+        return 1
+    fi
+
+    BBFILE="$(find ${DIR} -name "linux-imx_*.bb")"
+    KERNELVERSION="$(echo ${BBFILE##*linux-imx_} | awk -F '.' 'BEGIN{OFS="."}{print $1,$2}')"
 }
 
 buildclean()
@@ -150,9 +169,6 @@ esac
 case $PROJECT in
     "QCA6574AULE221" | "")
         {
-            if [ -z "$PROJECT" ]; then
-                echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
-            fi
             DISTRO=fsl-imx-xwayland
             export PROJECTID=QCA6574AULE221
         } ;;
@@ -178,6 +194,13 @@ else
     fi
 fi
 
+# Get current BSP kernel version
+get_bsp_kernel_version
+if [ -z "${KERNELVERSION}" ]; then
+    echo "Can't find linux kernel bbfile, use 5.4 by default"
+    KERNELVERSION="5.4"
+fi
+
 # Get all required source codes.
 . ${SCRIPT_FOLDER}/extract_sourcecode.sh
 
@@ -191,8 +214,13 @@ fi
 if [ -e "${WORK_SPACE}/sources/meta-freescale/EULA" ];then
     rm -rf ${WORK_SPACE}/sources/meta-freescale/EULA
 fi
-
-cp ${WORK_SPACE}/sources/meta-fsl-bsp-release/imx/EULA.txt ${WORK_SPACE}/sources/meta-freescale/EULA
+EULA_FILE=${WORK_SPACE}/sources/meta-imx/EULA.txt
+if [[ "${KERNELVERSION}" < "5.4" ]]; then
+    EULA_FILE=${WORK_SPACE}/sources/meta-fsl-bsp-release/imx/EULA.txt
+fi
+if [ -f ${EULA_FILE} ]; then
+    cp ${EULA_FILE} ${WORK_SPACE}/sources/meta-freescale/EULA
+fi
 
 #Default DISTRO
 if [ -z "$DISTRO" ]; then
@@ -221,17 +249,28 @@ else
     echo "ACCEPT_FSL_EULA = \"$EULA\"" >> conf/local.conf
 fi
 
-# Update bblayers.conf
-. ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
+# Export specific parameters for Yocto
+if grep -q 'PROJECTID' conf/local.conf; then
+    sed -e "s/^PROJECTID\s*=.*/PROJECTID = \"$PROJECTID\"/g" -i conf/local.conf
+else
+    echo "PROJECTID = \"$PROJECTID\"" >> conf/local.conf
+fi
 
-#Fix KW build
-KW_PATCH=${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
-patch -p 1 -d ${WORK_SPACE}/sources/poky/ -N < ${KW_PATCH} > /dev/null 2>&1
+if grep -q 'KERNELVERSION' conf/local.conf; then
+   sed -e "s/^KERNELVERSION\s*=.*/KERNELVERSION = \"$KERNELVERSION\"/g" -i conf/local.conf
+else
+   echo "KERNELVERSION = \"$KERNELVERSION\"" >> conf/local.conf
+fi
+
+# Update bblayers.conf
+. ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh
+
+#Workaround to fix KW build Error by remove "ERROR" in poky/meta/lib/oe/rootfs.py
+#The "ERROR" will be tracked by log check, which will make build failed.
+ROOTFSFILE=${WORK_SPACE}/sources/poky/meta/lib/oe/rootfs.py
+sed -e "s/ERROR: |Error: |Error |ERROR/Error: |Error/g" -i ${ROOTFSFILE}
 
 cleanenv
-
-# Export specific parameters for Yocto
-export BB_ENV_EXTRAWHITE="${BB_ENV_EXTRAWHITE} PROJECTID"
 
 cat <<EOF
 

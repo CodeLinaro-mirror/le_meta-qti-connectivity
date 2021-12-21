@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+#Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
 
 #Redistribution and use in source and binary forms, with or without
 #modification, are permitted provided that the following conditions are
@@ -41,13 +41,13 @@ usage()
     echo
     echo "script usage for QTI Standalone Auto image"
     echo "${SCRIPT_PARAMS} source ${SCRIPT_FILE} [BUILDDIR]"
-    echo "For example: PROJECT=QCA6574AULE221 source ${SCRIPT_FILE}"
+    echo "For example: PROJECT=QCA6584AULE201 source ${SCRIPT_FILE}"
     echo
     echo "EULA      :  FSL EULA, default 0 if undefined."
     echo "BUILDDIR  :  the build directory location, 'build' by default."
     echo "MACHINE   :  Supported machines, 'imx6qsabresd' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
-    echo "    QCA6574AULE221 : QCA6574AU.LE.2.2.1 SP"
+    echo "    QCA6584AULE201 : QCA6584AU.LE.2.0.1 SP"
 }
 
 execute_command()
@@ -68,20 +68,39 @@ cleanenv()
 list_machines()
 {
     echo "Supported Machines by this BSP:"
-    echo; ls ${WORK_SPACE}/sources/*/conf/machine/*.conf | \
+    echo; ls ${WORK_SPACE}/sources/*/conf/machine/*.conf ${WORK_SPACE}/sources/meta-imx/*/conf/machine/*.conf | \
     sed s/\.conf//g | sed -r 's/^.+\///' | xargs -I% echo -e "\t%"
     echo
 }
 
 check_machine_valid()
 {
-    local MACHINES=`ls -1 ${WORK_SPACE}/sources/*/conf/machine`
+    local MACHINES=`ls -1 ${WORK_SPACE}/sources/*/conf/machine ${WORK_SPACE}/sources/meta-imx/*/conf/machine`
     local VALID_MACHINE=`echo -e "${MACHINES}" | grep ${MACHINE}.conf$ | wc -l`
     if [ "$VALID_MACHINE" = "0" ]; then
         echo -e "\nThe MACHINE=$MACHINE is not supported by this build setup"
         list_machines
         return 1
     fi
+}
+
+get_bsp_kernel_version()
+{
+    local BBFILE
+    local DIR
+
+    DIR=${WORK_SPACE}/sources/meta-fsl-bsp-release
+    if [ -d ${WORK_SPACE}/sources/meta-imx ]; then
+        DIR=${WORK_SPACE}/sources/meta-imx
+    fi
+
+    if [ ! -d ${DIR} ]; then
+        echo "bsp dir not exist"
+        return 1
+    fi
+
+    BBFILE="$(find ${DIR} -name "linux-imx_*.bb")"
+    KERNELVERSION="$(echo ${BBFILE##*linux-imx_} | awk -F '.' 'BEGIN{OFS="."}{print $1,$2}')"
 }
 
 buildclean()
@@ -122,17 +141,24 @@ build-imxauto-image()
 SCRIPT_FOLDER="$(dirname "${BASH_SOURCE}")"
 WORK_SPACE=$(readlink -f ${SCRIPT_FOLDER}/../../..)
 SCRIPT_FILE=${SCRIPT_FOLDER}/set_bb_env.sh
+PACKAGE_CLASSES="package_rpm"
 
 set -x
 
+cat  << EOF
+IMPORTANT NOTICE:
+Use of the set_bb_env.sh script will combine some open source licensed software and/or third party licensed software
+components into the product. Redistribution and use of the open source and/or third party code
+may legally require you to comply with the terms of the open source and/or third party license(s)
+that apply to the code used and redistributed."
+
+EOF
+
 case $PROJECT in
-    "QCA6574AULE221" | "")
+    "QCA6584AULE201" | "")
         {
-            if [ -z "$PROJECT" ]; then
-                echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
-            fi
 #            DISTRO=fsl-imx-x11
-            export PROJECTID=QCA6574AULE221
+            export PROJECTID=QCA6584AULE201
         } ;;
     *)
         {
@@ -155,15 +181,14 @@ else
 fi
 
 if [ -z "$DISTRO" ]; then
-    if [ -f "${WORK_SPACE}/sources/meta-fsl-bsp-release/imx/meta-sdk/conf/distro/fsl-imx-x11.conf" ]; then
-        # Project QCA6574AU.LE.2.2.1
-        DISTRO=fsl-imx-x11
-    else
-	# Project QCA6584AU.LE.2.0.1 (LK3.10.17)
-        DISTRO=poky
-        export PROJECTID=QCA6584AULE201
-        echo "Change PROJECTID to: ${PROJECTID}"
-    fi
+    DISTRO=fsl-imx-x11
+fi
+
+# Get current BSP kernel version
+get_bsp_kernel_version
+if [ -z "${KERNELVERSION}" ]; then
+    echo "Can't find linux kernel bbfile, use 5.4 by default"
+    KERNELVERSION="5.4"
 fi
 
 # Get all required source codes.
@@ -189,6 +214,7 @@ mv conf/local.conf conf/local.conf.sample
 grep -v '^#\|^$' conf/local.conf.sample > conf/local.conf
 sed -e "s,MACHINE ??=.*,MACHINE ??= '$MACHINE',g" \
     -e "s,DISTRO ?=.*,DISTRO ?= '$DISTRO',g" \
+    -e "s,PACKAGE_CLASSES ?=.*,PACKAGE_CLASSES ?= '$PACKAGE_CLASSES',g" \
     -i conf/local.conf
 
 if grep -q '^DL_DIR ?=' conf/local.conf; then
@@ -203,21 +229,28 @@ else
     echo "ACCEPT_FSL_EULA = \"$EULA\"" >> conf/local.conf
 fi
 
-# Update bblayers.conf for PROJECT QCA6574AULE221
-. ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
-
-
-if [ $PROJECTID != "QCA6584AULE201" ]; then
-   #Fix KW build
-   KW_PATCH=${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-poky-fix-KW-build-issue.patch
-   patch -p 1 -d ${WORK_SPACE}/sources/poky/ -N < ${KW_PATCH} > /dev/null 2>&1
-
+# Export specific parameters for Yocto
+if grep -q 'PROJECTID' conf/local.conf; then
+    sed -e "s/^PROJECTID\s*=.*/PROJECTID = \"$PROJECTID\"/g" -i conf/local.conf
+else
+    echo "PROJECTID = \"$PROJECTID\"" >> conf/local.conf
 fi
 
-cleanenv
+if grep -q 'KERNELVERSION' conf/local.conf; then
+   sed -e "s/^KERNELVERSION\s*=.*/KERNELVERSION = \"$KERNELVERSION\"/g" -i conf/local.conf
+else
+   echo "KERNELVERSION = \"$KERNELVERSION\"" >> conf/local.conf
+fi
 
-# Export specific parameters for Yocto
-export BB_ENV_EXTRAWHITE="${BB_ENV_EXTRAWHITE} PROJECTID"
+#Workaround to fix KW build Error by remove "ERROR" in poky/meta/lib/oe/rootfs.py
+#The "ERROR" will be tracked by log check, which will make build failed.
+ROOTFSFILE=${WORK_SPACE}/sources/poky/meta/lib/oe/rootfs.py
+sed -e "s/ERROR: |Error: |Error |ERROR/Error: |Error/g" -i ${ROOTFSFILE}
+
+# Update bblayers.conf for PROJECT QCA6574AULE221
+. ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh
+
+cleanenv
 
 set +x
 
