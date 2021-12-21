@@ -29,7 +29,7 @@
 #!/bin/sh
 
 echo 'BBLAYERS += " ${BSPDIR}/sources/meta-qti-connectivity "' >>  conf/bblayers.conf
-echo 'export PROJECTID="QCA6584AULE201"' >> conf/bblayers.conf
+echo 'export PROJECTID="QCA6574AULE221"' >> conf/bblayers.conf
 echo 'BBMASK ="meta-qti-connectivity/recipes-products/images/automotive-connx-image.bb"
 BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-msm-4.4_git.bbappend"
 BBMASK.="|meta-qti-connectivity/recipes-kernel/lk/lk_git.bbappend"
@@ -40,8 +40,7 @@ BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend
 sed -i -e 's/IMAGE_ROOTFS_SIZE ?= "131072"/IMAGE_ROOTFS_SIZE ??= "139264"/g' ../sources/poky/meta/conf/bitbake.conf
 
 echo  'MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "pciutils"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-dsrc"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "qcacld-hl-rome"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "qcacld-ll"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iw"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iperf"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wireless-tools"
@@ -51,5 +50,5 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-config"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rng-tools"
 ' >> conf/local.conf
 echo "Please run following command to build image."
-echo "bitbake core-image-minimal"
+echo "bitbake core-image-base"
 
