@@ -23,6 +23,22 @@ PROVIDES_NAME    = "kernel-module-wlan"
 RPROVIDES_${PN} += "${PROVIDES_NAME}"
 
 EXTRA_OEMAKE += "CONFGI_ARM_MDMFERMIUM=n CONFIG_WLAN_FEATURE_SAE=y CONFIG_LINUX_QCMBR=y WLAN_OPEN_SOURCE=1 CONFIG_NON_QC_PLATFORM=y CONFIG_ROME_IF=pci"
+
+do_unpack_append() {
+    bb.build.exec_func('do_download_patches', d)
+}
+
+do_download_patches() {
+	cd ${S}
+  wget --no-check-certificate https://source.codeaurora.org/quic/romeau/sba-patches/plain/sba-patches/QCA6564.LE.1.0.3.c0.c1.krack/qcacld-2.0-LK310.patch -O qcacld-2.0-LK310.patch
+}
+
+do_patch() {
+	cd ${S}
+  patch -p1 -d ${S} < qcacld-2.0-LK310.patch
+
+}
+
 do_install () {
 
 #     module_do_install

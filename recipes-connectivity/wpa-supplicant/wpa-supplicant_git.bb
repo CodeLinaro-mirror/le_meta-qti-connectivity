@@ -19,6 +19,21 @@ SRC_URI += "file://hostapdconf \
 
 S = "${WORKDIR}/wlan-opensource/wpa_supplicant_8"
 
+do_unpack_append() {
+    bb.build.exec_func('do_download_patches', d)
+}
+
+do_download_patches() {
+	cd ${S}
+  wget --no-check-certificate https://source.codeaurora.org/quic/romeau/sba-patches/plain/sba-patches/QCA6564.LE.1.0.3.c0.c1.krack/wpa_supplicant_8_openssl_101.patch -O wpa_supplicant_8_openssl_101.patch
+}
+
+do_patch() {
+	cd ${S}
+  patch -p1 -d ${S} < wpa_supplicant_8_openssl_101.patch
+
+}
+
 do_configure() {
 	install -m 0644 ${WORKDIR}/hostapdconf ${S}/hostapd/.config
 	install -m 0644 ${WORKDIR}/supplicantconf ${S}/wpa_supplicant/.config
