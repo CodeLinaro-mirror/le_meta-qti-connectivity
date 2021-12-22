@@ -96,6 +96,12 @@ case ${KERNELVERSION} in
         META_FSL_3RD_REV="dbcc686f52c3c84db8cb86aa8973a4e373651b98"
         META_FSL_DIS_REV="ca27d12e4964d1336e662bcc60184bbff526c857"
         ;;
+    "5.10")
+        #For manifest: imx-5.10.72-2.2.0.xml
+        META_FSL_REV="469d6c958c76ea235b3d3c1527e797ce3a7392e3"
+        META_FSL_3RD_REV="f8150f3b37cb83cba1f9e2378e57bb63e02d4610"
+        META_FSL_DIS_REV="e6daa26ba1f748326546063d63a085ae671827d9"
+        ;;
     *)
         echo "Not supported kernel version ${KERNELVERSION}"
         return 1
