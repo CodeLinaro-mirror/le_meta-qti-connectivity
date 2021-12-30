@@ -1,16 +1,17 @@
-DESCRIPTION = "Qualcomm Technologies, Inc. WLAN CLD low latency driver version 3.0 for Hasting"
+DESCRIPTION = "Qualcomm Technologies, Inc. WLAN CLD low latency driver version 3.0 for Hasting Prime"
 
 inherit qcacld-30-common
 
-WLAN_MODULE_NAME = "wlan-hasting"
+WLAN_MODULE_NAME = "wlan-hsp"
 
 PACKAGES =+ "kernel-module-${WLAN_MODULE_NAME}"
 
 DEPENDS += "wlan-cnss-core"
 
-EXTRA_OEMAKE += "CONFIG_QCA_CLD_WLAN_PROFILE=qca6390 CHIP_NAME=qca6390 MODNAME=${WLAN_MODULE_NAME}"
-EXTRA_OEMAKE += "CONFIG_CNSS2=y CONFIG_CNSS_QCA6390=y CONFIG_HIF_PCI=y"
+EXTRA_OEMAKE += "CONFIG_QCA_CLD_WLAN_PROFILE=qca6490 CHIP_NAME=qca6490 MODNAME=${WLAN_MODULE_NAME}"
+EXTRA_OEMAKE += "CONFIG_CNSS2=y CONFIG_CNSS_QCA6490=y CONFIG_HIF_PCI=y"
 EXTRA_OEMAKE += "CONFIG_WLAN_DISABLE_EXPORT_SYMBOL=y CONFIG_SLUB_DEBUG_ON=n CONFIG_SLUB_DEBUG=n"
+EXTRA_OEMAKE += "CONFIG_FEATURE_COEX=y CONFIG_QCACLD_FEATURE_BTC_CHAIN_MODE=y"
 
 do_compile_prepend() {
      # Using default qcacld-3.0 absolute path, get compilation error:
