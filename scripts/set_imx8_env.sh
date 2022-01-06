@@ -197,8 +197,8 @@ fi
 # Get current BSP kernel version
 get_bsp_kernel_version
 if [ -z "${KERNELVERSION}" ]; then
-    echo "Can't find linux kernel bbfile, use 5.4 by default"
-    KERNELVERSION="5.4"
+    echo "Can't find linux kernel bbfile, use 5.10 by default"
+    KERNELVERSION="5.10"
 fi
 
 # Get all required source codes.
@@ -210,17 +210,20 @@ if [ -z "$BUILD_DIR" ]; then
     BUILD_DIR='build'
 fi
 
-# copy new EULA into community so setup uses latest i.MX EULA
-if [ -e "${WORK_SPACE}/sources/meta-freescale/EULA" ];then
-    rm -rf ${WORK_SPACE}/sources/meta-freescale/EULA
+# Cleanup previous meta-freescale/EULA overrides
+pushd ${WORK_SPACE}/sources/meta-freescale
+if [ -h EULA ]; then
+    echo Cleanup meta-freescale/EULA...
+    git checkout -- EULA
 fi
-EULA_FILE=${WORK_SPACE}/sources/meta-imx/EULA.txt
-if [[ "${KERNELVERSION}" < "5.4" ]]; then
-    EULA_FILE=${WORK_SPACE}/sources/meta-fsl-bsp-release/imx/EULA.txt
+if [ ! -f classes/fsl-eula-unpack.bbclass ]; then
+    echo Cleanup meta-freescale/classes/fsl-eula-unpack.bbclass...
+    git checkout -- classes/fsl-eula-unpack.bbclass
 fi
-if [ -f ${EULA_FILE} ]; then
-    cp ${EULA_FILE} ${WORK_SPACE}/sources/meta-freescale/EULA
-fi
+popd
+
+# Override the click-through in meta-freescale/EULA
+FSL_EULA_FILE=$CWD/sources/meta-imx/EULA.txt
 
 #Default DISTRO
 if [ -z "$DISTRO" ]; then
@@ -248,6 +251,11 @@ if grep -q '^ACCEPT_FSL_EULA\s*=' conf/local.conf; then
 else
     echo "ACCEPT_FSL_EULA = \"$EULA\"" >> conf/local.conf
 fi
+
+echo >> conf/local.conf
+echo "# Switch to Debian packaging and include package-management in the image" >> conf/local.conf
+echo "PACKAGE_CLASSES = \"package_deb\"" >> conf/local.conf
+echo "EXTRA_IMAGE_FEATURES += \"package-management\"" >> conf/local.conf
 
 # Export specific parameters for Yocto
 if grep -q 'PROJECTID' conf/local.conf; then
