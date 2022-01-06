@@ -5,34 +5,30 @@ FILESEXTRAPATHS_prepend := "${BSPDIR}/sources:${THISDIR}/files:"
 MAINLINE_PRESENT = "${@os.path.exists('${BSPDIR}/sources/kernel')}"
 
 python __anonymous () {
-    ver=d.getVar("PV",True).split('.')
-    d.setVar("PATCH_FOLDER", "lk-" + '.'.join((ver[0], ver[1])))
+    d.setVar("PATCH_FOLDER", "lk-${KERNELVERSION}")
 
     if (d.getVar("MAINLINE_PRESENT", True) == 'True'):
         d.setVar("SRC_URI", "file://kernel/ ")
-        d.appendVar("SRC_URI", " file://config/defconfig_${PV}")
+        d.appendVar("SRC_URI", " file://config/defconfig_${KERNELVERSION}")
         d.setVar("S", "${WORKDIR}/kernel")
 }
 
-SRC_URI += "file://config/defconfig_${PV}"
+SRC_URI += "file://config/defconfig_${KERNELVERSION}"
 SRC_URI += "file://${PATCH_FOLDER}/"
 
 do_copy_defconfig_append() {
-    cat ${WORKDIR}/config/defconfig_${PV} >> ${B}/.config
+    cat ${WORKDIR}/config/defconfig_${KERNELVERSION} >> ${B}/.config
 }
 
 do_patch_for_kernel() {
     # For RB line, need to apply kernel patch
-    if [ ${MAINLINE_PRESENT} != "True" ]; then
-        PATCH_PATH="${WORKDIR}/${PATCH_FOLDER}"
-        pushd ${S}
+    PATCH_PATH="${WORKDIR}/${PATCH_FOLDER}"
+    if [ ${MAINLINE_PRESENT} != "True" ] && [ -e ${PATCH_PATH}/* ]; then
         for i in $(ls ${PATCH_PATH})
         do
-            patch -p1 -d . < ${PATCH_PATH}/$i
+            patch -N --silent -p1 -d ${S} < ${PATCH_PATH}/$i
         done
-        popd
     fi
-
 }
 
 addtask do_patch_for_kernel after do_patch before do_configure
