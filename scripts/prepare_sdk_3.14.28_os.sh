@@ -35,13 +35,13 @@ BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-msm-4.4_git.bb
 BBMASK.="|meta-qti-connectivity/recipes-kernel/lk/lk_git.bbappend"
 BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-libc-headers/linux-libc-headers_%.bbappend"
 BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"
-BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.14.28.bbappend"
+BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"
 ' >> conf/bblayers.conf
 
 sed -i -e 's/IMAGE_ROOTFS_SIZE ?= "131072"/IMAGE_ROOTFS_SIZE ??= "139264"/g' ../sources/poky/meta/conf/bitbake.conf
 
 echo  'MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "pciutils"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "qcacld-ll"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "qcacld-hl"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iw"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iperf"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wireless-tools"
