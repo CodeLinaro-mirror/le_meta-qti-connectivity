@@ -23,7 +23,9 @@ SRC_URI += "	${CAF_PATCH_URL}2f6ecce8947840c2233293f66b1203e9cdc06be0;downloadfi
 		${CAF_PATCH_URL}72487e61feadd6b31ebc6308d6313b219dfe1cfb;downloadfilename=0001-nl80211-fix-scheduled-scan-RSSI-matchset-attribute-c.patch;md5sum=4ff02a6495e6a7df2902ac150e8696e1 \
 		"
 
+SRC_URI += "https://source.codeaurora.org/quic/romeau/sba-patches/plain/sba-patches/QCA6574AU.LE.2.2.1/cfg80211_3.14.28_wpa3.patch;downloadfilename=cfg80211_3.14.28_wpa3.patch;md5sum=9fb5a9a67abe8056036efe6ab3d30109"
 
+SRC_URI += "https://source.codeaurora.org/quic/romeau/sba-patches/plain/sba-patches/QCA6564.LE.1.0.3.c0.c1.krack/0001-WLAN-subsystem-Sysctl-support-for-key-TCP-IP-paramet-2.patch;downloadfilename=0001-WLAN-subsystem-Sysctl-support-for-key-TCP-IP-paramet-2.patch;md5sum=2b32fe56deb9084542fe5505950ccf79"
 
 do_before_configure () {
 

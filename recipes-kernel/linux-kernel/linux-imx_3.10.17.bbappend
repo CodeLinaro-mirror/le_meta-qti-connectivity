@@ -18,7 +18,7 @@ do_download_patches() {
     cd ${WORKDIR}
     wget --no-check-certificate https://www.codeaurora.org/patches/external/wlan/Automotive/3rdparty/fsl3-10/Release_15_09_10/cfg80211_3.10.17.patch
     wget --no-check-certificate https://source.codeaurora.org/quic/romeau/sba-patches/plain/sba-patches/QCA6564.LE.1.0.3.c0.c1.krack/0001-WLAN-subsystem-Sysctl-support-for-key-TCP-IP-paramet.patch -O 0001-WLAN-subsystem-Sysctl-support-for-key-TCP-IP-paramet.patch
-    wget --no-check-certificate https://source.codeaurora.org/quic/romeau/sba-patches/plain/sba-patches/QCA6564.LE.1.0.3.c0.c1.krack/cfg80211_3.10.17_wpa3.patch -O cfg80211_3.10.17_wpa3.patch
+    wget --no-check-certificate https://source.codeaurora.org/quic/romeau/sba-patches/plain/sba-patches/QCA6574AU.LE.2.2.1/cfg80211_3.10.17_wpa3.patch -O cfg80211_3.10.17_wpa3.patch
 }
 
 python do_patch_append() {
