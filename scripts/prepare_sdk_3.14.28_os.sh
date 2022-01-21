@@ -29,6 +29,8 @@
 #!/bin/sh
 
 echo 'BBLAYERS += " ${BSPDIR}/sources/meta-qti-connectivity "' >>  conf/bblayers.conf
+echo 'BBLAYERS += "${BSPDIR}/sources/meta-openembedded/meta-networking"' >>  conf/bblayers.conf
+echo 'BBLAYERS += "${BSPDIR}/sources/meta-openembedded/meta-python"' >>  conf/bblayers.conf
 echo 'export PROJECTID="QCA6574AULE221"' >> conf/bblayers.conf
 echo 'BBMASK ="meta-qti-connectivity/recipes-products/images/automotive-connx-image.bb"
 BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-msm-4.4_git.bbappend"
@@ -49,6 +51,8 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wpa-supplicant"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-sigmadut"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-config"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rng-tools"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iputils"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "bridge-utils"
 ' >> conf/local.conf
 echo "Please run following command to build image."
 echo "bitbake core-image-base"
