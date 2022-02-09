@@ -12,9 +12,9 @@ SRC_URI = "file://wlan-opensource/dsrc-tool/ \
 
 S = "${WORKDIR}/wlan-opensource/dsrc-tool/"
 
-TOOL_CHAIN_PRE = "arm-poky-linux-gnueabi-"
+TOOL_CHAIN_PRE = ""
 
-LIBNL3_DIR = "${WORKDIR}/../../../../sysroots/${MACHINE}/usr/include/libnl3"
+LIBNL3_DIR = "${STAGING_INCDIR}/libnl3"
 CPPFLAGS += "-I ${LIBNL3_DIR} -I inc -I src -MMD -MP"
 LDFLAGS := "-lnl-3 -lnl-genl-3"
 
