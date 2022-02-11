@@ -1,0 +1,117 @@
+From b019cda7543c945b9f53f76c8eb81ee502844ec1 Mon Sep 17 00:00:00 2001
+From: Zhaoyang Liu <quic_zhaoyang@quicinc.com>
+Date: Tue, 18 Jan 2022 16:31:43 +0800
+Subject: [PATCH] dts: add cnss2 converged devices support
+
+Add device tree change to support converged cnss2 devices.
+
+Signed-off-by: Zhaoyang Liu <quic_zhaoyang@quicinc.com>
+---
+ arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi | 41 +++++++++++++++++++++++++
+ arch/arm64/boot/dts/freescale/imx8mq.dtsi       | 40 ++++++++++++++++++++++++
+ 2 files changed, 81 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi b/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
+index c6629e0..09b856a 100644
+--- a/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
+@@ -161,4 +161,45 @@ hsio_subsys: bus@5f000000 {
+ 		num-ob-windows = <6>;
+ 		status = "disabled";
+ 	};
++
++	mhi: qcom,mhi {
++		compatible = "qcom,mhi";
++		status = "okay";
++	};
++
++	ipc_router: qcom,ipc_router_external_modem_xprt2 {
++		compatible = "qcom,ipc_router_mhi_xprt";
++		qcom,ch-name = "IPCRTR";
++		qcom,out-chan-id = <20>;
++		qcom,in-chan-id = <21>;
++		qcom,xprt-remote = "external-wlan";
++		qcom,xprt-linkid = <1>;
++		qcom,xprt-version = <3>;
++		status = "okay";
++	};
++
++	diag_mhi: qcom,diag-mhi {
++		compatible = "qcom,diag-mhi";
++		status = "okay";
++	};
++
++	cnss2: qcom,cnss-qca-converged {
++		compatible = "qcom,cnss-qca-converged";
++
++		qcom,converged-dt;
++		qcom,bus-type=<0>;
++
++		status = "okay";
++
++		/* Support Hasting Device */
++		chip_cfg@1 {
++			supported-ids = <0x1101>;
++		};
++
++		/* Support Hasting Prime Device */
++		chip_cfg@3 {
++			supported-ids = <0x1103>;
++		};
++	};
++
+ };
+diff --git a/arch/arm64/boot/dts/freescale/imx8mq.dtsi b/arch/arm64/boot/dts/freescale/imx8mq.dtsi
+index 0b071fb..8ef659a 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mq.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mq.dtsi
+@@ -1498,6 +1498,46 @@
+ 			status = "disabled";
+ 		};
+ 
++		mhi: qcom,mhi {
++			compatible = "qcom,mhi";
++			status = "okay";
++		};
++
++		ipc_router: qcom,ipc_router_external_modem_xprt2 {
++			compatible = "qcom,ipc_router_mhi_xprt";
++			qcom,ch-name = "IPCRTR";
++			qcom,out-chan-id = <20>;
++			qcom,in-chan-id = <21>;
++			qcom,xprt-remote = "external-wlan";
++			qcom,xprt-linkid = <1>;
++			qcom,xprt-version = <3>;
++			status = "okay";
++		};
++
++		diag_mhi: qcom,diag-mhi {
++			compatible = "qcom,diag-mhi";
++			status = "okay";
++		};
++
++		cnss2: qcom,cnss-qca-converged {
++			compatible = "qcom,cnss-qca-converged";
++
++			qcom,converged-dt;
++			qcom,bus-type=<0>;
++
++			status = "okay";
++
++			/* Support Hasting Device */
++			chip_cfg@1 {
++				supported-ids = <0x1101>;
++			};
++
++			/* Support Hasting Prime Device */
++			chip_cfg@3 {
++				supported-ids = <0x1103>;
++			};
++		};
++
+ 		gic: interrupt-controller@38800000 {
+ 			compatible = "arm,gic-v3";
+ 			reg = <0x38800000 0x10000>,	/* GIC Dist */
+-- 
+2.7.4
+

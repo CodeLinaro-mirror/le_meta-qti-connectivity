@@ -23,7 +23,7 @@ do_copy_defconfig_append() {
 do_patch_for_kernel() {
     # For RB line, need to apply kernel patch
     PATCH_PATH="${WORKDIR}/${PATCH_FOLDER}"
-    if [ ${MAINLINE_PRESENT} != "True" ] && [ -e ${PATCH_PATH}/* ]; then
+    if [ "${MAINLINE_PRESENT}" != "True" ]; then
         for i in $(ls ${PATCH_PATH})
         do
             patch -N --silent -p1 -d ${S} < ${PATCH_PATH}/$i

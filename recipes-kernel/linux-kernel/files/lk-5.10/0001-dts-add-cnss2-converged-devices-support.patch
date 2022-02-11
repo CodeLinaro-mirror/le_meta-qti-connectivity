@@ -1,33 +1,29 @@
-From a3fbf5f177e1e2a5d5492cddfb2241fc266193d1 Mon Sep 17 00:00:00 2001
+From c00a3ba7a88a5d054a5e29ae1be627cdf130dd94 Mon Sep 17 00:00:00 2001
 From: Zhaoyang Liu <quic_zhaoyang@quicinc.com>
 Date: Tue, 4 Jan 2022 13:30:16 +0800
-Subject: [PATCH] dts: add device tree changes to support hsp
+Subject: [PATCH] dts: add cnss2 converged devices support
 
+Add device tree change to support converged cnss2 devices.
+
+Signed-off-by: Zhaoyang Liu <quic_zhaoyang@quicinc.com>
 ---
- .../boot/dts/freescale/imx8-ss-hsio.dtsi      | 27 +++++++++++++++++++
- arch/arm64/boot/dts/freescale/imx8mq.dtsi     | 26 ++++++++++++++++++
- 2 files changed, 53 insertions(+)
+ arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi | 40 +++++++++++++++++++++++++
+ arch/arm64/boot/dts/freescale/imx8mq.dtsi       | 40 +++++++++++++++++++++++++
+ 2 files changed, 80 insertions(+)
 
 diff --git a/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi b/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
-index c6629e048777..588b7efc399e 100644
+index c6629e0..6cdb553 100644
 --- a/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
 +++ b/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
-@@ -90,6 +90,11 @@ misc_crr5_lpcg: clock-controller@5f0f0000 {
- 		power-domains = <&pd IMX_SC_R_HSIO_GPIO>;
+@@ -161,4 +161,44 @@ hsio_subsys: bus@5f000000 {
+ 		num-ob-windows = <6>;
+ 		status = "disabled";
  	};
- 
++
 +	mhi: qcom,mhi {
 +		compatible = "qcom,mhi";
 +		status = "okay";
 +	};
-+
- 	pcieb: pcie@0x5f010000 {
- 		compatible = "fsl,imx8qm-pcie","snps,dw-pcie";
- 		reg = <0x5f010000 0x10000>, /* Controller reg */
-@@ -161,4 +166,26 @@ pcieb_ep: pcie_ep@0x5f010000 {
- 		num-ob-windows = <6>;
- 		status = "disabled";
- 	};
 +
 +	ipc_router: qcom,ipc_router_external_modem_xprt2 {
 +		compatible = "qcom,ipc_router_mhi_xprt";
@@ -45,18 +41,31 @@ index c6629e048777..588b7efc399e 100644
 +		status = "okay";
 +	};
 +
-+	cnss2: qcom,cnss-qca6490 {
-+		compatible = "qcom,cnss-qca6490";
-+		status = "okay";
-+	};
++	cnss2: qcom,cnss-qca-converged {
++		compatible = "qcom,cnss-qca-converged";
 +
++		qcom,converged-dt;
++		qcom,bus-type=<0>;
++
++		status = "okay";
++
++		/* Support Hasting Device */
++		chip_cfg@1 {
++			supported-ids = <0x1101>;
++		};
++
++		/* Support Hasting Prime Device */
++		chip_cfg@3 {
++			supported-ids = <0x1103>;
++		};
++	};
  };
 diff --git a/arch/arm64/boot/dts/freescale/imx8mq.dtsi b/arch/arm64/boot/dts/freescale/imx8mq.dtsi
-index 4071063d618c..9de7beecf46a 100755
+index 4071063..70d04e1 100755
 --- a/arch/arm64/boot/dts/freescale/imx8mq.dtsi
 +++ b/arch/arm64/boot/dts/freescale/imx8mq.dtsi
-@@ -1489,6 +1489,11 @@ gpmi: gpmi-nand@33002000{
- 			status = "disabled";
+@@ -1602,6 +1602,46 @@
+ 			interrupt-parent = <&gic>;
  		};
  
 +		mhi: qcom,mhi {
@@ -64,13 +73,6 @@ index 4071063d618c..9de7beecf46a 100755
 +			status = "okay";
 +		};
 +
- 		pcie0: pcie@33800000 {
- 			compatible = "fsl,imx8mq-pcie";
- 			reg = <0x33800000 0x400000>,
-@@ -1602,6 +1607,27 @@ gic: interrupt-controller@38800000 {
- 			interrupt-parent = <&gic>;
- 		};
- 
 +		ipc_router: qcom,ipc_router_external_modem_xprt2 {
 +			compatible = "qcom,ipc_router_mhi_xprt";
 +			qcom,ch-name = "IPCRTR";
@@ -87,14 +89,28 @@ index 4071063d618c..9de7beecf46a 100755
 +			status = "okay";
 +		};
 +
-+		cnss2: qcom,cnss-qca6490 {
-+			compatible = "qcom,cnss-qca6490";
++		cnss2: qcom,cnss-qca-converged {
++			compatible = "qcom,cnss-qca-converged";
++
++			qcom,converged-dt;
++			qcom,bus-type=<0>;
++
 +			status = "okay";
++
++			/* Support Hasting Device */
++			chip_cfg@1 {
++				supported-ids = <0x1101>;
++			};
++
++			/* Support Hasting Prime Device */
++			chip_cfg@3 {
++				supported-ids = <0x1103>;
++			};
 +		};
 +
  		ddrc: memory-controller@3d400000 {
  			compatible = "fsl,imx8mq-ddrc", "fsl,imx8m-ddrc";
  			reg = <0x3d400000 0x400000>;
 -- 
-2.25.1
+2.7.4
 
