@@ -15,20 +15,6 @@ EXTRA_OEMAKE += "CONFIG_FEATURE_COEX=y CONFIG_QCACLD_FEATURE_BTC_CHAIN_MODE=y"
 EXTRA_OEMAKE += "CONFIG_CONNECTION_ROAMING_CFG=n"
 
 do_compile_prepend() {
-     # Using default qcacld-3.0 absolute path, get compilation error:
-     # make[3]: execvp: /bin/sh: Argument list too long.
-     # Becasue the Makefile argument including the objects files
-     # paths is too long to complete the compilation.
-     # Create soft link to the directory above KERNEL_SRC to fix this issue.
-     # Need override the parameter M to use qcacld-3.0 relative path.
-     # Need use wlan-cnss-core extra symbols when generating module.
-     ln -nsf ${WORKDIR}/qcacld-3.0 ${STAGING_KERNEL_DIR}/../qcacld-3.0
-     ln -nsf ${WORKDIR}/qca-wifi-host-cmn ${STAGING_KERNEL_DIR}/../qca-wifi-host-cmn
-     ln -nsf ${WORKDIR}/fw-api ${STAGING_KERNEL_DIR}/../fw-api
-     export M=../qcacld-3.0
-     export KBUILD_EXTRA="KBUILD_EXTRA_SYMBOLS=${STAGING_INCDIR}/wlan-cnss-core/Module.symvers"
-}
-
-do_install_prepend() {
-    export M=../qcacld-3.0
+    # Need use wlan-cnss-core extra symbols when generating module.
+    export KBUILD_EXTRA="KBUILD_EXTRA_SYMBOLS=${STAGING_INCDIR}/wlan-cnss-core/Module.symvers"
 }

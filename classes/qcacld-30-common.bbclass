@@ -27,8 +27,21 @@ EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y"
 
 do_compile_prepend() {
     sed -in '/Werror/d' ${S}/Kbuild
+    # Using default qcacld-3.0 absolute path, get compilation error:
+    # make[3]: execvp: /bin/sh: Argument list too long.
+    # Becasue the Makefile argument including the objects files
+    # paths is too long to complete the compilation.
+    # Create soft link to the directory above KERNEL_SRC to fix this issue.
+    # Need override the parameter M to use qcacld-3.0 relative path.
+    # Need use wlan-cnss-core extra symbols when generating module.
+    install -d ${STAGING_KERNEL_DIR}/../${PN}
+    ln -sf ${WORKDIR}/qcacld-3.0 ${STAGING_KERNEL_DIR}/../${PN}/qcacld-3.0
+    ln -sf ${WORKDIR}/qca-wifi-host-cmn ${STAGING_KERNEL_DIR}/../${PN}/qca-wifi-host-cmn
+    ln -sf ${WORKDIR}/fw-api ${STAGING_KERNEL_DIR}/../${PN}/fw-api
+    export M=../${PN}/qcacld-3.0
 }
 
 do_install () {
+    export M=../${PN}/qcacld-3.0
     module_do_install
 }
