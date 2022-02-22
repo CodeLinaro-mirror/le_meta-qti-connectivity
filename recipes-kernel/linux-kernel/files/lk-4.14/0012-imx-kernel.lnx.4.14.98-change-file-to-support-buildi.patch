@@ -10,7 +10,7 @@ Change-Id: I0b999f6ee0bb72de72a4b1a87ecea423254fc02a
 Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
 ---
  arch/arm64/boot/dts/freescale/Makefile             |   6 ++-
- arch/arm64/boot/dts/freescale/fsl-imx8dx.dtsi 	    |   2 +-
+ arch/arm64/boot/dts/freescale/fsl-imx8dx.dtsi 	    |   3 +-
  arch/arm64/boot/dts/freescale/fsl-imx8mq-evk.dts   |   2 +-
  .../boot/dts/freescale/fsl-imx8mq-evk-cnss.dts     | 280 +++++++++++++++++++++
  arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi      |   1 +
@@ -20,13 +20,13 @@ Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
  include/linux/dma-mapping.h                        |  39 ++-
  include/linux/elf.h                                |  33 +++
  include/linux/mod_devicetable.h                    |  15 ++
- include/net/cnss2.h                                | 271 ++++++++++++++++++++
+ include/net/cnss2.h                                | 273 ++++++++++++++++++++
  include/net/cnss_nl.h                              | 112 ++++++++
  include/uapi/linux/coresight-stm.h                 |  13 +-
  include/uapi/linux/qrtr.h                          |  42 ++++
  mm/memblock.c                                      |   4 +
  net/core/skbuff.c                                  |   1 +
- 17 files changed, 968 insertions(+), 10 deletions(-)
+ 17 files changed, 975 insertions(+), 11 deletions(-)
  create mode 100644 arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts
  create mode 100644 include/net/cnss2.h
  create mode 100644 include/net/cnss_nl.h
@@ -71,15 +71,15 @@ index 5c377c2..bbb0e5a
  
  / {
      model = "Freescale i.MX8DX";
-@@ -152,7 +152,7 @@
-                        compatible = "shared-dma-pool";
-                        reusable;
-                        size = <0 0x3c000000>;
--                       alloc-ranges = <0 0x96000000 0 0x3c000000>;
-+                       alloc-ranges = <0 0x40000000 0 0x40000000>;
-                        linux,cma-default;
-                };
-        };
+@@ -151,7 +152,7 @@
+ 			compatible = "shared-dma-pool";
+ 			reusable;
+ 			size = <0 0x3c000000>;
+-			alloc-ranges = <0 0x96000000 0 0x3c000000>;
++			alloc-ranges = <0 0x40000000 0 0x40000000>;
+ 			linux,cma-default;
+ 		};
+ 	};
 diff --git a/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk.dts b/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk.dts
 index ce936ae..a44aa09 100644
 --- a/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk.dts
@@ -856,7 +856,7 @@ index 00000000..95e872c
 +	struct cnss_wlan_runtime_ops *runtime_ops;
 +	const struct pci_device_id *id_table;
 +	enum cnss_driver_mode (*get_driver_mode)(void);
-+ 	enum cnss_suspend_mode *suspend_mode;
++	enum cnss_suspend_mode *suspend_mode;
 +};
 +
 +struct cnss_usb_wlan_driver {
@@ -937,8 +937,8 @@ index 00000000..95e872c
 +};
 +
 +enum cnss_suspend_mode {
-+       CNSS_SUSPEND_LEGACY,
-+       CNSS_SUSPEND_POWER_DOWN,
++	CNSS_SUSPEND_LEGACY,
++	CNSS_SUSPEND_POWER_DOWN,
 +};
 +
 +enum cnss_recovery_reason {
