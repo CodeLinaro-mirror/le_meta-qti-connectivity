@@ -9,7 +9,7 @@ IMAGE_LINGUAS = " "
 inherit core-image
 require recipes-products/images/standalone-imx8auto-image-prop.bb
 
-IMAGE_ROOTFS_SIZE ?= "139264"
+IMAGE_ROOTFS_SIZE ?= "139264"	
 IMAGE_ROOTFS_EXTRA_SPACE_append = "${@bb.utils.contains("DISTRO_FEATURES", "systemd", " + 4096", "" ,d)}"
 
 
@@ -20,6 +20,7 @@ IMAGE_INSTALL += "iw"
 IMAGE_INSTALL += "tcpdump"
 IMAGE_INSTALL += "wireless-tools"
 IMAGE_INSTALL += "iperf2"
+IMAGE_INSTALL += "iperf3"
 IMAGE_INSTALL += "wpa-supplicant"
 IMAGE_INSTALL += "wlan-sigmadut"
 IMAGE_INSTALL += "wlan-config"
