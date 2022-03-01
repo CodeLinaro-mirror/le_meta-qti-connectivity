@@ -1,0 +1,24 @@
+From bdc66891c4fa87a86e4f1455cf9a87929be07d0b Mon Sep 17 00:00:00 2001
+From: Matthew Li <quic_ljianjun@quicinc.com>
+Date: Tue, 1 Mar 2022 06:08:50 +0800
+Subject: [PATCH] Enable the M.2 Bluetooth in the i.MX8MQ evk board
+
+---
+ arch/arm64/boot/dts/freescale/imx8mq-evk.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mq-evk.dts b/arch/arm64/boot/dts/freescale/imx8mq-evk.dts
+index cb87cd4..11b03f8 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mq-evk.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mq-evk.dts
+@@ -24,7 +24,7 @@
+ 
+ 	modem_reset: modem-reset {
+ 		compatible = "gpio-reset";
+-		reset-gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
++		reset-gpios = <&gpio3 5 GPIO_ACTIVE_HIGH>;
+ 		reset-delay-us = <2000>;
+ 		reset-post-delay-ms = <40>;
+ 		#reset-cells = <0>;
+-- 
+2.7.4
