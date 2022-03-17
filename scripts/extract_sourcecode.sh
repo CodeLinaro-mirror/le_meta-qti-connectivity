@@ -68,10 +68,10 @@ download_git_code()
 META_FSL_GIT="git://git.yoctoproject.org/meta-freescale"
 META_FSL_REV="a398b50b7fc084a9e68cc3000c218d5028522a25"
 
-META_FSL_3RD_GIT="git://github.com/Freescale/meta-freescale-3rdparty"
+META_FSL_3RD_GIT="https://github.com/Freescale/meta-freescale-3rdparty"
 META_FSL_3RD_REV="68314612e236cab1da82d72a0da62635a3523f84"
 
-META_FSL_DIS_GIT="git://github.com/Freescale/meta-freescale-distro"
+META_FSL_DIS_GIT="https://github.com/Freescale/meta-freescale-distro"
 META_FSL_DIS_REV="cd5c7a2539f40004f74126e9fdf08254fd9a6390"
 
 download_git_code ${META_FSL_GIT} ${META_FSL_REV}
