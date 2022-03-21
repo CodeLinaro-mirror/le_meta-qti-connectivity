@@ -69,11 +69,11 @@ download_git_code()
 
 META_FSL_GIT="git://git.yoctoproject.org/meta-freescale"
 
-META_FSL_3RD_GIT="git://github.com/Freescale/meta-freescale-3rdparty"
+META_FSL_3RD_GIT="https://github.com/Freescale/meta-freescale-3rdparty"
 
-META_FSL_DIS_GIT="git://github.com/Freescale/meta-freescale-distro"
+META_FSL_DIS_GIT="https://github.com/Freescale/meta-freescale-distro"
 
-META_FSL_BROWSER_GIT="git://github.com/OSSystems/meta-browser"
+META_FSL_BROWSER_GIT="https://github.com/OSSystems/meta-browser"
 
 if [ $MACHINE == 'imx8mqevk' ]; then
 	META_FSL_REV="407c6cf408969445031a492e2d25e0e2749582ea"
