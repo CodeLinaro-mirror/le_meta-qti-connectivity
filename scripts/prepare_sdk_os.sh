@@ -87,6 +87,7 @@ fi
 case ${PROJECTID} in
     "QCA6574AULE221")
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-rome\"" >> conf/local.conf
+      	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-hl-rome\"" >> conf/local.conf
         ;;
     "QCA6584AULE201")
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld20-hl-rome\"" >> conf/local.conf
