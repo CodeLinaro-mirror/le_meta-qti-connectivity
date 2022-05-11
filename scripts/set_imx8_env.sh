@@ -182,10 +182,10 @@ case $PROJECT in
 esac
 
 # Default MACHINE
-if [[ -z "$MACHINE" || $MACHINE == "imx8qxpmek" ]]; then
-    MACHINE='imx8qxpmek'
-elif [ "$MACHINE" == "imx8mqevk" ]; then
+if [[ -z "$MACHINE" || $MACHINE == "imx8mqevk" ]]; then
     MACHINE='imx8mqevk'
+elif [ "$MACHINE" == "imx8qxpmek" ]; then
+    MACHINE='imx8qxpmek'
 else
     check_machine_valid
     if [ "$?" != "0" ]; then
@@ -277,6 +277,11 @@ fi
 #The "ERROR" will be tracked by log check, which will make build failed.
 ROOTFSFILE=${WORK_SPACE}/sources/poky/meta/lib/oe/rootfs.py
 sed -e "s/ERROR: |Error: |Error |ERROR/Error: |Error/g" -i ${ROOTFSFILE}
+
+# Apply patches to 3rd codes
+if [ ${KERNELVERSION} == "5.10" ]; then
+. ${WORK_SPACE}/${SCRIPT_FOLDER}/apply_patch.sh
+fi
 
 cleanenv
 
