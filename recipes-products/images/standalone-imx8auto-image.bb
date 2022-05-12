@@ -30,5 +30,5 @@ IMAGE_INSTALL += "iputils"
 IMAGE_INSTALL += "bridge-utils"
 IMAGE_INSTALL += "qcacld-ll"
 IMAGE_INSTALL += "qcacld-ll-dualwifi"
-IMAGE_INSTALL += "qcacld-hl-rome"
+IMAGE_INSTALL += "qcacld32-hl-rome"
 
