@@ -1,0 +1,80 @@
+From 8067459366f78cc09f9ee8fff2e6637af7325fdf Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Mon, 9 May 2022 15:15:22 +0800
+Subject: [PATCH] Address do_rootfs error when length of source root
+ directory's name is very long
+
+e.g. KW build'style "CHSS.LNX_FSL.5.1_TARGET_ALL.01.403.018_qso-lintcmdr_ecc799e5-0beb-f127-9fb6-5cb90179c3e0/kw_oe_build-production/checkout"
+
+Change-Id: I6382266244ba33d45278f5f64a5f3ae954ed636b
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ meta/lib/oe/package_manager/deb/__init__.py | 38 +++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+
+diff --git a/meta/lib/oe/package_manager/deb/__init__.py b/meta/lib/oe/package_manager/deb/__init__.py
+index 2ee68fe..43a470e 100644
+--- a/meta/lib/oe/package_manager/deb/__init__.py
++++ b/meta/lib/oe/package_manager/deb/__init__.py
+@@ -4,6 +4,7 @@
+ 
+ import re
+ import subprocess
++import random
+ from oe.package_manager import *
+ 
+ class DpkgIndexer(Indexer):
+@@ -167,6 +168,7 @@ class DpkgPM(OpkgDpkgPM):
+     def __init__(self, d, target_rootfs, archs, base_archs, apt_conf_dir=None, deb_repo_workdir="oe-rootfs-repo", filterbydependencies=True):
+         super(DpkgPM, self).__init__(d, target_rootfs)
+         self.deploy_dir = oe.path.join(self.d.getVar('WORKDIR'), deb_repo_workdir)
++        self.manage_deploy_dir(d);
+ 
+         create_packages_dir(self.d, self.deploy_dir, d.getVar("DEPLOY_DIR_DEB"), "package_write_deb", filterbydependencies)
+ 
+@@ -188,6 +190,42 @@ class DpkgPM(OpkgDpkgPM):
+ 
+         self.indexer = DpkgIndexer(self.d, self.deploy_dir)
+ 
++    def manage_deploy_dir(self, d):
++        ddir = d.getVar("DEPLOY_DIR_DEB")
++        len_ddir = len(ddir)
++        if (len_ddir < 150):
++            return
++
++        bb.note("Begin to manage deploy_dir [%s] length %d"%(ddir, len_ddir))
++        dir_sufix = ".oe-rootfs"+str(random.randint(100, 1000))
++        root_id = -1
++
++        puuid = re.compile(('[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[0-9a-f]{4}-[a-f0-9]{12}'), re.IGNORECASE)
++        names = ddir.split('/')
++
++        for i in range(len(names) - 1):
++            if (names[i] == 'deploy' and names[i + 1] == 'deb'):
++                root_id = i - 3
++                break
++            s = puuid.findall(names[i])
++            if (s):
++                root_id = i
++                dir_sufix = ".oe-roofs"+s[0].split('-')[-2]
++                bb.note("%s at location %d sufix %s"%(s, root_id, dir_sufix))
++                break
++
++        if (root_id <= -1):
++            bb.fatal("Can't manage deploy dir")
++
++        names = names[:root_id]
++        names.append(dir_sufix)
++        d = os.path.join('/')
++        for i in range(len(names)):
++            d = os.path.join(d, names[i])
++
++        self.deploy_dir = d
++        bb.note("Managed depoly_dir is [%s]"%self.deploy_dir)
++
+     def mark_packages(self, status_tag, packages=None):
+         """
+         This function will change a package's status in /var/lib/dpkg/status file.
+-- 
+2.9.5
+
