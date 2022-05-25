@@ -16,6 +16,9 @@ S = "${WORKDIR}/wlan-cnss-core"
 
 FILES_${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/wlan_cnss_core_pci.ko"
 
+#EXTRA_OEMAKE += "CONFIG_WLAN_EN=y"
+#EXTRA_OEMAKE += "CONFIG_PCI_RC_SUPPORT_PM=y"
+
 do_compile_prepend() {
 
 # wlan hasting driver need the two head files

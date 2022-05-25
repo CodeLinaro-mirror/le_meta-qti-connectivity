@@ -1,0 +1,28 @@
+From d1a68f8d840c17bf624c9ed2fb424fe35eff999a Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Wed, 27 Apr 2022 17:22:42 +0800
+Subject: [PATCH] Add wlan-en-gpio resource
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mq-evk.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mq-evk.dts b/arch/arm64/boot/dts/freescale/imx8mq-evk.dts
+index 11b03f8..5e1441b 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mq-evk.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mq-evk.dts
+@@ -634,6 +634,10 @@
+ 	};
+ };
+ 
++&cnss2 {
++	wlan-en-gpio = <&gpio5 10 GPIO_ACTIVE_HIGH>;
++};
++
+ &pcie1_ep {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_pcie1>;
+-- 
+2.9.5
+
