@@ -1,0 +1,71 @@
+From 6d694e927a01edc280fd909c3439b3f961eb2f44 Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Tue, 7 Jun 2022 16:03:49 +0800
+Subject: [PATCH] Add PCIe RC pm control function
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ drivers/pci/controller/dwc/pci-imx6.c             | 27 +++++++++++++++++++++++
+ drivers/pci/controller/dwc/pcie-designware-host.c |  1 -
+ 2 files changed, 27 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/pci/controller/dwc/pci-imx6.c b/drivers/pci/controller/dwc/pci-imx6.c
+index d3ca0d9..2c0b6c3 100644
+--- a/drivers/pci/controller/dwc/pci-imx6.c
++++ b/drivers/pci/controller/dwc/pci-imx6.c
+@@ -1919,6 +1919,13 @@ static int imx6_pcie_host_init(struct pcie_port *pp)
+ {
+ 	struct dw_pcie *pci = to_dw_pcie_from_pp(pp);
+ 	struct imx6_pcie *imx6_pcie = to_imx6_pcie(pci);
++	u32 ctrl, num_ctrls;
++
++	num_ctrls = pp->num_vectors / MAX_MSI_IRQS_PER_CTRL;
++	/* Initialize IRQ Status array */
++	for (ctrl = 0; ctrl < num_ctrls; ctrl++) {
++		pp->irq_mask[ctrl] = ~0;
++	}
+ 
+ 	dw_pcie_setup_rc(pp);
+ 	pci_imx_set_msi_en(pp);
+@@ -2365,6 +2372,26 @@ static int imx6_pcie_resume_noirq(struct device *dev)
+ 
+ 	return 0;
+ }
++
++int imx6_rc_pm_control(void *endpoint, int op)
++{
++	struct pci_dev *pci_dev = (struct pci_dev *)endpoint;
++	struct pcie_port *pp = pci_dev->bus->sysdata;
++	struct dw_pcie *pci = to_dw_pcie_from_pp(pp);
++	struct device *dev = pci->dev;
++
++	if (!dev)
++		return -1;
++
++	pr_info("%s dev %p OP %s dev 0x%lx\n", __func__, dev, op ? "resume":"suspend", (u64)dev);
++	if (op) {
++		imx6_pcie_resume_noirq(dev);
++	} else {
++		imx6_pcie_suspend_noirq(dev);
++	}
++	return 0;
++}
++EXPORT_SYMBOL(imx6_rc_pm_control);
+ #endif
+ 
+ static const struct dev_pm_ops imx6_pcie_pm_ops = {
+diff --git a/drivers/pci/controller/dwc/pcie-designware-host.c b/drivers/pci/controller/dwc/pcie-designware-host.c
+index 44c2a65..0eb0ac9 100644
+--- a/drivers/pci/controller/dwc/pcie-designware-host.c
++++ b/drivers/pci/controller/dwc/pcie-designware-host.c
+@@ -547,7 +547,6 @@ void dw_pcie_setup_rc(struct pcie_port *pp)
+ 
+ 		/* Initialize IRQ Status array */
+ 		for (ctrl = 0; ctrl < num_ctrls; ctrl++) {
+-			pp->irq_mask[ctrl] = ~0;
+ 			dw_pcie_writel_dbi(pci, PCIE_MSI_INTR0_MASK +
+ 					    (ctrl * MSI_REG_CTRL_BLOCK_SIZE),
+ 					    pp->irq_mask[ctrl]);
+-- 
+2.9.5
+

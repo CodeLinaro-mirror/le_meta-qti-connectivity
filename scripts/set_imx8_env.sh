@@ -37,7 +37,7 @@ umask 022
 
 usage()
 {
-    local SCRIPT_PARAMS="[EULA=<eula>] [MACHINE=<machine>] [PROJECT=<projectid>]"
+    local SCRIPT_PARAMS="[EULA=<eula>] [MACHINE=<machine>] [PROJECT=<projectid>] [ADDON=<name>]"
     echo
     echo "script usage for QTI Standalone Auto image"
     echo "${SCRIPT_PARAMS} source ${SCRIPT_FILE} [BUILDDIR]"
@@ -47,6 +47,7 @@ usage()
     echo "BUILDDIR  :  the build directory location, 'build' by default."
     echo "MACHINE   :  Supported machines, 'imx6qsabresd' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
+    echo "ADDON     :  Connectivity add-on feature names (separate in space)."
     echo "    QCA6574AULE221 : QCA6574AU.LE.2.2.1 SP"
 }
 
@@ -62,7 +63,7 @@ execute_command()
 
 cleanenv()
 {
-    unset EULA MACHINE PROJECT DISTRO
+    unset EULA MACHINE PROJECT DISTRO ADDON
 }
 
 list_machines()
@@ -181,6 +182,26 @@ case $PROJECT in
         } ;;
 esac
 
+FEATURE_RCPM="0"
+
+addons=(${ADDON//''/ })
+for feature in ${addons[@]}
+do
+    case $feature in
+        "RCPM")
+            {
+                FEATURE_RCPM="1"
+            } ;;
+        *)
+            {
+                echo "Unsupported addon $feature!!!"
+                usage
+                cleanenv
+                return 1
+            } ;;
+    esac
+done
+
 # Default MACHINE
 if [[ -z "$MACHINE" || $MACHINE == "imx8mqevk" ]]; then
     MACHINE='imx8mqevk'
@@ -270,6 +291,11 @@ else
    echo "KERNELVERSION = \"$KERNELVERSION\"" >> conf/local.conf
 fi
 
+if grep -q 'FEATURE_RCPM' conf/local.conf; then
+   sed -e "s/^FEATURE_RCPM\s*=.*/FEATURE_RCPM = \"$FEATURE_RCPM\"/g" -i conf/local.conf
+else
+   echo "FEATURE_RCPM = \"$FEATURE_RCPM\"" >> conf/local.conf
+fi
 # Update bblayers.conf
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh
 
