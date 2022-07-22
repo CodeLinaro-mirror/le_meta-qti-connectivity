@@ -15,6 +15,9 @@ FILES_${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/wlan-cnss-cor
 PROVIDES_NAME    = "kernel-module-wlan-cnss-core"
 RPROVIDES_${PN} += "${PROVIDES_NAME}"
 
+#EXTRA_OEMAKE += "CONFIG_WLAN_EN=y" 
+#EXTRA_OEMAKE += "CONFIG_PCI_RC_SUPPORT_PM=y" 
+
 do_compile_prepend() {
     sed -in '/Werror/d' ${S}/Kbuild
 }

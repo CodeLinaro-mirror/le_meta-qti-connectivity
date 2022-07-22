@@ -20,13 +20,13 @@ Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
  include/linux/dma-mapping.h                        |  39 ++-
  include/linux/elf.h                                |  33 +++
  include/linux/mod_devicetable.h                    |  15 ++
- include/net/cnss2.h                                | 273 ++++++++++++++++++++
+ include/net/cnss2.h                                | 278 +++++++++++++++++++++
  include/net/cnss_nl.h                              | 112 ++++++++
  include/uapi/linux/coresight-stm.h                 |  13 +-
  include/uapi/linux/qrtr.h                          |  42 ++++
  mm/memblock.c                                      |   4 +
  net/core/skbuff.c                                  |   1 +
- 17 files changed, 975 insertions(+), 11 deletions(-)
+ 17 files changed, 980 insertions(+), 11 deletions(-)
  create mode 100644 arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts
  create mode 100644 include/net/cnss2.h
  create mode 100644 include/net/cnss_nl.h
@@ -98,7 +98,7 @@ new file mode 100755
 index 00000000..4ae6c96
 --- /dev/null
 +++ b/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts
-@@ -0,0 +1,280 @@
+@@ -0,0 +1,285 @@
 +/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -141,6 +141,8 @@ index 00000000..4ae6c96
 +		      <0x20000000 0x20000000 0x10000>,
 +		      <0xa0000000 0xa0000000 0x10000000>,
 +		      <0xb0000000 0xb0000000 0x10000>;
++
++		wlan-en-gpio = <&gpio5 10 GPIO_ACTIVE_HIGH>;
 +
 +		chip_cfg@0 {
 +			reg = <0x10000000 0x10000000>,
@@ -285,6 +287,9 @@ index 00000000..4ae6c96
 +			mhi,ee-names = "SBL", "RDDM";
 +			mhi,bhie-offset = <0x0324>;
 +
++			pcie-disable-l1;
++			pcie-disable-l1ss;
++			
 +			mhi_channels {
 +				#address-cells = <1>;
 +				#size-cells = <0>;
