@@ -26,6 +26,7 @@ IMAGE_INSTALL += "bridge-utils"
 SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/synergy-bt-proprietary')}"
 IMAGE_INSTALL += "${@bb.utils.contains('SYNERGY_DIR_PRESENT', 'True', 'alsa-lib', '', d)}"
 IMAGE_INSTALL += "${@bb.utils.contains('SYNERGY_DIR_PRESENT', 'True', 'alsa-utils', '', d)}"
+IMAGE_INSTALL += "rfkill"
 
 #Wlan driver
 IMAGE_INSTALL += "wlan-cnss-core"
