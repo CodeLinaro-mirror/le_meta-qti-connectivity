@@ -1,0 +1,26 @@
+From e2e98acc3eadb0522bb0a2bce5dae538fa922a7d Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Wed, 20 Jul 2022 03:17:00 -0400
+Subject: [PATCH] mobile-broadband-provider build patch
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ .../mobile-broadband-provider-info_git.bb                       | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meta/recipes-connectivity/mobile-broadband-provider-info/mobile-broadband-provider-info_git.bb b/meta/recipes-connectivity/mobile-broadband-provider-info/mobile-broadband-provider-info_git.bb
+index b4cbc1a76c..ef008492cb 100644
+--- a/meta/recipes-connectivity/mobile-broadband-provider-info/mobile-broadband-provider-info_git.bb
++++ b/meta/recipes-connectivity/mobile-broadband-provider-info/mobile-broadband-provider-info_git.bb
+@@ -8,7 +8,7 @@ SRCREV = "90f3fe28aa25135b7e4a54a7816388913bfd4a2a"
+ PV = "20201225"
+ PE = "1"
+ 
+-SRC_URI = "git://gitlab.gnome.org/GNOME/mobile-broadband-provider-info.git;protocol=https;branch=master"
++SRC_URI = "git://gitlab.gnome.org/GNOME/mobile-broadband-provider-info.git;protocol=https;branch=main"
+ S = "${WORKDIR}/git"
+ 
+ inherit autotools
+-- 
+2.17.1
+

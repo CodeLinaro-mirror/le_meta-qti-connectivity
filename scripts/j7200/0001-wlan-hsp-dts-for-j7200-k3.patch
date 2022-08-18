@@ -1,0 +1,51 @@
+From 4132696631f6578d4d133527b927028594eca876 Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Wed, 29 Jun 2022 13:54:28 +0800
+Subject: [PATCH] wlan hsp dts for j7200 k3
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ .../boot/dts/ti/k3-j7200-common-proc-board.dts     | 27 ++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/ti/k3-j7200-common-proc-board.dts b/arch/arm64/boot/dts/ti/k3-j7200-common-proc-board.dts
+index 68e9369..982a50f 100644
+--- a/arch/arm64/boot/dts/ti/k3-j7200-common-proc-board.dts
++++ b/arch/arm64/boot/dts/ti/k3-j7200-common-proc-board.dts
+@@ -125,6 +125,33 @@
+ 		states = <1800000 0x0>,
+ 			 <3300000 0x1>;
+ 	};
++
++       ipc_router: qcom,ipc_router_external_modem_xprt2 {
++               compatible = "qcom,ipc_router_mhi_xprt";
++               qcom,ch-name = "IPCRTR";
++               qcom,out-chan-id = <20>;
++               qcom,in-chan-id = <21>;
++               qcom,xprt-remote = "external-wlan";
++               qcom,xprt-linkid = <1>;
++               qcom,xprt-version = <3>;
++               status = "okay";
++       };
++
++       mhi: qcom,mhi {
++               compatible = "qcom,mhi";
++               status = "okay";
++       };
++
++       diag_mhi: qcom,diag-mhi {
++               compatible = "qcom,diag-mhi";
++               status = "okay";
++       };
++
++       cnss2: qcom,cnss-qca6490 {
++               compatible = "qcom,cnss-qca6490";
++               status = "okay";
++       };
++
+ };
+ 
+ &wkup_pmx0 {
+-- 
+2.9.5
+
