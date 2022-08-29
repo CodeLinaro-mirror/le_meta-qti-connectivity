@@ -1,0 +1,40 @@
+From 56e2ef07461144de6a9546794c877635c2a290fb Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Wed, 20 Jul 2022 03:27:16 -0400
+Subject: [PATCH] meta-psdkla build patch
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ recipes-core/packagegroups/onnxruntime.bb          | 2 +-
+ recipes-devtools/protobuf/protobuf_3.11.4.bbappend | 3 +--
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/recipes-core/packagegroups/onnxruntime.bb b/recipes-core/packagegroups/onnxruntime.bb
+index a5e06db..b4f2662 100644
+--- a/recipes-core/packagegroups/onnxruntime.bb
++++ b/recipes-core/packagegroups/onnxruntime.bb
+@@ -81,7 +81,7 @@ SRC_URI = "git://github.com/TexasInstruments/onnxruntime;protocol=https;branch=t
+            git://github.com/microsoft/wil;protocol=https;branch=master;destsuffix=${S}/cmake/external/wil;name=cmake-external-wil \
+            git://github.com/NVlabs/cub;protocol=https;branch=main;destsuffix=${S}/cmake/external/cub;name=cmake-external-cub \
+            git://github.com/google/nsync;protocol=https;branch=master;destsuffix=${S}/cmake/external/nsync;name=cmake-external-nsync \
+-           git://github.com/protocolbuffers/protobuf;protocol=https;branch=master;destsuffix=${S}/cmake/external/protobuf;name=cmake-external-protobuf \
++           git://github.com/protocolbuffers/protobuf;protocol=https;branch=main;destsuffix=${S}/cmake/external/protobuf;name=cmake-external-protobuf \
+            git://github.com/google/googletest;protocol=https;branch=master;destsuffix=${S}/cmake/external/protobuf/third_party/googletest;name=cmake-external-protobuf-third-party-googletest \
+            git://github.com/google/benchmark;protocol=https;branch=master;destsuffix=${S}/cmake/external/protobuf/third_party/benchmark;name=cmake-external-protobuf-third-party-benchmark \
+            git://github.com/jarro2783/cxxopts;protocol=https;branch=master;destsuffix=${S}/cmake/external/cxxopts;name=cmake-external-cxxopts \
+diff --git a/recipes-devtools/protobuf/protobuf_3.11.4.bbappend b/recipes-devtools/protobuf/protobuf_3.11.4.bbappend
+index 872ccfa..f9dbca8 100644
+--- a/recipes-devtools/protobuf/protobuf_3.11.4.bbappend
++++ b/recipes-devtools/protobuf/protobuf_3.11.4.bbappend
+@@ -5,7 +5,6 @@ SRC_URI_remove = "\
+ "
+ 
+ SRC_URI_append = "\
+-    git://github.com/google/protobuf.git;branch=master \
++    git://github.com/google/protobuf.git;branch=main \
+ "
+-
+ PR_append = "_psdkla"
+-- 
+2.17.1
+
