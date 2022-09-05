@@ -1,0 +1,1693 @@
+/*
+* Copyright (c) 2014 Linux Foundation
+* All Rights Reserved.
+* This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+*/
+diff --git a/drivers/net/wireless/ath/regd.c b/drivers/net/wireless/ath/regd.c
+old mode 100644
+new mode 100755
+index 06ea6cc..7230c0d
+--- a/drivers/net/wireless/ath/regd.c
++++ b/drivers/net/wireless/ath/regd.c
+@@ -642,6 +642,7 @@ ath_regd_init_wiphy(struct ath_regulatory *reg,
+ 		 * saved on the wiphy orig_* parameters
+ 		 */
+ 		regd = ath_world_regdomain(reg);
++		wiphy->country_ie_pref = NL80211_COUNTRY_IE_FOLLOW_POWER;
+ 		wiphy->regulatory_flags |= REGULATORY_COUNTRY_IE_FOLLOW_POWER;
+ 	} else {
+ 		/*
+diff --git a/include/linux/if_arp.h b/include/linux/if_arp.h
+old mode 100644
+new mode 100755
+index f563907..657d442
+--- a/include/linux/if_arp.h
++++ b/include/linux/if_arp.h
+@@ -26,6 +26,7 @@
+ #include <linux/skbuff.h>
+ #include <uapi/linux/if_arp.h>
+ 
++#if 0
+ static inline struct arphdr *arp_hdr(const struct sk_buff *skb)
+ {
+ 	return (struct arphdr *)skb_network_header(skb);
+@@ -44,4 +45,5 @@ static inline int arp_hdr_len(struct net_device *dev)
+ 		return sizeof(struct arphdr) + (dev->addr_len + sizeof(u32)) * 2;
+ 	}
+ }
++#endif
+ #endif	/* _LINUX_IF_ARP_H */
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+old mode 100644
+new mode 100755
+index a2ddcf2..8a3f391
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -134,6 +134,8 @@ enum ieee80211_channel_flags {
+ 	IEEE80211_CHAN_NO_10MHZ		= 1<<12,
+ };
+ 
++#define CFG80211_DEL_STA_V2 1
++
+ #define IEEE80211_CHAN_NO_HT40 \
+ 	(IEEE80211_CHAN_NO_HT40PLUS | IEEE80211_CHAN_NO_HT40MINUS)
+ 
+@@ -841,6 +843,23 @@ int cfg80211_check_station_change(struct wiphy *wiphy,
+ 				  struct station_parameters *params,
+ 				  enum cfg80211_station_type statype);
+ 
++ /**
++ * struct station_del_parameters - station deletion parameters
++ *
++ * Used to delete a station entry (or all stations).
++ *
++ * @mac: MAC address of the station to remove or NULL to remove all stations
++ * @subtype: Management frame subtype to use for indicating removal
++ *	(10 = Disassociation, 12 = Deauthentication)
++ * @reason_code: Reason code for the Disassociation/Deauthentication frame
++ */
++struct station_del_parameters {
++	const u8 *mac;
++	u8 subtype;
++	u16 reason_code;
++};
++
++
+ /**
+  * enum station_info_flags - station information flags
+  *
+@@ -1478,6 +1497,7 @@ struct cfg80211_sched_scan_request {
+ 	struct cfg80211_match_set *match_sets;
+ 	int n_match_sets;
+ 	s32 min_rssi_thold;
++	s32 rssi_thold; /* just for backward compatible */
+ 
+ 	/* internal */
+ 	struct wiphy *wiphy;
+@@ -2132,7 +2152,7 @@ struct cfg80211_qos_map {
+  * @stop_ap: Stop being an AP, including stopping beaconing.
+  *
+  * @add_station: Add a new station.
+- * @del_station: Remove a station; @mac may be NULL to remove all stations.
++ * @del_station: Remove a station; 
+  * @change_station: Modify a given station. Note that flags changes are not much
+  *	validated in cfg80211, in particular the auth/assoc/authorized flags
+  *	might come to the driver in invalid combinations -- make sure to check
+@@ -2376,7 +2396,7 @@ struct cfg80211_ops {
+ 			       const u8 *mac,
+ 			       struct station_parameters *params);
+ 	int	(*del_station)(struct wiphy *wiphy, struct net_device *dev,
+-			       const u8 *mac);
++			       struct station_del_parameters *params);
+ 	int	(*change_station)(struct wiphy *wiphy, struct net_device *dev,
+ 				  const u8 *mac,
+ 				  struct station_parameters *params);
+@@ -2627,6 +2647,7 @@ struct cfg80211_ops {
+  *	TSPEC sessions (TID aka TSID 0-7) with the NL80211_CMD_ADD_TX_TS
+  *	command. Standard IEEE 802.11 TSPEC setup is not yet supported, it
+  *	needs to be able to handle Block-Ack agreements and other things.
++ * @WIPHY_FLAG_DFS_OFFLOAD: The driver handles all the DFS related operations.
+  */
+ enum wiphy_flags {
+ 	WIPHY_FLAG_SUPPORTS_WMM_ADMISSION	= BIT(0),
+@@ -2652,6 +2673,7 @@ enum wiphy_flags {
+ 	WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL	= BIT(21),
+ 	WIPHY_FLAG_SUPPORTS_5_10_MHZ		= BIT(22),
+ 	WIPHY_FLAG_HAS_CHANNEL_SWITCH		= BIT(23),
++	WIPHY_FLAG_DFS_OFFLOAD			= BIT(24),
+ };
+ 
+ /**
+@@ -2953,6 +2975,8 @@ struct wiphy_vendor_command {
+  *	802.11-2012 8.4.2.29 for the defined fields.
+  * @extended_capabilities_mask: mask of the valid values
+  * @extended_capabilities_len: length of the extended capabilities
++ * @country_ie_pref: country IE processing preferences specified
++ *	by enum nl80211_country_ie_pref
+  * @coalesce: packet coalescing support information
+  *
+  * @vendor_commands: array of vendor commands supported by the hardware
+@@ -3045,6 +3069,7 @@ struct wiphy {
+ 	const u8 *extended_capabilities, *extended_capabilities_mask;
+ 	u8 extended_capabilities_len;
+ 
++	u8 country_ie_pref;
+ 	/* If multiple wiphys are registered and you're handed e.g.
+ 	 * a regular netdev with assigned ieee80211_ptr, you won't
+ 	 * know whether it points to a wiphy your driver has registered
+@@ -3666,6 +3691,32 @@ const u8 *cfg80211_find_vendor_ie(unsigned int oui, u8 oui_type,
+ int regulatory_hint(struct wiphy *wiphy, const char *alpha2);
+ 
+ /**
++ * regulatory_hint_user - hint to the wireless core a regulatory domain
++ * which the driver has received from an application
++ * @alpha2: the ISO/IEC 3166 alpha2 the driver claims its regulatory domain
++ *	should be in. If @rd is set this should be NULL. Note that if you
++ *	set this to NULL you should still set rd->alpha2 to some accepted
++ *	alpha2.
++ * @user_reg_hint_type: the type of user regulatory hint.
++ *
++ * Wireless drivers can use this function to hint to the wireless core
++ * the current regulatory domain as specified by trusted applications,
++ * it is the driver's responsibilty to estbalish which applications it
++ * trusts.
++ *
++ * The wiphy should be registered to cfg80211 prior to this call.
++ * For cfg80211 drivers this means you must first use wiphy_register(),
++ * for mac80211 drivers you must first use ieee80211_register_hw().
++ *
++ * Drivers should check the return value, its possible you can get
++ * an -ENOMEM or an -EINVAL.
++ *
++ * Return: 0 on success. -ENOMEM, -EINVAL.
++ */
++int regulatory_hint_user(const char *alpha2, 
++			 enum nl80211_user_reg_hint_type user_reg_hint_type);
++
++/**
+  * wiphy_apply_custom_regulatory - apply a custom driver regulatory domain
+  * @wiphy: the wireless device we want to process the regulatory domain on
+  * @regd: the custom regulatory domain to use for this wiphy
+@@ -4783,6 +4834,33 @@ void cfg80211_report_wowlan_wakeup(struct wireless_dev *wdev,
+ void cfg80211_crit_proto_stopped(struct wireless_dev *wdev, gfp_t gfp);
+ 
+ /**
++ * cfg80211_ap_stopped - notify userspace that AP mode stopped
++ * @netdev: network device
++ * @gfp: context flags
++ */
++void cfg80211_ap_stopped(struct net_device *netdev, gfp_t gfp);
++/**
++ * cfg80211_is_gratuitous_arp_unsolicited_na - packet is grat. ARP/unsol. NA
++ * @skb: the input packet, must be an ethernet frame already
++ *
++ * Return: %true if the packet is a gratuitous ARP or unsolicited NA packet.
++ * This is used to drop packets that shouldn't occur because the AP implements
++ * a proxy service.
++ */
++bool cfg80211_is_gratuitous_arp_unsolicited_na(struct sk_buff *skb);
++
++/**
++ * cfg80211_is_gratuitous_arp_unsolicited_na - packet is grat. ARP/unsol. NA
++ * @skb: the input packet, must be an ethernet frame already
++ *
++ * Return: %true if the packet is a gratuitous ARP or unsolicited NA packet.
++ * This is used to drop packets that shouldn't occur because the AP implements
++ * a proxy service.
++
++bool cfg80211_is_gratuitous_arp_unsolicited_na(struct sk_buff *skb);
++ */
++
++/**
+  * ieee80211_get_num_supported_channels - get number of channels device has
+  * @wiphy: the wiphy
+  *
+
+diff --git a/include/uapi/linux/if_arp.h b/include/uapi/linux/if_arp.h
+old mode 100644
+new mode 100755
+index 4d024d7..011cd33
+--- a/include/uapi/linux/if_arp.h
++++ b/include/uapi/linux/if_arp.h
+@@ -59,6 +59,7 @@
+ #define ARPHRD_LAPB	516		/* LAPB				*/
+ #define ARPHRD_DDCMP    517		/* Digital's DDCMP protocol     */
+ #define ARPHRD_RAWHDLC	518		/* Raw HDLC			*/
++#define ARPHDR_RAWIP    530		/* Raw IP */
+ 
+ #define ARPHRD_TUNNEL	768		/* IPIP tunnel			*/
+ #define ARPHRD_TUNNEL6	769		/* IP6IP6 tunnel       		*/
+@@ -157,5 +158,19 @@ struct arphdr {
+ 
+ };
+ 
++#ifdef __KERNEL__
++#include <linux/skbuff.h>
++
++static inline struct arphdr *arp_hdr(const struct sk_buff *skb)
++{
++	return (struct arphdr *)skb_network_header(skb);
++}
++
++static inline int arp_hdr_len(struct net_device *dev)
++{
++	return sizeof(struct arphdr) + (dev->addr_len + sizeof(u32)) *2;
++}
++
++#endif
+ 
+ #endif /* _UAPI_LINUX_IF_ARP_H */
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+old mode 100644
+new mode 100755
+index 4b28dc0..467a8fa
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -2541,6 +2541,34 @@ enum nl80211_reg_type {
+ };
+ 
+ /**
++ * enum nl80211_country_ie_pref - country IE processing preferences
++ *
++ * enumerates the different preferences a 802.11 card can advertize
++ * for parsing the country IEs. As per the current implementation
++ * country IEs are only used derive the apha2, the information
++ * for power settings that comes with the country IE is ignored
++ * and we use the power settings from regdb.
++ *
++ * @NL80211_COUNTRY_IE_FOLLOW_CORE - This is the default behaviour.
++ *	It allows the core to update channel flags according to the
++ *	ISO3166-alpha2 in the country IE. The applied power is -
++ *	MIN(power specified by custom domain, power obtained from regdb)
++ * @NL80211_COUNTRY_IE_FOLLOW_POWER - for devices that have a
++ *	preference that even though they may have programmed their own
++ *	custom power setting prior to wiphy registration, they want
++ *	to ensure their channel power settings are updated for this
++ *	connection with the power settings derived from alpha2 of the
++ *	country IE.
++ * @NL80211_COUNTRY_IE_IGNORE_CORE - for devices that have a preference to
++ *	to ignore all country IE information processed by the core.
++ */
++enum nl80211_country_ie_pref {
++	NL80211_COUNTRY_IE_FOLLOW_CORE,
++	NL80211_COUNTRY_IE_FOLLOW_POWER,
++	NL80211_COUNTRY_IE_IGNORE_CORE,
++};
++
++/**
+  * enum nl80211_reg_rule_attr - regulatory rule attributes
+  * @__NL80211_REG_RULE_ATTR_INVALID: attribute number 0 is reserved
+  * @NL80211_ATTR_REG_RULE_FLAGS: a set of flags which specify additional
+diff --git a/net/mac80211/cfg.c b/net/mac80211/cfg.c
+old mode 100644
+new mode 100755
+index 343da1e..2de1525
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1225,14 +1225,14 @@ static int ieee80211_add_station(struct wiphy *wiphy, struct net_device *dev,
+ }
+ 
+ static int ieee80211_del_station(struct wiphy *wiphy, struct net_device *dev,
+-				 const u8 *mac)
++				 struct station_del_parameters *params)
+ {
+ 	struct ieee80211_sub_if_data *sdata;
+ 
+ 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+ 
+-	if (mac)
+-		return sta_info_destroy_addr_bss(sdata, mac);
++	if (params->mac)
++		return sta_info_destroy_addr_bss(sdata, params->mac);
+ 
+ 	sta_info_flush(sdata);
+ 	return 0;
+diff --git a/net/wireless/Makefile b/net/wireless/Makefile
+old mode 100644
+new mode 100755
+index a761670..d7c98a8
+--- a/net/wireless/Makefile
++++ b/net/wireless/Makefile
+@@ -6,7 +6,7 @@ obj-$(CONFIG_LIB80211_CRYPT_TKIP) += lib80211_crypt_tkip.o
+ 
+ obj-$(CONFIG_WEXT_CORE) += wext-core.o
+ obj-$(CONFIG_WEXT_PROC) += wext-proc.o
+-obj-$(CONFIG_WEXT_SPY) += wext-spy.o
++obj-y += wext-spy.o
+ obj-$(CONFIG_WEXT_PRIV) += wext-priv.o
+ 
+ cfg80211-y += core.o sysfs.o radiotap.o util.o reg.o scan.o nl80211.o
+diff --git a/net/wireless/chan.c b/net/wireless/chan.c
+old mode 100644
+new mode 100755
+index 92ae263..06b994b
+--- a/net/wireless/chan.c
++++ b/net/wireless/chan.c
+@@ -319,7 +319,8 @@ static int cfg80211_get_chans_dfs_required(struct wiphy *wiphy,
+ 		if (!c)
+ 			return -EINVAL;
+ 
+-		if (c->flags & IEEE80211_CHAN_RADAR)
++		if ((c->flags & IEEE80211_CHAN_RADAR) &&
++		    !(wiphy->flags & WIPHY_FLAG_DFS_OFFLOAD))
+ 			return 1;
+ 	}
+ 	return 0;
+@@ -589,7 +590,9 @@ static bool cfg80211_secondary_chans_ok(struct wiphy *wiphy,
+ 
+ 	for (freq = start_freq; freq <= end_freq; freq += 20) {
+ 		c = ieee80211_get_channel(wiphy, freq);
+-		if (!c || c->flags & prohibited_flags)
++		if ((!(wiphy->flags & WIPHY_FLAG_DFS_OFFLOAD)) &&
++		    (prohibited_flags & c->flags & IEEE80211_CHAN_RADAR) &&
++ 		    (c->dfs_state != NL80211_DFS_AVAILABLE))
+ 			return false;
+ 	}
+ 	
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+old mode 100644
+new mode 100755
+index 0286733..e7e5451
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -1605,6 +1605,44 @@ static int nl80211_send_wiphy(struct cfg80211_registered_device *rdev,
+ 				rdev->wiphy.max_acl_mac_addrs))
+ 			goto nla_put_failure;
+ 
++		if (rdev->wiphy.max_ap_assoc_sta &&
++		    nla_put_u32(msg, NL80211_ATTR_MAX_AP_ASSOC_STA,
++				rdev->wiphy.max_ap_assoc_sta))
++			goto nla_put_failure;
++
++		if (rdev->wiphy.n_vendor_commands) {
++			const struct nl80211_vendor_cmd_info *info;
++			struct nlattr *nested;
++
++			nested = nla_nest_start(msg, NL80211_ATTR_VENDOR_DATA);
++			if (!nested)
++				goto nla_put_failure;
++
++			for (i = 0; i < rdev->wiphy.n_vendor_commands; i++) {
++				info = &rdev->wiphy.vendor_commands[i].info;
++				if (nla_put(msg, i + 1, sizeof(*info), info))
++					goto nla_put_failure;
++			}
++				nla_nest_end(msg, nested);
++		}
++
++		if (rdev->wiphy.n_vendor_events) {
++			const struct nl80211_vendor_cmd_info *info;
++			struct nlattr *nested;
++
++			nested = nla_nest_start(msg,
++				NL80211_ATTR_VENDOR_EVENTS);
++			if (!nested)
++				goto nla_put_failure;
++
++			for (i = 0; i < rdev->wiphy.n_vendor_events; i++) {
++				info = &rdev->wiphy.vendor_events[i];
++				if (nla_put(msg, i + 1, sizeof(*info), info))
++					goto nla_put_failure;
++			}
++			nla_nest_end(msg, nested);
++		}
++
+ 		/*
+ 		 * Any information below this point is only available to
+ 		 * applications that can deal with it being split. This
+@@ -4407,10 +4445,12 @@ static int nl80211_del_station(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
+ 	struct net_device *dev = info->user_ptr[1];
+-	u8 *mac_addr = NULL;
++	struct station_del_parameters params;
++
++	memset(&params, 0, sizeof(params));
+ 
+ 	if (info->attrs[NL80211_ATTR_MAC])
+-		mac_addr = nla_data(info->attrs[NL80211_ATTR_MAC]);
++		params.mac = nla_data(info->attrs[NL80211_ATTR_MAC]);
+ 
+ 	if (dev->ieee80211_ptr->iftype != NL80211_IFTYPE_AP &&
+ 	    dev->ieee80211_ptr->iftype != NL80211_IFTYPE_AP_VLAN &&
+@@ -4421,7 +4461,28 @@ static int nl80211_del_station(struct sk_buff *skb, struct genl_info *info)
+ 	if (!rdev->ops->del_station)
+ 		return -EOPNOTSUPP;
+ 
+-	return rdev_del_station(rdev, dev, mac_addr);
++	if (info->attrs[NL80211_ATTR_MGMT_SUBTYPE]) {
++		params.subtype =
++			nla_get_u8(info->attrs[NL80211_ATTR_MGMT_SUBTYPE]);
++		if (params.subtype != IEEE80211_STYPE_DISASSOC >> 4 &&
++		    params.subtype != IEEE80211_STYPE_DEAUTH >> 4)
++			return -EINVAL;
++	} else {
++		/* Default to Deauthentication frame */
++		params.subtype = IEEE80211_STYPE_DEAUTH >> 4;
++	}
++
++	if (info->attrs[NL80211_ATTR_REASON_CODE]) {
++		params.reason_code =
++			nla_get_u16(info->attrs[NL80211_ATTR_REASON_CODE]);
++		if (params.reason_code == 0)
++			return -EINVAL; /* 0 is reserved */
++	} else {
++		/* Default to reason code 2 */
++		params.reason_code = WLAN_REASON_PREV_AUTH_NOT_VALID;
++	}
++
++	return rdev_del_station(rdev, dev, &params);
+ }
+ 
+ static int nl80211_send_mpath(struct sk_buff *msg, u32 portid, u32 seq,
+@@ -5890,6 +5951,9 @@ static int nl80211_start_radar_detection(struct sk_buff *skb,
+ 	if (netif_carrier_ok(dev))
+ 		return -EBUSY;
+ 
++	if (rdev->wiphy.flags & WIPHY_FLAG_DFS_OFFLOAD)
++		return -EOPNOTSUPP;
++
+ 	if (wdev->cac_started)
+ 		return -EBUSY;
+ 
+@@ -7060,6 +7124,10 @@ void __cfg80211_send_event_skb(struct sk_buff *skb, gfp_t gfp)
+ EXPORT_SYMBOL(__cfg80211_send_event_skb);
+ 
+ #ifdef CONFIG_NL80211_TESTMODE
++static struct genl_multicast_group nl80211_vendor_mcgrp = {
++       .name = "vendor",
++};
++
+ static int nl80211_testmode_do(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
+diff --git a/net/wireless/rdev-ops.h b/net/wireless/rdev-ops.h
+old mode 100644
+new mode 100755
+index f6d457d..3bfd20e
+--- a/net/wireless/rdev-ops.h
++++ b/net/wireless/rdev-ops.h
+@@ -178,11 +178,12 @@ static inline int rdev_add_station(struct cfg80211_registered_device *rdev,
+ }
+ 
+ static inline int rdev_del_station(struct cfg80211_registered_device *rdev,
+-				   struct net_device *dev, u8 *mac)
++				   struct net_device *dev,
++				   struct station_del_parameters *params)
+ {
+ 	int ret;
+-	trace_rdev_del_station(&rdev->wiphy, dev, mac);
+-	ret = rdev->ops->del_station(&rdev->wiphy, dev, mac);
++	trace_rdev_del_station(&rdev->wiphy, dev, params);
++	ret = rdev->ops->del_station(&rdev->wiphy, dev, params);
+ 	trace_rdev_return_int(&rdev->wiphy, ret);
+ 	return ret;
+ }
+diff --git a/net/wireless/reg.c b/net/wireless/reg.c
+old mode 100644
+new mode 100755
+index 6fd53ea..e985895
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -1173,11 +1173,11 @@ static void handle_channel(struct wiphy *wiphy,
+ 
+ 	if (chan->orig_mpwr) {
+ 		/*
+-		 * Devices that use REGULATORY_COUNTRY_IE_FOLLOW_POWER
+-		 * will always follow the passed country IE power settings.
++		 * Devices that use NL80211_COUNTRY_IE_FOLLOW_POWER will always
++		 * follow the passed country IE power settings.
+ 		 */
+ 		if (initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE &&
+-		    wiphy->regulatory_flags & REGULATORY_COUNTRY_IE_FOLLOW_POWER)
++		    wiphy->country_ie_pref & NL80211_COUNTRY_IE_FOLLOW_POWER)
+ 			chan->max_power = chan->max_reg_power;
+ 		else
+ 			chan->max_power = min(chan->orig_mpwr,
+@@ -1814,6 +1814,9 @@ __reg_process_hint_country_ie(struct wiphy *wiphy,
+ 	struct regulatory_request *lr = get_last_request();
+ 
+ 	if (reg_request_cell_base(lr)) {
++		if (wiphy->country_ie_pref & NL80211_COUNTRY_IE_IGNORE_CORE)
++			return REG_REQ_IGNORE;
++
+ 		/* Trust a Cell base station over the AP's country IE */
+ 		if (regdom_changes(country_ie_request->alpha2))
+ 			return REG_REQ_IGNORE;
+@@ -2062,6 +2065,7 @@ int regulatory_hint_user(const char *alpha2,
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(regulatory_hint_user);
+ 
+ int regulatory_hint_indoor_user(void)
+ {
+diff --git a/net/wireless/reg.h b/net/wireless/reg.h
+old mode 100644
+new mode 100755
+index 5e48031..6f3a97e
+--- a/net/wireless/reg.h
++++ b/net/wireless/reg.h
+@@ -23,8 +23,6 @@ bool is_world_regdom(const char *alpha2);
+ bool reg_supported_dfs_region(enum nl80211_dfs_regions dfs_region);
+ enum nl80211_dfs_regions reg_get_dfs_region(struct wiphy *wiphy);
+ 
+-int regulatory_hint_user(const char *alpha2,
+-			 enum nl80211_user_reg_hint_type user_reg_hint_type);
+ int regulatory_hint_indoor_user(void);
+ 
+ void wiphy_regulatory_register(struct wiphy *wiphy);
+diff --git a/net/wireless/trace.h b/net/wireless/trace.h
+old mode 100644
+new mode 100755
+index 625a6e6..66bc3c9
+--- a/net/wireless/trace.h
++++ b/net/wireless/trace.h
+@@ -680,9 +680,28 @@ DECLARE_EVENT_CLASS(wiphy_netdev_mac_evt,
+ 		  WIPHY_PR_ARG, NETDEV_PR_ARG, MAC_PR_ARG(sta_mac))
+ );
+ 
+-DEFINE_EVENT(wiphy_netdev_mac_evt, rdev_del_station,
+-	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev, const u8 *mac),
+-	TP_ARGS(wiphy, netdev, mac)
++DECLARE_EVENT_CLASS(station_del,
++	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev,
++		 struct station_del_parameters *params),
++	TP_ARGS(wiphy, netdev, params),
++	TP_STRUCT__entry(
++		WIPHY_ENTRY
++		NETDEV_ENTRY
++		MAC_ENTRY(sta_mac)
++	),
++	TP_fast_assign(
++		WIPHY_ASSIGN;
++		NETDEV_ASSIGN;
++		MAC_ASSIGN(sta_mac, params->mac);
++	),
++	TP_printk(WIPHY_PR_FMT ", " NETDEV_PR_FMT ", station mac: " MAC_PR_FMT,
++		  WIPHY_PR_ARG, NETDEV_PR_ARG, MAC_PR_ARG(sta_mac))
++);
++
++DEFINE_EVENT(station_del, rdev_del_station,
++	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev,
++		 struct station_del_parameters *params),
++	TP_ARGS(wiphy, netdev, params)
+ );
+ 
+ DEFINE_EVENT(wiphy_netdev_mac_evt, rdev_get_station,
+diff --git a/net/wireless/util.c b/net/wireless/util.c
+old mode 100644
+new mode 100755
+index 5e233a5..de3dffc
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -11,6 +11,8 @@
+ #include <net/cfg80211.h>
+ #include <net/ip.h>
+ #include <net/dsfield.h>
++#include <net/ndisc.h>
++#include <linux/if_arp.h>
+ #include <linux/if_vlan.h>
+ #include <linux/mpls.h>
+ #include "core.h"
+@@ -1575,3 +1577,55 @@ EXPORT_SYMBOL(rfc1042_header);
+ const unsigned char bridge_tunnel_header[] __aligned(2) =
+ 	{ 0xaa, 0xaa, 0x03, 0x00, 0x00, 0xf8 };
+ EXPORT_SYMBOL(bridge_tunnel_header);
++
++bool cfg80211_is_gratuitous_arp_unsolicited_na(struct sk_buff *skb)
++{
++	const struct ethhdr *eth = (void *)skb->data;
++	const struct {
++		struct arphdr hdr;
++		u8 ar_sha[ETH_ALEN];
++		u8 ar_sip[4];
++		u8 ar_tha[ETH_ALEN];
++		u8 ar_tip[4];
++	} __packed *arp;
++	const struct ipv6hdr *ipv6;
++	const struct icmp6hdr *icmpv6;
++
++	switch (eth->h_proto) {
++	case cpu_to_be16(ETH_P_ARP):
++		/* can't say - but will probably be dropped later anyway */
++		if (!pskb_may_pull(skb, sizeof(*eth) + sizeof(*arp)))
++			return false;
++
++		arp = (void *)(eth + 1);
++
++		if ((arp->hdr.ar_op == cpu_to_be16(ARPOP_REPLY) ||
++		     arp->hdr.ar_op == cpu_to_be16(ARPOP_REQUEST)) &&
++		    !memcmp(arp->ar_sip, arp->ar_tip, sizeof(arp->ar_sip)))
++			return true;
++		break;
++	case cpu_to_be16(ETH_P_IPV6):
++		/* can't say - but will probably be dropped later anyway */
++		if (!pskb_may_pull(skb, sizeof(*eth) + sizeof(*ipv6) +
++					sizeof(*icmpv6)))
++			return false;
++
++		ipv6 = (void *)(eth + 1);
++		icmpv6 = (void *)(ipv6 + 1);
++
++		if (icmpv6->icmp6_type == NDISC_NEIGHBOUR_ADVERTISEMENT &&
++		    !memcmp(&ipv6->saddr, &ipv6->daddr, sizeof(ipv6->saddr)))
++			return true;
++		break;
++	default:
++		/*
++		 * no need to support other protocols, proxy service isn't
++		 * specified for any others
++		 */
++		break;
++	}
++
++	return false;
++}
++EXPORT_SYMBOL(cfg80211_is_gratuitous_arp_unsolicited_na);
++
+diff --git a/net/wireless/db.txt b/net/wireless/db.txt
+old mode 100644
+new mode 100755
+index a2fc3a0..92b78b3
+--- a/net/wireless/db.txt
++++ b/net/wireless/db.txt
+@@ -1,3 +1,38 @@
++# Copyright (c) 2008, Luis R. Rodriguez <mcgrof@gmail.com>
++# Copyright (c) 2008, Johannes Berg <johannes@sipsolutions.net>
++# Copyright (c) 2008, Michael Green <Michael.Green@Atheros.com>
++# Permission to use, copy, modify, and/or distribute this software for any
++# purpose with or without fee is hereby granted, provided that the above
++# copyright notice and this permission notice appear in all copies.
++# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++# Modifications provided under
++# Copyright (c) 2016, The Linux Foundation. All rights reserved.
++# Redistribution and use in source and binary forms, with or without modification, are permitted
++# provided that the following conditions are met:
++# *Redistributions of source code must retain the above copyright notice, this list of conditions
++#  and the following disclaimer. 
++# *Redistributions in binary form must reproduce the above copyright notice, this list of 
++#  conditions and the following disclaimer in the documentation and/or
++#  other materials provided with the distribution. 
++# *Neither the name of The Linux Foundation nor the names of its contributors may be used to 
++#  endorse or promote products derived from this software without
++#  specific prior written permission.
++# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
++# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
++# A PARTICULAR PURPOSE AND NON-INFRINGEMENT ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
++# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
++# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++# THEORY OF LIABILITY,WHETHER IN CONTRACT, STRICT # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
++# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
++# OF SUCH DAMAGE.
++
+ #
+ # This file is a placeholder to prevent accidental build breakage if someone
+ # enables CONFIG_CFG80211_INTERNAL_REGDB.  Almost no one actually needs to
+@@ -15,3 +50,993 @@
+ #
+ #   git://git.kernel.org/pub/scm/linux/kernel/git/linville/wireless-regdb.git
+ #
++# This is the world regulatory domain
++country 00:
++	(2402 - 2472 @ 40), (3, 20)
++	# Channel 12 - 13.
++	(2457 - 2482 @ 40), (3, 20), PASSIVE-SCAN, NO-IBSS
++	# Channel 14. Only JP enables this and for 802.11b only
++	(2474 - 2494 @ 20), (3, 20), PASSIVE-SCAN, NO-IBSS, NO-OFDM
++	# Channel 36 - 48
++	(5170 - 5250 @ 80), (3, 20), PASSIVE-SCAN, NO-IBSS
++	# NB: 5260 MHz - 5700 MHz requies DFS
++	# Channel 149 - 165
++	(5735 - 5835 @ 80), (3, 20), PASSIVE-SCAN, NO-IBSS
++	# IEEE 802.11ad (60GHz), channels 1..3
++	(57240 - 63720 @ 2160), (N/A, 0)
++
++
++country AE:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 24), DFS
++	(5490 - 5710 @ 80), (3, 24), DFS
++	(5735 - 5835 @ 80), (3, 30)
++
++country AL:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (N/A, 20)
++	(5250 - 5350 @ 80), (N/A, 20), DFS
++	(5470 - 5725 @ 80), (N/A, 27), DFS
++
++country AM:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 20), (N/A, 18)
++	(5250 - 5330 @ 20), (N/A, 18), DFS
++
++country AN:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++
++country AR:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 23), DFS
++	(5490 - 5600 @ 80), (3, 23), DFS
++	(5650 - 5730 @ 80), (3, 23), DFS
++	(5735 - 5835 @ 80), (3, 30)
++
++country AS:
++	(2402 - 2472 @ 40), (N/A, 30)
++	(5150 - 5250 @ 80), (6, 17)
++	(5250 - 5350 @ 80), (6, 24), DFS
++	(5470 - 5725 @ 80), (6, 24), DFS
++	(5725 - 5850 @ 80), (6, 30)
++
++country AT: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country AU:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 23), DFS
++	(5490 - 5600 @ 80), (3, 23), DFS
++	(5650 - 5730 @ 80), (3, 23), DFS
++	(5735 - 5835 @ 80), (3, 30)
++
++country AW:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 40), (N/A, 20)
++	(5250 - 5330 @ 40), (N/A, 20), DFS
++	(5490 - 5710 @ 40), (N/A, 27), DFS
++
++country AZ:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 18)
++	(5250 - 5330 @ 80), (N/A, 18), DFS
++
++country BA: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country BB:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (3, 23)
++	(5250 - 5330 @ 80), (3, 23), DFS
++	(5735 - 5835 @ 80), (3, 30)
++
++country BD:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5725 - 5850 @ 80), (N/A, 30)
++
++country BE: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country BG: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 23)
++	(5250 - 5290 @ 80), (N/A, 23), DFS
++	(5490 - 5710 @ 80), (N/A, 30), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country BH:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 20), (N/A, 20)
++	(5250 - 5330 @ 20), (N/A, 20), DFS
++	(5735 - 5835 @ 20), (N/A, 20)
++
++country BM:
++	(2402 - 2472 @ 40), (N/A, 30)
++	(5150 - 5250 @ 80), (6, 17)
++	(5250 - 5350 @ 80), (6, 24), DFS
++	(5470 - 5725 @ 80), (6, 24), DFS
++	(5725 - 5850 @ 80), (6, 30)
++
++country BN:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5735 - 5835 @ 80), (N/A, 30)
++
++country BO:
++	(2402 - 2482 @ 40), (N/A, 30)
++	(5735 - 5835 @ 80), (N/A, 30)
++
++country BR:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 24), DFS
++	(5490 - 5710 @ 80), (3, 24), DFS
++	(5735 - 5835 @ 80), (3, 30)
++
++country BS:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (6, 17)
++	(5250 - 5350 @ 80), (6, 24), DFS
++	(5470 - 5725 @ 80), (6, 24), DFS
++	(5725 - 5850 @ 80), (6, 30)
++
++country BY:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++
++country BZ:
++	(2402 - 2482 @ 40), (N/A, 30)
++	(5735 - 5835 @ 80), (N/A, 30)
++
++country CA:
++	(2402 - 2472 @ 40), (N/A, 27)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 23), DFS
++	(5490 - 5600 @ 80), (3, 23), DFS
++	(5650 - 5730 @ 80), (3, 23), DFS
++	(5735 - 5835 @ 80), (3, 30)
++
++country CH: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country CL:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5735 - 5835 @ 80), (N/A, 20)
++
++country CN:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (6,	23)
++	(5250 - 5350 @ 80), (6,	23), DFS
++	(5725 - 5850 @ 80), (6,	30)
++	(5735 - 5835 @ 80), (N/A, 30)
++	# 60 gHz band channels 1,4: 28dBm, channels 2,3: 44dBm
++	# ref: http://www.miit.gov.cn/n11293472/n11505629/n11506593/n11960250/n11960606/n11960700/n12330791.files/n12330790.pdf
++	(57240 - 59400 @ 2160), (N/A, 28)
++	(59400 - 63720 @ 2160), (N/A, 44)
++	(63720 - 65880 @ 2160), (N/A, 28)
++
++country CO:
++	(2402 - 2472 @ 40), (N/A, 27)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 24), DFS
++	(5490 - 5710 @ 80), (3, 24), DFS
++	(5735 - 5835 @ 80), (3, 30)
++
++country CR:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 20), (3, 17)
++	(5250 - 5330 @ 20), (3, 24), DFS
++	(5490 - 5710 @ 20), (3, 24), DFS
++	(5735 - 5835 @ 20), (3, 30)
++
++country CY: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++# Data from http://www.ctu.eu/164/download/VOR/VOR-12-08-2005-34.pdf
++# and http://www.ctu.eu/164/download/VOR/VOR-12-05-2007-6-AN.pdf
++# Power at 5250 - 5350 MHz and 5470 - 5725 MHz can be doubled if TPC is
++# implemented.
++country CZ: DFS-ETSI
++	(2400 - 2483.5 @ 40), (N/A, 100 mW)
++	(5150 - 5250 @ 80), (N/A, 200 mW), NO-OUTDOOR
++	(5250 - 5350 @ 80), (N/A, 100 mW), NO-OUTDOOR, DFS
++	(5470 - 5725 @ 80), (N/A, 500 mW), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++# Data from "Frequenznutzungsplan" (as published in April 2008), downloaded from
++# http://www.bundesnetzagentur.de/cae/servlet/contentblob/38448/publicationFile/2659/Frequenznutzungsplan2008_Id17448pdf.pdf
++# For the 5GHz range also see
++# http://www.bundesnetzagentur.de/cae/servlet/contentblob/38216/publicationFile/6579/WLAN5GHzVfg7_2010_28042010pdf.pdf
++# The values have been reduced by a factor of 2 (3db) for non TPC devices
++# (in other words: devices with TPC can use twice the tx power of this table).
++# Note that the docs do not require TPC for 5150--5250; the reduction to
++# 100mW thus is not strictly required -- however the conservative 100mW
++# limit is used here as the non-interference with radar and satellite
++# apps relies on the attenuation by the building walls only in the
++# absence of DFS; the neighbour countries have 100mW limit here as well.
++
++country DE: DFS-ETSI
++	# entries 279004 and 280006
++	(2400 - 2483.5 @ 40), (N/A, 100 mW)
++	# entry 303005
++	(5150 - 5250 @ 80), (N/A, 100 mW), NO-OUTDOOR
++	# entries 304002 and 305002
++	(5250 - 5350 @ 80), (N/A, 100 mW), NO-OUTDOOR, DFS
++	# entries 308002, 309001 and 310003
++	(5470 - 5725 @ 80), (N/A, 500 mW), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country DK: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country DO:
++	(2402 - 2472 @ 40), (N/A, 27)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 23), DFS
++	(5735 - 5835 @ 80), (3, 30)
++
++country DZ:
++	(2402 - 2482 @ 40), (N/A, 20)
++
++country EC:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 20), (3, 17)
++	(5250 - 5330 @ 20), (3, 24), DFS
++	(5490 - 5710 @ 20), (3, 24), DFS
++	(5735 - 5835 @ 20), (3, 30)
++
++country EE: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country EG:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 20), (N/A, 20)
++	(5250 - 5330 @ 20), (N/A, 20), DFS
++
++country ES: DFS-ETSI
++	(2400 - 2483.5 @ 40), (N/A, 100 mW)
++	(5150 - 5250 @ 80), (N/A, 100 mW), NO-OUTDOOR
++	(5250 - 5350 @ 80), (N/A, 100 mW), NO-OUTDOOR, DFS
++	(5470 - 5725 @ 80), (N/A, 500 mW), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country ET: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++
++country FI: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country FR: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country GF:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (N/A, 20)
++	(5250 - 5350 @ 80), (N/A, 20), DFS
++        (5470 - 5725 @ 80), (N/A, 20), DFS
++
++country GE:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 18)
++	(5250 - 5330 @ 80), (N/A, 18), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country GB: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country GD:
++	(2402 - 2472 @ 40), (3, 30)
++	(5170 - 5250 @ 80), (6, 17)
++	(5250 - 5330 @ 80), (6, 24), DFS
++	(5490 - 5710 @ 80), (6, 24), DFS
++	(5735 - 5835 @ 80), (6, 30)
++
++country GP:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (N/A, 20)
++	(5250 - 5350 @ 80), (N/A, 20), DFS
++        (5470 - 5725 @ 80), (N/A, 27), DFS
++
++country GR: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country GL: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 20), (N/A, 20)
++	(5250 - 5330 @ 20), (N/A, 20), DFS
++	(5490 - 5710 @ 20), (N/A, 27), DFS
++
++country GT:
++	(2402 - 2472 @ 40), (3, 30)
++	(5170 - 5250 @ 80), (6, 17)
++	(5250 - 5330 @ 80), (6, 23), DFS
++	(5735 - 5835 @ 80), (6, 30)
++
++country GU:
++	(2402 - 2472 @ 40), (3, 30)
++	(5170 - 5250 @ 20), (6, 17)
++	(5250 - 5330 @ 20), (6, 24), DFS
++	(5490 - 5710 @ 20), (6, 24), DFS
++	(5735 - 5835 @ 20), (6, 30)
++
++country HN:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (6, 17)
++	(5250 - 5330 @ 80), (6, 24), DFS
++	(5490 - 5710 @ 80), (6, 24), DFS
++	(5735 - 5835 @ 80), (6, 30)
++
++country HK:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (6, 17)
++	(5250 - 5330 @ 80), (6, 24), DFS
++	(5490 - 5710 @ 80), (6, 24), DFS
++	(5735 - 5835 @ 80), (6, 30)
++
++country HR: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country HT:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++
++country HU: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country ID:
++	# ref: http://www.postel.go.id/content/ID/regulasi/standardisasi/kepdir/bwa%205,8%20ghz.pdf
++	(2402 - 2482 @ 20), (N/A, 20)
++	(5735 - 5815 @ 20), (N/A, 23)
++
++country IE: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country IL:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++
++country IN:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5735 - 5835 @ 80), (N/A, 20)
++
++country IS: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country IR:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5735 - 5835 @ 80), (N/A, 30)
++
++country IT: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country JM:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (6, 17)
++	(5250 - 5330 @ 80), (6, 24), DFS
++	(5490 - 5710 @ 80), (6, 24), DFS
++	(5735 - 5835 @ 80), (6, 30)
++
++country JP:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(2474 - 2494 @ 20), (N/A, 20), NO-OFDM
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 160), (N/A, 20), DFS
++
++country JO:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (N/A, 23)
++	(5725 - 5850 @ 80), (N/A, 23)
++
++country KE:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (N/A, 23)
++        (5470 - 5570 @ 80), (N/A, 30), DFS
++        (5725 - 5775 @ 80), (N/A, 23)
++
++country KH:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++
++country KY:
++        (2402 - 2472 @ 40), (N/A, 27)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 24), DFS
++	(5490 - 5710 @ 80), (3, 24), DFS
++	(5735 - 5835 @ 80), (3, 30)
++
++country KR:
++	(2402 - 2482 @ 20), (N/A, 20)
++	(5150 - 5250 @ 80), (6, 20)
++	(5250 - 5350 @ 80), (6, 20), DFS
++	(5470 - 5630 @ 80), (6, 30), DFS
++	(5735 - 5725 @ 80), (6, 30), DFS
++	(5725 - 5825 @ 80), (6, 30)
++
++country KW:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++
++country KZ:
++	(2402 - 2482 @ 40), (N/A, 20)
++
++country LB:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (6, 17)
++	(5250 - 5350 @ 80), (6, 24), DFS
++	(5470 - 5725 @ 80), (6, 24), DFS
++	(5725 - 5850 @ 80), (6, 30)
++
++country LI: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++
++country LK:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 20), (3, 17)
++	(5250 - 5330 @ 20), (3, 20), DFS
++	(5490 - 5710 @ 20), (3, 20), DFS
++	(5735 - 5835 @ 20), (3, 30)
++
++country LT: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country LU: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country LV: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country MC: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++        (5150 - 5250 @ 80), (N/A, 20)
++        (5250 - 5350 @ 80), (N/A, 20), DFS
++        (5470 - 5725 @ 80), (N/A, 27), DFS
++
++country MA:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5735 - 5835 @ 80), (N/A, 20), DFS
++
++country MO:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 40), (3, 23)
++	(5250 - 5330 @ 40), (3, 23), DFS
++	(5735 - 5835 @ 40), (3, 30)
++
++country MP:
++	(2402 - 2472 @ 40), (N/A, 30)
++        (5150 - 5250 @ 80), (6, 17)
++        (5250 - 5350 @ 80), (6, 24), DFS
++        (5470 - 5725 @ 80), (6,	24), DFS
++        (5725 - 5850 @ 80), (6, 30)
++
++country MK: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 40), (N/A, 20)
++	(5250 - 5330 @ 40), (N/A, 20), DFS
++	(5490 - 5710 @ 40), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country MN:
++	(2402 - 2482 @ 40), (N/A, 20)
++        (5150 - 5250 @ 80), (6, 17)
++        (5250 - 5350 @ 80), (6, 24), DFS
++        (5470 - 5725 @ 80), (6, 24), DFS
++        (5725 - 5850 @ 80), (6,	30)
++
++country MT: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 40), (N/A, 20)
++	(5250 - 5330 @ 40), (N/A, 20), DFS
++	(5490 - 5710 @ 40), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country MQ: DFS-ETSI
++        (2402 - 2482 @ 40), (N/A, 20)
++        (5150 - 5250 @ 80), (N/A, 20)
++	(5250 - 5350 @ 80), (N/A, 20), DFS
++	(5470 - 5725 @ 80), (N/A, 27), DFS
++
++country MU:
++        (2402 - 2482 @ 40), (N/A, 20)
++        (5150 - 5250 @ 80), (6, 17)
++        (5250 - 5350 @ 80), (6, 24), DFS
++        (5470 - 5725 @ 80), (6, 24), DFS
++        (5725 - 5850 @ 80), (6, 30)
++
++country MY:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 17)
++	(5250 - 5330 @ 80), (N/A, 23), DFS
++	(5735 - 5835 @ 80), (N/A, 30)
++
++country MX:
++	(2402 - 2482 @ 40), (3, 20)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 24), DFS
++	(5490 - 5710 @ 80), (3, 24), DFS
++	(5735 - 5835 @ 80), (3, 30)
++
++country MW:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (N/A, 20)
++	(5250 - 5350 @ 80), (N/A, 20), DFS
++	(5470 - 5725 @ 80), (N/A, 27), DFS
++
++country NG:
++	(2402 - 2482 @ 40), (N/A, 20)
++        (5250 - 5350 @ 80), (N/A, 30), DFS
++        (5725 - 5850 @ 80), (N/A, 30)
++
++country NI:
++	(2402 - 2472 @ 40), (N/A, 30)
++        (5150 - 5250 @ 80), (6, 17)
++        (5250 - 5350 @ 80), (6, 24), DFS
++        (5470 - 5725 @ 80), (6,	24), DFS
++        (5725 - 5850 @ 80), (6, 30)
++
++country NL: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20), NO-OUTDOOR
++	(5250 - 5330 @ 80), (N/A, 20), NO-OUTDOOR, DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country NO: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country NP:
++	(2402 - 2482 @ 40), (N/A, 20)
++        (5150 - 5250 @ 80), (N/A, 20)
++        (5250 - 5350 @ 80), (N/A, 20), DFS
++        (5725 - 5850 @ 80), (N/A, 20)
++
++country NZ:
++	(2402 - 2482 @ 40), (N/A, 30)
++	(5170 - 5250 @ 80), (6, 17)
++	(5250 - 5330 @ 80), (6, 24), DFS
++	(5490 - 5710 @ 80), (6, 24), DFS
++	(5735 - 5835 @ 80), (6, 30)
++
++country OM:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (N/A, 20)
++	(5250 - 5350 @ 80), (N/A, 20), DFS
++	(5470 - 5725 @ 80), (N/A, 27), DFS
++
++country PA:
++	(2402 - 2472 @ 40), (N/A, 30)
++	(5170 - 5250 @ 80), (6, 17)
++	(5250 - 5330 @ 80), (6, 23), DFS
++	(5735 - 5835 @ 80), (6, 30)
++
++country PE:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (6, 20)
++	(5250 - 5330 @ 80), (6, 20), DFS
++	(5490 - 5710 @ 80), (6, 27), DFS
++	(5735 - 5835 @ 80), (6, 30)
++
++country PF:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (N/A, 20)
++	(5250 - 5350 @ 80), (N/A, 20), DFS
++        (5470 - 5725 @ 80), (N/A, 27), DFS
++
++country PG:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (6, 17)
++	(5250 - 5350 @ 80), (6, 24), DFS
++	(5470 - 5725 @ 80), (6, 24), DFS
++	(5725 - 5850 @ 80), (6, 30)
++
++country PH:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (6, 17)
++	(5250 - 5330 @ 80), (6, 24), DFS
++	(5490 - 5710 @ 80), (6, 24), DFS
++	(5735 - 5835 @ 80), (6, 30)
++
++country PK:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5735 - 5835 @ 80), (N/A, 30)
++
++country PL: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country PT: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country PR:
++	(2402 - 2472 @ 40), (3, 30)
++	(5170 - 5250 @ 80), (6, 17)
++	(5250 - 5330 @ 80), (6, 24), DFS
++	(5490 - 5710 @ 80), (6, 24), DFS
++	(5735 - 5835 @ 80), (6, 30)
++
++country PY:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (6, 17)
++	(5250 - 5350 @ 80), (6, 24), DFS
++	(5470 - 5725 @ 80), (6, 24), DFS
++	(5725 - 5850 @ 80), (6, 30)
++
++country QA:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5735 - 5835 @ 80), (N/A, 30)
++
++country RE:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (N/A, 20)
++	(5250 - 5350 @ 80), (N/A, 20), DFS
++	(5470 - 5725 @ 80), (N/A, 27), DFS
++
++country RO: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++
++# Source:
++# http://www.ratel.rs/upload/documents/Plan_namene/Plan_namene-sl_glasnik.pdf
++country RS:
++	(2400 - 2483.5 @ 40), (N/A, 100 mW)
++	(5150 - 5250 @ 80), (N/A, 200 mW), NO-OUTDOOR
++        (5250 - 5350 @ 80), (N/A, 200 mW), DFS
++	(5470 - 5725 @ 80), (3, 1000 mW), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country RU:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 40), (N/A, 20)
++	(5250 - 5350 @ 40), (N/A, 20), DFS
++	(5650 - 5725 @ 40), (N/A, 30), DFS
++	(5725 - 5825 @ 40), (N/A, 30)
++
++country RW:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (6, 17)
++	(5250 - 5330 @ 80), (6, 24), DFS
++	(5470 - 5725 @ 80), (6, 24), DFS
++	(5725 - 5835 @ 80), (6, 30)
++
++country SA:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 24), DFS
++	(5490 - 5710 @ 80), (3, 24), DFS
++
++country SE: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country SG:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (6, 17)
++	(5250 - 5330 @ 80), (6, 24), DFS
++	(5490 - 5710 @ 80), (6, 24), DFS
++	(5735 - 5835 @ 80), (6, 30)
++
++country SI: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country SK: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country SR: DFS-ETSI
++	(2400 - 2483.5 @ 40), (N/A, 100 mW)
++	(5150 - 5250 @ 80), (N/A, 100 mW), NO-OUTDOOR
++	(5250 - 5350 @ 80), (N/A, 100 mW), NO-OUTDOOR, DFS
++	(5470 - 5725 @ 80), (N/A, 500 mW), DFS
++
++country SV:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 20), (3, 17)
++	(5250 - 5330 @ 20), (3, 23), DFS
++	(5735 - 5835 @ 20), (3, 30)
++
++country SY:
++	(2402 - 2482 @ 40), (N/A, 20)
++
++country TW:
++	(2402 - 2472 @ 40), (3, 30)
++	(5270 - 5330 @ 40), (6, 17)
++	(5490 - 5590 @ 80), (6, 30), DFS
++	(5650 - 5730 @ 80), (6, 30), DFS
++	(5735 - 5815 @ 80), (6, 30)
++
++country TH:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 24), DFS
++	(5490 - 5710 @ 80), (3, 24), DFS
++	(5735 - 5835 @ 80), (3, 30)
++
++country TT:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 40), (3, 17)
++	(5250 - 5330 @ 40), (3, 20), DFS
++	(5490 - 5710 @ 40), (3, 20), DFS
++	(5735 - 5835 @ 40), (3, 30)
++
++country TN:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 20), (N/A, 20)
++	(5250 - 5330 @ 20), (N/A, 20), DFS
++
++country TR: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (N/A, 20)
++	(5250 - 5330 @ 80), (N/A, 20), DFS
++	(5490 - 5710 @ 80), (N/A, 27), DFS
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++ 
++# Source:
++# #914 / 06 Sep 2007: http://www.ucrf.gov.ua/uk/doc/nkrz/1196068874
++# #1174 / 23 Oct 2008: http://www.nkrz.gov.ua/uk/activities/ruling/1225269361
++# (appendix 8)
++# Listed 5GHz range is a lowest common denominator for all related
++# rules in the referenced laws. Such a range is used because of
++# disputable definitions there.
++country UA:
++	(2400 - 2483.5 @ 40), (N/A, 20), NO-OUTDOOR
++	(5150 - 5250 @ 40), (N/A, 20), NO-OUTDOOR
++	(5250 - 5350 @ 40), (N/A, 20), NO-OUTDOOR, DFS
++	(5470 - 5670 @ 40), (N/A, 20), DFS
++	(5725 - 5850 @ 40), (N/A, 20)
++	# 60 gHz band channels 1-4, ref: Etsi En 302 567
++	(57240 - 65880 @ 2160), (N/A, 40), NO-OUTDOOR
++
++country UG:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (6, 20)
++	(5250 - 5350 @ 80), (6, 20), DFS
++        (5470 - 5725 @ 80), (6, 20), DFS
++        (5725 - 5825 @ 80), (6, 20)
++
++country US: DFS-FCC
++	(2402 - 2472 @ 40), (3, 27)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 24), DFS
++	(5490 - 5600 @ 80), (3, 24), DFS
++	(5650 - 5710 @ 40), (3, 24), DFS
++	(5710 - 5835 @ 80), (3, 30)
++	# 60g band
++	# reference: http://cfr.regstoday.com/47cfr15.aspx#47_CFR_15p255
++	# channels 1,2,3, EIRP=40dBm(43dBm peak)
++	(57240 - 63720 @ 2160), (N/A, 40)
++
++# Public Safety FCCA, FCC4
++#  27dBm [4.9GHz 1/4 rate], 30dBm [1/2 rate], 33dBm [full rate], and 5GHz same as FCC1
++#  db.txt cannot express the limitation on 5G so disable all 5G channels for FCC4
++country PS:
++	(2402 - 2472 @ 40), (N/A, 30)
++	#(4940 - 4990 @ 40), (6, 27)
++	#(5150 - 5250 @ 80), (6, 30)
++	#(5250 - 5350 @ 80), (6, 30), DFS
++	#(5725 - 5850 @ 80), (6, 33)
++
++country UY:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 40), (3, 17)
++	(5250 - 5330 @ 40), (3, 20), DFS
++	(5490 - 5710 @ 40), (3, 20), DFS
++	(5735 - 5835 @ 40), (3, 30)
++
++country UZ:
++	(2402 - 2472 @ 40), (3, 27)
++	(5170 - 5250 @ 40), (3, 17)
++	(5250 - 5330 @ 40), (3, 20), DFS
++	(5490 - 5710 @ 40), (3, 20), DFS
++	(5735 - 5835 @ 40), (3, 30)
++
++country VE:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (6, 17)
++	(5250 - 5350 @ 80), (6, 23), DFS
++	(5725 - 5850 @ 80), (6, 30)
++
++
++country VN:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (3, 17)
++	(5250 - 5330 @ 80), (3, 24), DFS
++	(5490 - 5710 @ 80), (3, 24), DFS
++	(5735 - 5835 @ 80), (3, 30)
++
++country VI:
++	(2402 - 2472 @ 40), (N/A, 30)
++	(5150 - 5250 @ 80), (6, 17)
++	(5250 - 5350 @ 80), (6, 24), DFS
++	(5470 - 5725 @ 80), (6, 24), DFS
++	(5725 - 5850 @ 80), (6, 30)
++
++country WS: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 20), (3, 17)
++	(5250 - 5330 @ 80), (3, 24), DFS
++	(5490 - 5710 @ 80), (3, 24), DFS
++
++country YE:
++	(2402 - 2482 @ 40), (N/A, 20)
++
++country YT: DFS-ETSI
++	(2402 - 2482 @ 40), (N/A, 20)
++        (5150 - 5250 @ 80), (N/A, 20)
++        (5250 - 5350 @ 80), (N/A, 20), DFS
++        (5470 - 5725 @ 80), (N/A, 27), DFS
++
++country ZA:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5170 - 5250 @ 80), (3, 20)
++	(5250 - 5330 @ 80), (3, 20), DFS
++	(5490 - 5710 @ 80), (3, 27), DFS
++
++country ZW:
++	(2402 - 2482 @ 40), (N/A, 20)
++	(5150 - 5250 @ 80), (N/A, 20)
++	(5250 - 5350 @ 80), (N/A, 20), DFS
++	(5470 - 5725 @ 80), (N/A, 27), DFS
++

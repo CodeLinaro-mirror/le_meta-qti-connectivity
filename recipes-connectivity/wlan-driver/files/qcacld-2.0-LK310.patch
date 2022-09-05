@@ -1,0 +1,173 @@
+From 958ed87e44d2373123eab40add7da0dc3851acbe Mon Sep 17 00:00:00 2001
+From: Xueqiang Gong <quic_gongx@quicinc.com>
+Date: Mon, 5 Sep 2022 13:13:26 +0800
+Subject: [PATCH] qcacld-2.0:fix buid failure for legacy linux kernel
+
+1. use ktime_get instead of ktime_get_ns for kernel below 3.17
+2. remove cfg80211_vendor_event_alloc for kernel below 4.1
+3. fix build error for function hdd_fill_bw_mc
+4. fix FW name issue for third party PCIE interface
+
+Change-Id: I3988707261e89cf891f542ebea93ee99819d7586
+CRs-Fixed: 3283639
+---
+ CORE/CLD_TXRX/HTT/htt_h2t.c      | 23 +++++++++++++++++++++--
+ CORE/HDD/inc/wlan_hdd_cfg80211.h | 19 +------------------
+ CORE/HDD/src/wlan_hdd_cfg80211.c |  2 +-
+ CORE/HDD/src/wlan_hdd_main.c     |  2 +-
+ CORE/SERVICES/BMI/ol_fw.c        |  7 +++++--
+ 5 files changed, 29 insertions(+), 24 deletions(-)
+
+diff --git a/CORE/CLD_TXRX/HTT/htt_h2t.c b/CORE/CLD_TXRX/HTT/htt_h2t.c
+index 35d300e..46c0e4d 100644
+--- a/CORE/CLD_TXRX/HTT/htt_h2t.c
++++ b/CORE/CLD_TXRX/HTT/htt_h2t.c
+@@ -1,6 +1,7 @@
+ /*
+  * Copyright (c) 2011-2019 The Linux Foundation. All rights reserved.
+- *
++ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
++ * 
+  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+  *
+  *
+@@ -1109,17 +1110,35 @@ int htt_h2t_chan_cali_data_msg(struct htt_pdev_t *pdev,
+ 		    ol_tx_target_credit_dec(pdev->txrx_pdev, 2);
+ 		if (tx_credit_availability == A_ERROR) {
+ 			u_int64_t tx_pending_record = 0;
+-
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)) 
++			ktime_t tx_pending_record_ktime;
++			ktime_t tx_pending_record_ktime_pending;
++			u_int64_t tx_pending_record_pending;
++#endif
+ 			adf_os_print("htt dl cali pending");
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)) 
+ 			tx_pending_record = ktime_get_ns();
++#else
++			tx_pending_record_ktime = ktime_get();
++			tx_pending_record = tx_pending_record_ktime.tv64;
++#endif
+ 			ol_tx_cali_pending_status_set(pdev->txrx_pdev, 1);
+ 			rc =
+ 			  wait_for_completion_timeout(&pdev->tx_cali_resource,
+ 						      msecs_to_jiffies(15));
+ 			if (!rc) {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)) 
+ 				adf_os_print("dl cali pending too long %lld",
+ 					     (ktime_get_ns() -
+ 						 tx_pending_record));
++#else
++				tx_pending_record_ktime_pending = ktime_get();
++				tx_pending_record_pending = tx_pending_record_ktime.tv64;
++				adf_os_print("dl cali pending too long %lld",
++					     (tx_pending_record_pending -
++						 tx_pending_record));
++
++#endif
+ 				ol_tx_cali_pending_status_set(pdev->txrx_pdev, 0);
+ 				return A_NO_RESOURCE;
+ 			}
+diff --git a/CORE/HDD/inc/wlan_hdd_cfg80211.h b/CORE/HDD/inc/wlan_hdd_cfg80211.h
+index 6a09d56..4fe00c1 100644
+--- a/CORE/HDD/inc/wlan_hdd_cfg80211.h
++++ b/CORE/HDD/inc/wlan_hdd_cfg80211.h
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
+- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
+  *
+  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+  *
+@@ -462,7 +462,6 @@ enum qca_nl80211_vendor_subcmds_index {
+ #if !defined(SUPPORT_WDEV_CFG80211_VENDOR_EVENT_ALLOC) && \
+ 	(LINUX_VERSION_CODE < KERNEL_VERSION(4, 1, 0)) && \
+ 	!defined(WITH_BACKPORTS)
+-
+ static inline struct sk_buff *
+ backported_cfg80211_vendor_event_alloc(struct wiphy *wiphy,
+ 				       struct wireless_dev *wdev,
+@@ -3099,22 +3098,6 @@ int wlan_hdd_disable_dfs_chan_scan(hdd_context_t *pHddCtx,
+ 
+ int wlan_hdd_cfg80211_update_apies(hdd_adapter_t* pHostapdAdapter);
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0))
+-#define SUPPORT_WDEV_CFG80211_VENDOR_EVENT_ALLOC
+-#endif
+-
+-#if !(defined (SUPPORT_WDEV_CFG80211_VENDOR_EVENT_ALLOC))
+-static inline struct sk_buff *
+-backported_cfg80211_vendor_event_alloc(struct wiphy *wiphy,
+-					struct wireless_dev *wdev,
+-					int approxlen,
+-					int event_idx, gfp_t gfp)
+-{
+-	return cfg80211_vendor_event_alloc(wiphy, approxlen, event_idx, gfp);
+-}
+-#define cfg80211_vendor_event_alloc backported_cfg80211_vendor_event_alloc
+-#endif
+-
+ void hdd_get_bpf_offload_cb(void *hdd_context, struct sir_bpf_get_offload *);
+ void hdd_init_bpf_completion(void);
+ 
+diff --git a/CORE/HDD/src/wlan_hdd_cfg80211.c b/CORE/HDD/src/wlan_hdd_cfg80211.c
+index dcd9e36..7eeb13a 100644
+--- a/CORE/HDD/src/wlan_hdd_cfg80211.c
++++ b/CORE/HDD/src/wlan_hdd_cfg80211.c
+@@ -27117,7 +27117,7 @@ static void hdd_fill_bw_mcs(struct rate_info *rinfo,
+  *
+  * Return: None
+  */
+-static void hdd_fill_bw_mcs(struct rate_info *sinfo,
++static void hdd_fill_bw_mcs(struct rate_info *rinfo,
+ 		uint8_t rate_flags,
+ 		uint8_t mcsidx,
+ 		uint8_t nss,
+diff --git a/CORE/HDD/src/wlan_hdd_main.c b/CORE/HDD/src/wlan_hdd_main.c
+index 7a9480e..cc544f8 100644
+--- a/CORE/HDD/src/wlan_hdd_main.c
++++ b/CORE/HDD/src/wlan_hdd_main.c
+@@ -13542,7 +13542,7 @@ void hdd_connect_result(struct net_device *dev,
+ }
+ #endif /* CFG80211_CONNECT_BSS */
+ 
+-#if defined MSM_PLATFORM && (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 19, 0))
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 19, 0))
+ /**
+  * hdd_stop_p2p_go() - call cfg80211 API to stop P2P GO
+  * @adapter: pointer to adapter
+diff --git a/CORE/SERVICES/BMI/ol_fw.c b/CORE/SERVICES/BMI/ol_fw.c
+index 821c964..72b9aa3 100644
+--- a/CORE/SERVICES/BMI/ol_fw.c
++++ b/CORE/SERVICES/BMI/ol_fw.c
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (c) 2013-2019, 2021 The Linux Foundation. All rights reserved.
++ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+  *
+  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+  *
+@@ -673,7 +674,8 @@ defined(CONFIG_NON_QC_PLATFORM_PCI)
+ 		break;
+ 	case ATH_FIRMWARE_FILE:
+ 		if (WLAN_IS_EPPING_ENABLED(vos_get_conparam())) {
+-#if defined(CONFIG_CNSS) || defined(HIF_SDIO)
++#if defined(CONFIG_CNSS) || defined(HIF_SDIO) || \
++			defined(CONFIG_NON_QC_PLATFORM_PCI)
+ 			filename = scn->fw_files.epping_file;
+ #else
+ 			filename = QCA_FIRMWARE_EPPING_FILE;
+@@ -684,7 +686,8 @@ defined(CONFIG_NON_QC_PLATFORM_PCI)
+ 		}
+ #ifdef QCA_WIFI_FTM
+ 		if (vos_get_conparam() == VOS_FTM_MODE) {
+-#if defined(CONFIG_CNSS) || defined(HIF_SDIO)
++#if defined(CONFIG_CNSS) || defined(HIF_SDIO) || \
++			defined(CONFIG_NON_QC_PLATFORM_PCI)
+ 			filename = scn->fw_files.utf_file;
+ #else
+ 			filename = QCA_UTF_FIRMWARE_FILE;
+-- 
+2.7.4
+
