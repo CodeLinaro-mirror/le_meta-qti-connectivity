@@ -28,9 +28,7 @@ add_on_patch() {
         return
     fi
 
-    if [ ${FEATURE_RCPM} == "1" ]; then
-        patch -N --silent -p1 -d ${S} < ${ADDON_PATH}/"rcpm_msi.patch"
-    fi
+    patch -N --silent -p1 -d ${S} < ${ADDON_PATH}/"rcpm_msi.patch"
 }
 
 do_patch_for_kernel() {
