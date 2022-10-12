@@ -24,11 +24,9 @@ do_copy_defconfig_append() {
 
 add_on_patch() {
     ADDON_PATH="${WORKDIR}/${ADDON_FOLDER}"
-    if [ ! -d ${ADDON_PATH} ]; then
-        return
+    if [ -f ${ADDON_PATH}/"rcpm_msi.patch" ]; then
+        patch -N --silent -p1 -d ${S} < ${ADDON_PATH}/"rcpm_msi.patch"
     fi
-
-    patch -N --silent -p1 -d ${S} < ${ADDON_PATH}/"rcpm_msi.patch"
 }
 
 do_patch_for_kernel() {
