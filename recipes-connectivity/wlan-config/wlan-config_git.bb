@@ -16,3 +16,17 @@ EXTRA_OECONF = "--enable-thirdparty-wlan=yes"
 FILES_${PN} += "${datadir}/misc/wifi/*"
 FILES_${PN} += "${nonarch_base_libdir}/firmware/wlan/*"
 FILES_${PN} += "${sysconfdir}/init.d/*"
+
+do_install_append() {
+	BDIR="${D}/lib/firmware/wlan"
+	CFG_FILE="${BDIR}/QCA6698AU.LE.1.1_HastingPrime_PCIe_qcacld-3.0-iMX8.ini"
+	ADD_FILE="${BDIR}/wow_pcie_wake_n_imx8mqevk.ini"
+
+	if [ "${MACHINE}" == "imx8mqevk" -a "${KERNELVERSION}" == "5.10" ]; then
+		while read -r line
+		do
+			sed -i "/^END/i$line" ${CFG_FILE}
+		done < ${ADD_FILE}
+		rm -fr ${ADD_FILE}
+	fi
+}
