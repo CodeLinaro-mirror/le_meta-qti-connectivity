@@ -27,6 +27,10 @@
 #OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 #IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#Changes from Qualcomm Innovation Center are provided under the following license:
+#
+#Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+#SPDX-License-Identifier: BSD-3-Clause-Clear
 
 # This script tries to update conf/bblayers.conf for different project.
 
@@ -131,6 +135,12 @@ EOF
 
     if [ "${KERNELVERSION}" == "4.19" ]; then
         echo 'BBMASK.="|meta-qti-connectivity/recipes-core/busybox/busybox_%.bbappend"' >> ${BBLAYERS_CONF}
+    fi
+
+    if [ "${KERNELVERSION}" == "5.10" ]; then
+        echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"' >> ${BBLAYERS_CONF}
+    else
+        echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_5.10.bbappend"' >> ${BBLAYERS_CONF}
     fi
 }
 

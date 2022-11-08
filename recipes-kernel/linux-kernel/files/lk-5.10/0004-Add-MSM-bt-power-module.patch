@@ -18,9 +18,9 @@ index 4e73a531b377..d107ea1620d2 100644
 --- a/drivers/bluetooth/Kconfig
 +++ b/drivers/bluetooth/Kconfig
 @@ -425,4 +425,15 @@ config BT_HCIRSI
-	  Say Y here to compile support for HCI over Redpine into the
-	  kernel or say M to compile as a module.
-
+ 	  Say Y here to compile support for HCI over Redpine into the
+ 	  kernel or say M to compile as a module.
+ 
 +config MSM_BT_POWER
 +        tristate "MSM Bluetooth Power Control"
 +        help
