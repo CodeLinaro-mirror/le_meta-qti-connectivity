@@ -1,0 +1,29 @@
+From 9ce61e75ea56acde481d8136b7c5e3400f435603 Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Wed, 9 Nov 2022 12:39:01 +0800
+Subject: [PATCH] Set PERST low when RC suspend
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ drivers/pci/controller/dwc/pci-imx6.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/pci/controller/dwc/pci-imx6.c b/drivers/pci/controller/dwc/pci-imx6.c
+index 2c0b6c30474f..f7475aa64136 100644
+--- a/drivers/pci/controller/dwc/pci-imx6.c
++++ b/drivers/pci/controller/dwc/pci-imx6.c
+@@ -2335,6 +2335,11 @@ static int imx6_pcie_suspend_noirq(struct device *dev)
+ 		imx6_pcie_clk_disable(imx6_pcie);
+ 	}
+ 
++	if (gpio_is_valid(imx6_pcie->reset_gpio)) {
++		gpio_set_value_cansleep(imx6_pcie->reset_gpio,
++			imx6_pcie->gpio_active_high);
++	}
++
+ 	return 0;
+ }
+ 
+-- 
+2.17.1
+
