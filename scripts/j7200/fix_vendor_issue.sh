@@ -37,6 +37,7 @@ CUR_DIR=`pwd`
 # patches for ti-processor-sdk-linux-j7200-evm-08_02_00_02-Linux-x86 release
 SRC_mobile_broadband="${SRC_DIR}/oe-core/meta/recipes-connectivity/mobile-broadband-provider-info"
 SRC_meta_psdkla="${SRC_DIR}/meta-psdkla"
+SRC_meta_openembedded="${SRC_DIR}/meta-openembedded"
 
 clean_vendor()
 {
@@ -70,6 +71,13 @@ cd -
 cd ${SRC_meta_psdkla}
 if [ ! -f .qcpatched ]; then
 	git am ${CUR_DIR}/0001-meta-psdkla-build-patch.patch
+	touch .qcpatched
+fi
+cd -
+
+cd ${SRC_meta_openembedded}
+if [ ! -f .qcpatched ]; then
+	git am ${CUR_DIR}/0001-Correct-git-code-fetech-issue-in-meta-openembedded.patch
 	touch .qcpatched
 fi
 cd -

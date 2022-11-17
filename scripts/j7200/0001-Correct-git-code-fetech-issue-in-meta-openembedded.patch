@@ -1,0 +1,40 @@
+From b509340ba2cea3a7732842817479e89e880f6fe7 Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Thu, 17 Nov 2022 10:12:49 +0800
+Subject: [PATCH] Correct git code fetech issue in meta-openembedded
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ .../recipes-support/bridge-utils/bridge-utils_1.6.bb            | 2 +-
+ meta-oe/recipes-test/googletest/googletest_git.bb               | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/meta-networking/recipes-support/bridge-utils/bridge-utils_1.6.bb b/meta-networking/recipes-support/bridge-utils/bridge-utils_1.6.bb
+index d693ae9a9..4b195eded 100644
+--- a/meta-networking/recipes-support/bridge-utils/bridge-utils_1.6.bb
++++ b/meta-networking/recipes-support/bridge-utils/bridge-utils_1.6.bb
+@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=f9d20a453221a1b7e32ae84694da2c37"
+ SRCREV = "42c1aefc303fdf891fbb099ea51f00dca83ab606"
+ 
+ SRC_URI = "\
+-    git://git.kernel.org/pub/scm/linux/kernel/git/shemminger/bridge-utils.git;branch=master \
++    git://git.kernel.org/pub/scm/linux/kernel/git/shemminger/bridge-utils.git;branch=main \
+     file://kernel-headers.patch \
+     file://0005-build-don-t-ignore-CFLAGS-from-environment.patch \
+     file://0006-libbridge-Modifying-the-AR-to-cross-toolchain.patch \
+diff --git a/meta-oe/recipes-test/googletest/googletest_git.bb b/meta-oe/recipes-test/googletest/googletest_git.bb
+index 898f23faf..35fe1bed0 100644
+--- a/meta-oe/recipes-test/googletest/googletest_git.bb
++++ b/meta-oe/recipes-test/googletest/googletest_git.bb
+@@ -11,7 +11,7 @@ PROVIDES += "gmock gtest"
+ 
+ S = "${WORKDIR}/git"
+ SRCREV = "703bd9caab50b139428cea1aaff9974ebee5742e"
+-SRC_URI = "git://github.com/google/googletest.git;branch=master;protocol=https"
++SRC_URI = "git://github.com/google/googletest.git;branch=main;protocol=https"
+ 
+ inherit cmake
+ 
+-- 
+2.17.1
+
