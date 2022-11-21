@@ -1,0 +1,30 @@
+From 3cf8a1b407c3db09189c98591f2d0ba42009dddf Mon Sep 17 00:00:00 2001
+From: Xueqiang Gong <quic_gongx@quicinc.com>
+Date: Tue, 22 Nov 2022 10:18:28 +0800
+Subject: [PATCH] pci: ignore the on board cypress wlan chip, do not disable
+ MSI capability
+
+Change-Id: I32765398146e2a4b59e3de8eeda6e910b36dadb8
+Signed-off-by: Xueqiang Gong <quic_gongx@quicinc.com>
+---
+ drivers/pci/quirks.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
+index bdc107c..4f9dbf8 100644
+--- a/drivers/pci/quirks.c
++++ b/drivers/pci/quirks.c
+@@ -2361,8 +2361,8 @@ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_VIA, PCI_DEVICE_ID_VIA_VT3351, quirk_disab
+ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_VIA, PCI_DEVICE_ID_VIA_VT3364, quirk_disable_all_msi);
+ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_VIA, PCI_DEVICE_ID_VIA_8380_0, quirk_disable_all_msi);
+ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_SI, 0x0761, quirk_disable_all_msi);
+-DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_BROADCOM, 0x43ec, quirk_disable_all_msi);
+-DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_BROADCOM, 0x43ef, quirk_disable_all_msi);
++//DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_BROADCOM, 0x43ec, quirk_disable_all_msi);
++//DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_BROADCOM, 0x43ef, quirk_disable_all_msi);
+ 
+ /* Disable MSI on chipsets that are known to not support it */
+ static void quirk_disable_msi(struct pci_dev *dev)
+-- 
+2.7.4
+

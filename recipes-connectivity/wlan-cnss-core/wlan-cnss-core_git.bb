@@ -17,6 +17,8 @@ RPROVIDES_${PN} += "${PROVIDES_NAME}"
 
 #EXTRA_OEMAKE += "CONFIG_WLAN_EN=y" 
 #EXTRA_OEMAKE += "CONFIG_PCI_RC_SUPPORT_PM=y" 
+#EXTRA_OEMAKE += "CONFIG_ONE_MSI_VECTOR=y" 
+EXTRA_OEMAKE += "${@oe.utils.conditional('FEATURE_SINGLE_MSI', '1', 'CONFIG_ONE_MSI_VECTOR=y', '', d)}"
 
 do_compile_prepend() {
     sed -in '/Werror/d' ${S}/Kbuild

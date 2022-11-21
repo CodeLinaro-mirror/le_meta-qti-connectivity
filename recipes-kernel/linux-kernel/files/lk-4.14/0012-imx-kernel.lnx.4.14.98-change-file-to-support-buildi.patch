@@ -12,7 +12,7 @@ Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
  arch/arm64/boot/dts/freescale/Makefile             |   6 ++-
  arch/arm64/boot/dts/freescale/fsl-imx8dx.dtsi 	    |   3 +-
  arch/arm64/boot/dts/freescale/fsl-imx8mq-evk.dts   |   2 +-
- .../boot/dts/freescale/fsl-imx8mq-evk-cnss.dts     | 280 +++++++++++++++++++++
+ .../boot/dts/freescale/fsl-imx8mq-evk-cnss.dts     | 285 +++++++++++++++++++++
  arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi      |   1 +
  arch/arm64/mm/dma-mapping.c                        |  53 ++++
  drivers/pci/dwc/pcie-designware.h                  |   2 +-
@@ -20,7 +20,7 @@ Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
  include/linux/dma-mapping.h                        |  39 ++-
  include/linux/elf.h                                |  33 +++
  include/linux/mod_devicetable.h                    |  15 ++
- include/net/cnss2.h                                | 278 +++++++++++++++++++++
+ include/net/cnss2.h                                | 272 +++++++++++++++++++++
  include/net/cnss_nl.h                              | 112 ++++++++
  include/uapi/linux/coresight-stm.h                 |  13 +-
  include/uapi/linux/qrtr.h                          |  42 ++++
@@ -755,7 +755,7 @@ new file mode 100755
 index 00000000..95e872c
 --- /dev/null
 +++ b/include/net/cnss2.h
-@@ -0,0 +1,271 @@
+@@ -0,0 +1,272 @@
 +/* Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -1007,6 +1007,7 @@ index 00000000..95e872c
 +					uint32_t *user_base_data,
 +					uint32_t *base_vector);
 +extern int cnss_get_msi_irq(struct device *dev, unsigned int vector);
++extern bool cnss_is_one_msi(struct device *dev);
 +extern void cnss_get_msi_address(struct device *dev, uint32_t *msi_addr_low,
 +				 uint32_t *msi_addr_high);
 +extern int cnss_wlan_enable(struct device *dev,

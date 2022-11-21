@@ -11,7 +11,7 @@ Change-Id: I38e9222c9dc6c0aefbe713d3b97175f301aa47f3
 Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
 ---
  arch/arm64/boot/dts/freescale/Makefile             |   4 +-
- .../boot/dts/freescale/fsl-imx8mq-evk-cnss.dts     | 280 +++++++++++++++++++++
+ .../boot/dts/freescale/fsl-imx8mq-evk-cnss.dts     | 283 +++++++++++++++++++++
  arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi      |   1 +
  arch/arm64/boot/dts/freescale/fsl-imx8mq-evk.dts   |   2 +-
  arch/arm64/mm/dma-mapping.c                        |  54 ++++
@@ -23,13 +23,13 @@ Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
  include/linux/elf.h                                |  36 +++
  include/linux/mod_devicetable.h                    |  15 ++
  include/linux/skbuff.h                             |  47 ++++
- include/net/cnss2.h                                | 271 ++++++++++++++++++++
+ include/net/cnss2.h                                | 272 ++++++++++++++++++++
  include/net/cnss_nl.h                              | 112 ++++++++
  include/uapi/linux/coresight-stm.h                 |  14 +-
  include/uapi/linux/pci_regs.h                      |  16 ++
  include/uapi/linux/qrtr.h                          |  44 ++++
  mm/memblock.c                                      |   4 +
- 18 files changed, 1066 insertions(+), 7 deletions(-)
+ 18 files changed, 1063 insertions(+), 7 deletions(-)
  create mode 100644 arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts
  create mode 100644 include/net/cnss2.h
  create mode 100644 include/net/cnss_nl.h
@@ -56,7 +56,7 @@ new file mode 100755
 index 00000000..4ae6c96
 --- /dev/null
 +++ b/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-cnss.dts
-@@ -0,0 +1,280 @@
+@@ -0,0 +1,283 @@
 +/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -243,6 +243,9 @@ index 00000000..4ae6c96
 +			mhi,ee-names = "SBL", "RDDM";
 +			mhi,bhie-offset = <0x0324>;
 +
++			pcie-disable-l1;
++			pcie-disable-l1ss;
++			
 +			mhi_channels {
 +				#address-cells = <1>;
 +				#size-cells = <0>;
@@ -869,7 +872,7 @@ new file mode 100755
 index 00000000..95e872c
 --- /dev/null
 +++ b/include/net/cnss2.h
-@@ -0,0 +1,271 @@
+@@ -0,0 +1,272 @@
 +/* Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -975,7 +978,7 @@ index 00000000..95e872c
 +	struct cnss_wlan_runtime_ops *runtime_ops;
 +	const struct pci_device_id *id_table;
 +	enum cnss_driver_mode (*get_driver_mode)(void);
-+ 	enum cnss_suspend_mode *suspend_mode;
++	enum cnss_suspend_mode *suspend_mode;
 +};
 +
 +struct cnss_usb_wlan_driver {
@@ -1056,8 +1059,8 @@ index 00000000..95e872c
 +};
 +
 +enum cnss_suspend_mode {
-+       CNSS_SUSPEND_LEGACY,
-+       CNSS_SUSPEND_POWER_DOWN,
++	CNSS_SUSPEND_LEGACY,
++	CNSS_SUSPEND_POWER_DOWN,
 +};
 +
 +enum cnss_recovery_reason {
@@ -1121,6 +1124,7 @@ index 00000000..95e872c
 +					uint32_t *user_base_data,
 +					uint32_t *base_vector);
 +extern int cnss_get_msi_irq(struct device *dev, unsigned int vector);
++extern bool cnss_is_one_msi(struct device *dev);
 +extern void cnss_get_msi_address(struct device *dev, uint32_t *msi_addr_low,
 +				 uint32_t *msi_addr_high);
 +extern int cnss_wlan_enable(struct device *dev,
