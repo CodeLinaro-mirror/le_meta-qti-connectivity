@@ -37,7 +37,7 @@ umask 022
 
 usage()
 {
-    local SCRIPT_PARAMS="[EULA=<eula>] [MACHINE=<machine>] [PROJECT=<projectid>] [KERNEL=<kernelversion>]"
+    local SCRIPT_PARAMS="[EULA=<eula>] [MACHINE=<machine>] [PROJECT=<projectid>] [ADDON=<name>] [KERNEL=<kernelversion>]"
     echo
     echo "script usage for QTI Standalone Auto image"
     echo "${SCRIPT_PARAMS} source ${SCRIPT_FILE} [BUILDDIR]"
@@ -47,6 +47,7 @@ usage()
     echo "BUILDDIR  :  the build directory location, 'build' by default."
     echo "MACHINE   :  Supported machines, 'imx8mqevk' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
+    echo "ADDON     :  Connectivity add-on feature names (separate in space)."
     echo "    QCA6595AULE01 : QCA6595AU.LE.0.1 SP"
 }
 
@@ -62,7 +63,7 @@ execute_command()
 
 cleanenv()
 {
-    unset EULA MACHINE PROJECT DISTRO
+    unset EULA MACHINE PROJECT DISTRO ADDON
 }
 
 list_machines()
@@ -216,6 +217,25 @@ case $PROJECT in
         } ;;
 esac
 
+FEATURE_SINGLE_MSI="0"
+
+addons=(${ADDON//''/ })
+for feature in ${addons[@]}
+do
+    case $feature in
+        "SINGLE_MSI")
+            {
+                FEATURE_SINGLE_MSI="1"
+            } ;;
+        *)
+            {
+                echo "Unsupported addon $feature!!!"
+                usage
+                cleanenv
+                return 1
+            } ;;
+    esac
+done
 # Default MACHINE
 if [[ -z "$MACHINE" || $MACHINE == "imx8mqevk" ]]; then
     MACHINE='imx8mqevk'
@@ -301,6 +321,11 @@ if grep -q 'SRC_URI = "http:' ../sources/poky/meta/recipes-extended/bzip2/bzip2_
     sed -i -e 's/SRC_URI = "http:/SRC_URI = "https:/g' ../sources/poky/meta/recipes-extended/bzip2/bzip2_1.0.6.bb
 fi
 
+if grep -q 'FEATURE_SINGLE_MSI' conf/local.conf; then
+   sed -e "s/^FEATURE_SINGLE_MSI\s*=.*/FEATURE_SINGLE_MSI = \"$FEATURE_SINGLE_MSI\"/g" -i conf/local.conf
+else
+   echo "FEATURE_SINGLE_MSI = \"$FEATURE_SINGLE_MSI\"" >> conf/local.conf
+fi
 # Update bblayers.conf
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
 
