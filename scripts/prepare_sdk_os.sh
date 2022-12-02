@@ -75,6 +75,7 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-sigmadut"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-config"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rng-tools"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "bridge-utils"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "dropbear"
 ' >> conf/local.conf
 
 # Use PROJECTID for specific package, will optimize this part.

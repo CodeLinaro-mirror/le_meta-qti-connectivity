@@ -21,6 +21,7 @@ IMAGE_INSTALL += "iperf3"
 IMAGE_INSTALL += "pciutils"
 IMAGE_INSTALL += "iputils"
 IMAGE_INSTALL += "bridge-utils"
+IMAGE_INSTALL += "dropbear"
 
 #Bluetooth software
 SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/synergy-bt-proprietary')}"
