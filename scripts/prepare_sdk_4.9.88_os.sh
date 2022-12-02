@@ -51,6 +51,7 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wpa-supplicant"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-sigmadut"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-config"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rng-tools"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "dropbear"
 ' >> conf/local.conf
 echo "Please run following command to build image."
 echo "bitbake core-image-minimal"
