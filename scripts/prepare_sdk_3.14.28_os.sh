@@ -53,6 +53,7 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-config"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rng-tools"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iputils"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "bridge-utils"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "dropbear"
 ' >> conf/local.conf
 echo "Please run following command to build image."
 echo "bitbake core-image-base"
