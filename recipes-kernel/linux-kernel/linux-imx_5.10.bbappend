@@ -21,6 +21,7 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0002-update-im8mq-evk-device-tree-to-enable-m2BT.patch \
 	file://${PATCH_FOLDER}/0003-Add-wlan-en-gpio-resource.patch \
 	file://${PATCH_FOLDER}/0004-Add-MSM-bt-power-module.patch \
+	file://${PATCH_FOLDER}/0005-Enable-configure-for-rx-fcs-error-report.patch \
 	file://${ADDON_FOLDER}/rcpm_msi.patch \
 	file://${ADDON_FOLDER}/Set-PERST-low-when-RC-suspend.patch \
 "
