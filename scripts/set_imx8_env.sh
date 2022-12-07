@@ -207,6 +207,8 @@ if [[ -z "$MACHINE" || $MACHINE == "imx8mqevk" || $MACHINE == "imxauto" ]]; then
     MACHINE='imx8mqevk'
 elif [ "$MACHINE" == "imx8qxpmek" ]; then
     MACHINE='imx8qxpmek'
+elif [ "$MACHINE" == "imx8qxpc0mek" ]; then
+    MACHINE='imx8qxpc0mek'
 else
     check_machine_valid
     if [ "$?" != "0" ]; then
