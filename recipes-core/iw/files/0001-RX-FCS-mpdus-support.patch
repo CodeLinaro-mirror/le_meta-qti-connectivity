@@ -1,0 +1,42 @@
+From 18dd655f6a3db728f19d3ea443dbba8093c0cff8 Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Mon, 5 Dec 2022 15:09:10 +0800
+Subject: [PATCH] RX FCS mpdus support
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ station.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/station.c b/station.c
+index b2c5b9c..7293bff 100644
+--- a/station.c
++++ b/station.c
+@@ -298,6 +298,8 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
+ 	static struct nla_policy stats_policy[NL80211_STA_INFO_MAX + 1] = {
+ 		[NL80211_STA_INFO_INACTIVE_TIME] = { .type = NLA_U32 },
+ 		[NL80211_STA_INFO_RX_BYTES] = { .type = NLA_U32 },
++		[NL80211_STA_INFO_FCS_ERROR_COUNT] = { .type = NLA_U32 },
++		[NL80211_STA_INFO_RX_MPDUS] = { .type = NLA_U32 },
+ 		[NL80211_STA_INFO_TX_BYTES] = { .type = NLA_U32 },
+ 		[NL80211_STA_INFO_RX_BYTES64] = { .type = NLA_U64 },
+ 		[NL80211_STA_INFO_TX_BYTES64] = { .type = NLA_U64 },
+@@ -373,6 +375,15 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
+ 	else if (sinfo[NL80211_STA_INFO_RX_BYTES])
+ 		printf("\n\trx bytes:\t%u",
+ 		       nla_get_u32(sinfo[NL80211_STA_INFO_RX_BYTES]));
++
++	if (sinfo[NL80211_STA_INFO_RX_MPDUS])
++		printf("\n\trx mpdus:\t%u",
++			nla_get_u32(sinfo[NL80211_STA_INFO_RX_MPDUS]));
++
++	if (sinfo[NL80211_STA_INFO_FCS_ERROR_COUNT])
++		printf("\n\trx fcs error count:\t%u",
++			nla_get_u32(sinfo[NL80211_STA_INFO_FCS_ERROR_COUNT]));
++
+ 	if (sinfo[NL80211_STA_INFO_RX_PACKETS])
+ 		printf("\n\trx packets:\t%u",
+ 			nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]));
+-- 
+2.17.1
+
