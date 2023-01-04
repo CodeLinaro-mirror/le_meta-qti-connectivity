@@ -102,11 +102,15 @@ DDIR="${WORK_SPACE}/build/tmp/deploy/deb"
 PATH_LENGTH=${#DDIR}
 
 if [ ! ${PATH_LENGTH} -lt ${LIMIT_LENGTH} ]; then
+        echo -e "[KW] ROOT path length ${PATH_LENGTH}"
         CHANGE_ID=$(get_change_id_from_patch ${P1["name"]})
+        echo -e "[KW] patch change id ${CHANGE_ID}"
         lookup_change_id ${P1["path"]} ${CHANGE_ID} 1
         if [ $? -eq 0 ]; then
+                echo -e "[KW] try to apply patch"
                 git_apply_patch ${P1["path"]} ${P1["name"]} ${P1["base"]}
         fi
+        echo -e "[KW] preparation done"
 else
         echo -e "ROOT path length ${PATH_LENGTH} looks fine"
 fi
