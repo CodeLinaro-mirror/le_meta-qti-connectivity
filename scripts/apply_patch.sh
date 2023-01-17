@@ -42,21 +42,28 @@ lookup_change_id()
                 return ${ERROR_INVALID_PARAMS}
         fi
 
-	if [ $# -eq 3 ]; then
-		depth="-n $3"
-	fi
-	FOUND=$(git -C $1 log ${depth} | grep "$2")
-	if [ -z "${FOUND}" ]; then
-		return 0
-	else
-		return 1
-	fi
+        if [ $# -eq 3 ]; then
+                depth="-n $3"
+                echo -e "[KW] poky path: "$1"|"
+                echo -e "[KW] CID: "$2"|"
+                echo -e "[KW] depth: "${depth}"|"
+        fi
+
+        echo -e "[KW] Lookup CID"
+        FOUND=$(git -C $1 log ${depth} | grep "$2")
+        if [ -z "${FOUND}" ]; then
+                echo -e "[KW] Patch not applied"
+                return 0
+        else
+                echo -e "[KW] patch already applied"
+                return 1
+        fi
 }
 
 # params: git_patch change_id
 get_change_id_from_patch()
 {
-	echo "$(cat $1 | grep "Change-Id"|awk '{print $2}')"
+        echo "$(cat $1 | grep "Change-Id"|awk '{print $2}')"
 }
 
 # params: folder_path patch_name, base_commit_id
@@ -67,7 +74,9 @@ git_apply_patch()
         fi
 
         cd $1
+        echo -e "[KW] check git repo"
         COMMIT_ID=$(git rev-parse --verify HEAD)
+        echo -e "[KW] finish check git repo"
         if [ ! $? -eq 0 ]; then
                 echo -e "git repo is not found"
                 cd -
@@ -81,9 +90,9 @@ git_apply_patch()
                 git am --abort
                 echo -e "Patch not applied"
                 echo -e "Poky TOP commit "${COMMIT_ID}
-		if [ $# -eq 3 ]; then
-	                echo -e "Expected Top commit "$3
-		fi
+                if [ $# -eq 3 ]; then
+                        echo -e "Expected Top commit "$3
+                fi
         else
                 echo -e "Apply patch successfully"
         fi
@@ -102,15 +111,12 @@ DDIR="${WORK_SPACE}/build/tmp/deploy/deb"
 PATH_LENGTH=${#DDIR}
 
 if [ ! ${PATH_LENGTH} -lt ${LIMIT_LENGTH} ]; then
-        echo -e "[KW] ROOT path length ${PATH_LENGTH}"
         CHANGE_ID=$(get_change_id_from_patch ${P1["name"]})
-        echo -e "[KW] patch change id ${CHANGE_ID}"
         lookup_change_id ${P1["path"]} ${CHANGE_ID} 1
         if [ $? -eq 0 ]; then
-                echo -e "[KW] try to apply patch"
                 git_apply_patch ${P1["path"]} ${P1["name"]} ${P1["base"]}
         fi
-        echo -e "[KW] preparation done"
+        echo -e "[KW] prepare done"
 else
         echo -e "ROOT path length ${PATH_LENGTH} looks fine"
 fi
