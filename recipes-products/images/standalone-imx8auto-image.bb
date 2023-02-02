@@ -23,6 +23,7 @@ IMAGE_INSTALL += "rng-tools"
 IMAGE_INSTALL += "openssh"
 IMAGE_INSTALL += "packagegroup-core-ssh-openssh"
 IMAGE_INSTALL += "openssh-sftp-server"
+IMAGE_INSTALL += "iptables"
 
 SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/synergy-bt-proprietary')}"
 IMAGE_INSTALL += "${@bb.utils.contains('SYNERGY_DIR_PRESENT', 'True', 'alsa-lib', '', d)}"
