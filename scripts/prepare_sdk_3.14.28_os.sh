@@ -56,6 +56,7 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "bridge-utils"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "openssh"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "packagegroup-core-ssh-openssh"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "openssh-sftp-server"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iptables"
 ' >> conf/local.conf
 echo "Please run following command to build image."
 echo "bitbake core-image-base"
