@@ -1,21 +1,13 @@
 
 FILESEXTRAPATHS_append := ":${THISDIR}/systemd-230"
 
-SRC_URI_append += "file://70-net-setup-link.rules \
-                   file://blacklist-wlan-tfl.conf \
-		   file://systemd-rngd.service \
-		  "
+SRC_URI_append += "file://systemd-net-buffer-tune.sh"
 
 do_install_append() {
-  install -d ${D}${sysconfdir}/modprobe.d
-
-  install -m 0644 ${WORKDIR}/70-net-setup-link.rules ${D}${sysconfdir}/udev/rules.d/
-  install -m 0644 ${WORKDIR}/blacklist-wlan-tfl.conf ${D}${sysconfdir}/modprobe.d/
-  install -m 0644 ${WORKDIR}/systemd-rngd.service ${D}${systemd_system_unitdir}/
-
-  ln -sf ${D}${systemd_system_unitdir}/systemd-rngd.service  \
-	 ${D}${sysconfdir}/systemd/system/multi-user.target.wants/systemd-rngd.service
+  # add a profile fragment to tune the network buffer size
+	install -Dm 0644 ${WORKDIR}/systemd-net-buffer-tune.sh  \
+	 ${D}${sysconfdir}/profile.d/systemd-net-buffer-tune.sh
 
 }
 
-FILES_${PN} += "${sysconfdir}/modprobe.d/*"
+FILES_${PN} += "${sysconfdir}/profile.d/systemd-net-buffer-tune.sh"
