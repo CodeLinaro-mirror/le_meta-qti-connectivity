@@ -1,0 +1,31 @@
+From 108764bc4c12198217dc1745cbf72ef430ce1eb6 Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Tue, 21 Feb 2023 12:47:10 +0800
+Subject: [PATCH] Add CONFIG_PCI_QC_ENHANCE
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ drivers/pci/controller/dwc/Kconfig | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/pci/controller/dwc/Kconfig b/drivers/pci/controller/dwc/Kconfig
+index ecdaabb9e6c5..fe9a4d68be51 100644
+--- a/drivers/pci/controller/dwc/Kconfig
++++ b/drivers/pci/controller/dwc/Kconfig
+@@ -91,6 +91,13 @@ config PCI_EXYNOS
+ config PCI_IMX6
+ 	tristate "Freescale i.MX6/7/8 PCIe driver"
+ 
++config PCI_QC_ENHANCE
++	bool "QC PCIe link stable enhancement code"
++	depends on PCI_IMX6
++	help
++	  Enable PCIe link stable enhancement for PCIe enumeration and
++	  PCIe device power control
++
+ config PCI_IMX6_HOST
+ 	bool "Freescale i.MX6/7/8 PCIe controller host mode"
+ 	depends on ARCH_MXC || COMPILE_TEST
+-- 
+2.17.1
+

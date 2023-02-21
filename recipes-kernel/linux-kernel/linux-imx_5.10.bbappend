@@ -25,6 +25,7 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0006-Add-32k-support-for-imx8qxp.patch \
 	file://${ADDON_FOLDER}/rcpm_msi.patch \
 	file://${ADDON_FOLDER}/Set-PERST-low-when-RC-suspend.patch \
+	file://${ADDON_FOLDER}/Add-CONFIG_PCI_QC_ENHANCE.patch \
 "
 
 do_copy_defconfig_append() {
