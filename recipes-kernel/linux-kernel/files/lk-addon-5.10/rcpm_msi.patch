@@ -32,7 +32,7 @@ index d3ca0d9..2c0b6c3 100644
  	return 0;
  }
 +
-+int imx6_rc_pm_control(void *endpoint, int op)
++int platform_rc_pm_control(void *endpoint, int op)
 +{
 +	struct pci_dev *pci_dev = (struct pci_dev *)endpoint;
 +	struct pcie_port *pp = pci_dev->bus->sysdata;
@@ -50,7 +50,7 @@ index d3ca0d9..2c0b6c3 100644
 +	}
 +	return 0;
 +}
-+EXPORT_SYMBOL(imx6_rc_pm_control);
++EXPORT_SYMBOL(platform_rc_pm_control);
  #endif
  
  static const struct dev_pm_ops imx6_pcie_pm_ops = {
