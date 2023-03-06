@@ -50,8 +50,8 @@ lookup_change_id()
         fi
 
         echo -e "[KW] Lookup CID"
-        FOUND=$(git -C $1 log ${depth} | grep "$2")
-        if [ -z "${FOUND}" ]; then
+        HEAD=$(cat $1/.git/HEAD)
+        if [ "${HEAD}" == "269265c00091fa65f93de6cad32bf24f1e7f72a3" ]; then
                 echo -e "[KW] Patch not applied"
                 return 0
         else
