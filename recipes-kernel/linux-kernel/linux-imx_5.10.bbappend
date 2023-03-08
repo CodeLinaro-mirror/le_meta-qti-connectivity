@@ -26,6 +26,7 @@ SRC_URI += " \
 	file://${ADDON_FOLDER}/rcpm_msi.patch \
 	file://${ADDON_FOLDER}/Set-PERST-low-when-RC-suspend.patch \
 	file://${ADDON_FOLDER}/Add-CONFIG_PCI_QC_ENHANCE.patch \
+	file://${ADDON_FOLDER}/Add-pci-rc-api-header-file.patch \
 "
 
 do_copy_defconfig_append() {
