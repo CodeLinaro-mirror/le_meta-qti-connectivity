@@ -9,7 +9,7 @@ IMAGE_LINGUAS = " "
 inherit core-image
 require recipes-products/images/standalone-imx8auto-image-prop.bb
 
-IMAGE_ROOTFS_SIZE ?= "139264"
+IMAGE_ROOTFS_SIZE ?= "557056"
 IMAGE_ROOTFS_EXTRA_SPACE_append = "${@bb.utils.contains("DISTRO_FEATURES", "systemd", " + 4096", "" ,d)}"
 
 #Common required tools
@@ -34,9 +34,10 @@ IMAGE_INSTALL += "rfkill"
 
 #Wlan driver
 IMAGE_INSTALL += "wlan-cnss-core"
-IMAGE_INSTALL += "qcacld32-ll-rome"
-IMAGE_INSTALL += "qcacld32-ll-hasting"
-IMAGE_INSTALL += "${@oe.utils.version_less_or_equal('KERNELVERSION', '5.4', '', 'qcacld32-ll-hsp', d)}"
+#IMAGE_INSTALL += "qcacld32-ll-rome"
+#IMAGE_INSTALL += "qcacld32-ll-hasting"
+#IMAGE_INSTALL += "${@oe.utils.version_less_or_equal('KERNELVERSION', '5.4', '', 'qcacld32-ll-hsp', d)}"
+IMAGE_INSTALL += "qcacld32-ll-hamilton"
 #IMAGE_INSTALL += "qcacld32-ll-rome-cnss2"
 #IMAGE_INSTALL += "qcacld20-ll-rome"
 #IMAGE_INSTALL += "qcacld20-hl-rome"

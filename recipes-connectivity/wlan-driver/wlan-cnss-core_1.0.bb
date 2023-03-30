@@ -21,9 +21,12 @@ EXTRA_OEMAKE += "${@oe.utils.conditional('FEATURE_RCPM', '1', 'CONFIG_PCI_RC_SUP
 
 do_compile_prepend() {
 
-# wlan hasting driver need the two head files
-    cp ${S}/cnss2/cnss2.h  ${STAGING_KERNEL_DIR}/include/net/
-    cp ${S}/cnss_utils/cnss_utils.h ${STAGING_KERNEL_DIR}/include/net/
+# wlan hamilton driver need the two head files
+    cp ${S}/inc/cnss2.h  ${STAGING_KERNEL_DIR}/include/net/
+    cp ${S}/inc/cnss_utils.h ${STAGING_KERNEL_DIR}/include/net/
+# head files at kernel is not updated, copy the latest files to kernel   
+    cp ${S}/include/linux/mhi.h ${STAGING_KERNEL_DIR}/include/linux/mhi.h
+    cp ${S}/include/trace/events/qrtr.h ${STAGING_KERNEL_DIR}/include/trace/events/qrtr.h
 
     sed -in '/Werror/d' ${S}/Kbuild
 }
