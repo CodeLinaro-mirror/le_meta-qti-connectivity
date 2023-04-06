@@ -30,6 +30,7 @@ SRC_URI += "file://config/defconfig_${KERNELVERSION}"
 
 SRC_URI += " \
 	file://${PATCH_FOLDER}/0001-update-dts-to-support-Hamilton-Chip.patch \
+	file://${PATCH_FOLDER}/0002-update-dts-to-add-32k-sleep-clock-at-imx8qxpmek.patch \
 "
 
 
