@@ -30,7 +30,7 @@ do_unpack_append() {
 
 do_download_patches() {
 	cd ${S}
-  wget --no-check-certificate https://source.codeaurora.org/quic/romeau/sba-patches/plain/sba-patches/QCA6574AU.LE.2.2.1/qcacld-2.0-LK310.patch -O qcacld-2.0-LK310.patch
+  wget --no-check-certificate https://git.codelinaro.org/clo/sba-patches/romeau_patches/-/raw/main/sba-patches/QCA6574AU.LE.2.2.1/qcacld-2.0-LK310.patch -O qcacld-2.0-LK310.patch
 }
 
 do_patch() {

@@ -25,7 +25,7 @@ do_unpack_append() {
 
 do_download_patches() {
 	cd ${S}
-  wget --no-check-certificate https://source.codeaurora.org/quic/romeau/sba-patches/plain/sba-patches/QCA6574AU.LE.2.2.1/wpa_supplicant_8_openssl_101.patch -O wpa_supplicant_8_openssl_101.patch
+  wget --no-check-certificate https://git.codelinaro.org/clo/sba-patches/romeau_patches/-/raw/main/sba-patches/QCA6574AU.LE.2.2.1/wpa_supplicant_8_openssl_101.patch -O wpa_supplicant_8_openssl_101.patch
 }
 
 do_patch() {

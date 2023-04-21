@@ -5,10 +5,10 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 #SRC_URI = "file://kernel/ \
 #          "
 
-CAF_PATCH_PATH = "https://source.codeaurora.org/quic/la/kernel/msm-3.18/patch/?"
+CLO_PATCH_PATH = "https://git.codelinaro.org/clo/la/kernel/msm-3.18/-/commit/"
 PATCH_NAME_1 = "0001-Add-strchrnul.patch"
 
-SRC_URI += "${CAF_PATCH_PATH}id=11d200e95f3e84c1102e4cc9863a3614fd41f3ad;downloadfilename=${PATCH_NAME_1};md5sum=d7a3b4c7611f69c3e25a4c880d420982"
+SRC_URI += "${CLO_PATCH_PATH}11d200e95f3e84c1102e4cc9863a3614fd41f3ad.patch;downloadfilename=${PATCH_NAME_1};md5sum=1387e55eb28cd20c21943be54b7c576a"
 
 do_patch_prepend() {
     bb.build.exec_func('do_download_patches', d)
@@ -16,9 +16,9 @@ do_patch_prepend() {
 
 do_download_patches() {
     cd ${WORKDIR}
-    wget --no-check-certificate https://www.codeaurora.org/patches/external/wlan/Automotive/3rdparty/fsl3-10/Release_15_09_10/cfg80211_3.10.17.patch
-    wget --no-check-certificate https://source.codeaurora.org/quic/romeau/sba-patches/plain/sba-patches/QCA6564.LE.1.0.3.c0.c1.krack/0001-WLAN-subsystem-Sysctl-support-for-key-TCP-IP-paramet.patch -O 0001-WLAN-subsystem-Sysctl-support-for-key-TCP-IP-paramet.patch
-    wget --no-check-certificate https://source.codeaurora.org/quic/romeau/sba-patches/plain/sba-patches/QCA6574AU.LE.2.2.1/cfg80211_3.10.17_wpa3.patch -O cfg80211_3.10.17_wpa3.patch
+    wget --no-check-certificate https://git.codelinaro.org/clo/external-wlan/patches/-/raw/caf_migration/master/Automotive/3rdparty/fsl3-10/Release_15_09_10/cfg80211_3.10.17.patch
+    wget --no-check-certificate https://git.codelinaro.org/clo/sba-patches/romeau_patches/-/raw/main/sba-patches/QCA6564.LE.1.0.3.c0.c1.krack/0001-WLAN-subsystem-Sysctl-support-for-key-TCP-IP-paramet.patch -O 0001-WLAN-subsystem-Sysctl-support-for-key-TCP-IP-paramet.patch
+    wget --no-check-certificate https://git.codelinaro.org/clo/sba-patches/romeau_patches/-/raw/main/sba-patches/QCA6574AU.LE.2.2.1/cfg80211_3.10.17_wpa3.patch -O cfg80211_3.10.17_wpa3.patch
 }
 
 python do_patch_append() {
