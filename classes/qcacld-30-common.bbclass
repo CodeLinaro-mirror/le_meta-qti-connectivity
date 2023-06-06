@@ -25,7 +25,7 @@ RPROVIDES_${PN}  += "kernel-module-${WLAN_MODULE_NAME} kernel-module-${WLAN_MODU
 
 EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y CONFIG_MULTI_IF_LOG=y"
 
-do_compile_prepend() {
+do_compile:prepend() {
     sed -in '/Werror/d' ${S}/Kbuild
     # Using default qcacld-3.0 absolute path, get compilation error:
     # make[3]: execvp: /bin/sh: Argument list too long.

@@ -13,11 +13,11 @@ S = "${WORKDIR}/mdm-init/"
 
 EXTRA_OECONF = "--enable-thirdparty-wlan=yes"
 
-FILES_${PN} += "${datadir}/misc/wifi/*"
-FILES_${PN} += "${nonarch_base_libdir}/firmware/wlan/*"
-FILES_${PN} += "${sysconfdir}/init.d/*"
+FILES:${PN} += "${datadir}/misc/wifi/*"
+FILES:${PN} += "${nonarch_base_libdir}/firmware/wlan/*"
+FILES:${PN} += "${sysconfdir}/init.d/*"
 
-do_install_append() {
+do_install:append() {
 	BDIR="${D}/lib/firmware/wlan"
 	CFG_FILE="${BDIR}/QCA6698AU.LE.1.1_HastingPrime_PCIe_qcacld-3.0-iMX8.ini"
 	ADD_FILE="${BDIR}/wow_pcie_wake_n_imx8mqevk.ini"
