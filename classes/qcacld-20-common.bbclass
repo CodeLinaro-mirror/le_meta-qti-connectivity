@@ -13,7 +13,7 @@ WLAN_CHIP_NAME ?= ""
 DEPENDS = "virtual/kernel"
 
 FILESPATH =+ "${BSPDIR}/sources/wlan-opensource:"
-SRC_URI = "file://qcacld-2.0/"
+#SRC_URI = "file://qcacld-2.0/"
 S = "${WORKDIR}/qcacld-2.0"
 
 FILES_${PN}     += "lib/firmware/wlan/*"
@@ -22,7 +22,7 @@ RPROVIDES_${PN}  += "kernel-module-${WLAN_MODULE_NAME} kernel-module-${WLAN_MODU
 
 EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y"
 
-do_compile_prepend() {
+do_compile:prepend() {
     sed -in '/Werror/d' ${S}/Kbuild
 }
 

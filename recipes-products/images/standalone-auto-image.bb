@@ -8,8 +8,8 @@ IMAGE_LINGUAS = " "
 
 inherit core-image
 
-IMAGE_ROOTFS_SIZE ?= "139264"
-IMAGE_ROOTFS_EXTRA_SPACE_append = "${@bb.utils.contains("DISTRO_FEATURES", "systemd", " + 4096", "" ,d)}"
+IMAGE_ROOTFS_SIZE ?= "557056"
+IMAGE_ROOTFS_EXTRA_SPACE:append = "${@bb.utils.contains("DISTRO_FEATURES", "systemd", " + 4096", "" ,d)}"
 
 require ${PROJECTID}-image.inc
 

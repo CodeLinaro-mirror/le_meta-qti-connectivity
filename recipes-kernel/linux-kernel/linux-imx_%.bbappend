@@ -1,6 +1,6 @@
 SCMVERSION = "n"
 
-FILESEXTRAPATHS_prepend := "${BSPDIR}/sources:${THISDIR}/files:"
+FILESEXTRAPATHS:prepend := "${BSPDIR}/sources:${THISDIR}/files:"
 
 MAINLINE_PRESENT = "${@os.path.exists('${BSPDIR}/sources/kernel')}"
 
@@ -18,7 +18,7 @@ SRC_URI += "file://config/defconfig_${KERNELVERSION}"
 SRC_URI += "file://${PATCH_FOLDER}/"
 SRC_URI += "file://${ADDON_FOLDER}/"
 
-do_copy_defconfig_append() {
+do_copy_defconfig:append() {
     cat ${WORKDIR}/config/defconfig_${KERNELVERSION} >> ${B}/.config
 }
 
