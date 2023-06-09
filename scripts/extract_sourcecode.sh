@@ -31,6 +31,10 @@
 # This script will extract all required open source code.
 # . sources/meta-qti-connectivity/scripts/extract_sourcecode.sh
 
+#Changes from Qualcomm Innovation Center are provided under the following license:
+#Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+#SPDX-License-Identifier: BSD-3-Clause-Clear
+
 download_git_code()
 {
     local GIT_URL=$1 GIT_REV=$2
@@ -67,7 +71,7 @@ download_git_code()
     echo "Download ${GIT_NAME} completed"
 }
 
-META_FSL_GIT="git://git.yoctoproject.org/meta-freescale"
+META_FSL_GIT="https://github.com/Freescale/meta-freescale"
 META_FSL_3RD_GIT="https://github.com/Freescale/meta-freescale-3rdparty"
 META_FSL_DIS_GIT="https://github.com/Freescale/meta-freescale-distro"
 
@@ -102,6 +106,12 @@ case ${KERNELVERSION} in
         META_FSL_3RD_REV="f8150f3b37cb83cba1f9e2378e57bb63e02d4610"
         META_FSL_DIS_REV="e6daa26ba1f748326546063d63a085ae671827d9"
         ;;
+    "6.1")
+        #For manifest: imx-6.1.1-1.0.1.xml
+        META_FSL_REV="09c47379218167dda9fb0098129909a667fea2ec"
+        META_FSL_3RD_REV="96c1f6a6c2cad246687cd695e0873fcc6cdde935"
+        META_FSL_DIS_REV="1069c2f210b18cd707a4d8a82140a684a42a4ff6"
+        ;;        
     *)
         echo "Not supported kernel version ${KERNELVERSION}"
         return 1
