@@ -42,7 +42,7 @@ generate_common_bblayers()
 LCONF_VERSION = "${LCONF_VER}"
 
 BBPATH = "\${TOPDIR}"
-export BSPDIR := "\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)) + '/../..')}"
+BSPDIR := "\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)) + '/../..')}"
 
 BBFILES ?= ""
 BBLAYERS = " \\
@@ -57,7 +57,6 @@ BBLAYERS = " \\
   \${BSPDIR}/sources/meta-openembedded/meta-filesystems \\
   \\
   \${BSPDIR}/sources/meta-browser \\
-  \${BSPDIR}/sources/meta-qt5 \\
 "
 EOF
 }
@@ -78,7 +77,7 @@ BBLAYERS += " \${BSPDIR}/sources/meta-freescale "
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale-3rdparty "
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale-distro "
 
-##i.MX Yocto Project Release layers
+# i.MX Yocto Project Release layers
 BBLAYERS += " \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-bsp "
 BBLAYERS += " \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-sdk "
 EOF
@@ -86,20 +85,24 @@ EOF
     case ${KERNELVERSION} in
         "4.1" | "4.9")
             sed -e "s/meta-poky/meta-yocto/g" -i ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-qt5 \"" >> ${BBLAYERS_CONF}
             ;;
         "4.14")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-qt5 \"" >> ${BBLAYERS_CONF}
             # Do noting.
             ;;
         "4.19")
             echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-ml \"" >> ${BBLAYERS_CONF}
             echo "" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-rust \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-qt5 \"" >> ${BBLAYERS_CONF}
             ;;
         "5.4")
             echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-ml \"" >> ${BBLAYERS_CONF}
             echo "" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-rust \"" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-clang \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-qt5 \"" >> ${BBLAYERS_CONF}
             ;;
         "5.10")
             echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-ml \"" >> ${BBLAYERS_CONF}
@@ -108,7 +111,22 @@ EOF
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-clang \"" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-python2 \""  >> ${BBLAYERS_CONF}
             sed -e "s/meta-browser/meta-browser\/meta-chromium/g" -i ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-qt5 \"" >> ${BBLAYERS_CONF}
             #echo "BBLAYERS += \" \${BSPDIR}/sources/meta-virtualization \""  >> ${BBLAYERS_CONF}
+            ;;
+        "6.1")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-ml \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-v2x \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-nxp-demo-experience \"" >> ${BBLAYERS_CONF}
+            echo "" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-arm/meta-arm \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-arm/meta-arm-toolchain \""  >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-clang \"" >> ${BBLAYERS_CONF}
+            sed -e "s/meta-browser/meta-browser\/meta-chromium/g" -i ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-qt6 \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-security/meta-parsec \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-security/meta-tpm \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-virtualization \""  >> ${BBLAYERS_CONF}
             ;;
         *)
             echo "Not supported kernel version ${KERNELVERSION}"
@@ -142,6 +160,13 @@ EOF
     else
         echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_5.10.bbappend"' >> ${BBLAYERS_CONF}
     fi
+    
+    if [ "${KERNELVERSION}" == "6.1" ]; then
+        echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"' >> ${BBLAYERS_CONF}
+        echo 'BBMASK.="|meta-imx/meta-bsp/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend"' >> ${BBLAYERS_CONF}
+    else
+        echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_6.1.bbappend"' >> ${BBLAYERS_CONF}
+    fi
 }
 
 ################################################################
@@ -150,7 +175,7 @@ EOF
 BBLAYERS_CONF=conf/bblayers.conf
 
 echo '' > ${BBLAYERS_CONF}
-if [ "${KERNELVERSION}" == "4.19" ]; then
+if [ "${KERNELVERSION}" == "6.1" ]; then
     LCONF_VER=7
 fi
 

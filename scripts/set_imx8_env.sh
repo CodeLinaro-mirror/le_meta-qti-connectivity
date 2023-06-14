@@ -33,6 +33,10 @@
 # Update BSP configuration parameters.
 # Export QTI Software Product specific PROJECTID.
 
+#Changes from Qualcomm Innovation Center are provided under the following license:
+#Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+#SPDX-License-Identifier: BSD-3-Clause-Clear
+
 umask 022
 
 usage()
@@ -41,14 +45,14 @@ usage()
     echo
     echo "script usage for QTI Standalone Auto image"
     echo "${SCRIPT_PARAMS} source ${SCRIPT_FILE} [BUILDDIR]"
-    echo "For example: PROJECT=QCA6574AULE221 source ${SCRIPT_FILE}"
+    echo "For example: PROJECT=QCA67x7AULE10 source ${SCRIPT_FILE}"
     echo
     echo "EULA      :  FSL EULA, default 0 if undefined."
     echo "BUILDDIR  :  the build directory location, 'build' by default."
-    echo "MACHINE   :  Supported machines, 'imx6qsabresd' by default. reference command \$list_machines"
+    echo "MACHINE   :  Supported machines, 'imx8qxpmek' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
     echo "ADDON     :  Connectivity add-on feature names (separate in space)."
-    echo "    QCA6574AULE221 : QCA6574AU.LE.2.2.1 SP"
+    echo "QCA67x7AULE10 : QCA67x7AU.LE.1.0 SP"
 }
 
 execute_command()
@@ -168,10 +172,10 @@ esac
 
 
 case $PROJECT in
-    "QCA6574AULE221" | "")
+    "QCA67x7AULE10" | "")
         {
             DISTRO=fsl-imx-xwayland
-            export PROJECTID=QCA6574AULE221
+            export PROJECTID=QCA67x7AULE10
         } ;;
     *)
         {
@@ -220,8 +224,8 @@ fi
 # Get current BSP kernel version
 get_bsp_kernel_version
 if [ -z "${KERNELVERSION}" ]; then
-    echo "Can't find linux kernel bbfile, use 5.10 by default"
-    KERNELVERSION="5.10"
+    echo "Can't find linux kernel bbfile, use 6.1 by default"
+    KERNELVERSION="6.1"
 fi
 
 # Get all required source codes.
