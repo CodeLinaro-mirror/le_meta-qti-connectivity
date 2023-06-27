@@ -117,7 +117,6 @@ EOF
         "6.1")
             echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-ml \"" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-v2x \"" >> ${BBLAYERS_CONF}
-            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-nxp-demo-experience \"" >> ${BBLAYERS_CONF}
             echo "" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-arm/meta-arm \"" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-arm/meta-arm-toolchain \""  >> ${BBLAYERS_CONF}
