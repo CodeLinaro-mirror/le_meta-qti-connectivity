@@ -32,6 +32,6 @@ do_install() {
 	install -m 0755 ${S}/dsrc/${TOOL_CHAIN_PRE}bin/dcc.dat ${D}/${bindir}/
 }
 
-FILES_${PN} += "${bindir}*"
-FILES_${PN}-dbg += "${bindir}/.debug/*"
+FILES:${PN} += "${bindir}*"
+FILES:${PN}-dbg += "${bindir}/.debug/*"
 
