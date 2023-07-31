@@ -8,9 +8,9 @@ DEPENDS = "openssl libnl virtual/kernel"
 
 FILESPATH =+ "${BSPDIR}/sources:"
 
-FILES_${PN} += "${sbindir}/*"
-FILES_${PN} += "${libdir}/lib*.so"
-FILES_${PN}-dbg += "${sbindir}/.debug"
+FILES:${PN} += "${sbindir}/*"
+FILES:${PN} += "${libdir}/lib*.so"
+FILES:${PN}-dbg += "${sbindir}/.debug"
 
 SRC_URI = "file://wlan-opensource/wpa_supplicant_8/"
 SRC_URI += "file://hostapdconf \

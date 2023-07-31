@@ -17,6 +17,6 @@ do_install:append() {
 
 }
 
-FILES_${PN} += "${sysconfdir}/profile.d/systemd-net-buffer-tune.sh"
-FILES_${PN} += "${sysconfdir}/udev/rules.d/01-fwdump-udev.rules"
-FILES_${PN} += "${sbindir}/fw-ram-dump.sh"
+FILES:${PN} += "${sysconfdir}/profile.d/systemd-net-buffer-tune.sh"
+FILES:${PN} += "${sysconfdir}/udev/rules.d/01-fwdump-udev.rules"
+FILES:${PN} += "${sbindir}/fw-ram-dump.sh"

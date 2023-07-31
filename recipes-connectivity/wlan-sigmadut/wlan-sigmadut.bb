@@ -27,5 +27,5 @@ do_install() {
 	install -m 0755 ${S}/sigma_dut ${D}/${bindir}
 }
 
-FILES_${PN} += "${bindir}*"
-FILES_${PN}-dbg += "${bindir}/.debug/*"
+FILES:${PN} += "${bindir}*"
+FILES:${PN}-dbg += "${bindir}/.debug/*"
