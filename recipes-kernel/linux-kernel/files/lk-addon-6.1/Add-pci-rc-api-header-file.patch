@@ -1,0 +1,26 @@
+From ce85f44c2b4f3b647356b70813e737e43e6f6326 Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Wed, 8 Mar 2023 11:39:09 +0800
+Subject: [PATCH] Add pci rc api header file
+
+add following function declare:
+platform_rc_pm_control
+platform_pcie_enumerate
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ include/linux/pci_rc_api.h | 2 ++
+ 1 file changed, 2 insertions(+)
+ create mode 100644 include/linux/pci_rc_api.h
+
+diff --git a/include/linux/pci_rc_api.h b/include/linux/pci_rc_api.h
+new file mode 100644
+index 000000000000..e643ed8c7c3a
+--- /dev/null
++++ b/include/linux/pci_rc_api.h
+@@ -0,0 +1,2 @@
++int platform_rc_pm_control(void *endpoint, int op);
++int platform_pcie_enumerate(u32 index);
+-- 
+2.17.1
+

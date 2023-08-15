@@ -1,0 +1,27 @@
+From 6ea13afcbeacfb73e5d8ad29a1d8aadb7a1e9115 Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Mon, 6 Feb 2023 11:10:06 +0800
+Subject: [PATCH] add 32K for imx8mqevk
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi b/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
+index 6cdb553b6200..272bfae524b9 100644
+--- a/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
+@@ -185,7 +185,8 @@ hsio_subsys: bus@5f000000 {
+ 
+ 	cnss2: qcom,cnss-qca-converged {
+ 		compatible = "qcom,cnss-qca-converged";
+-
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_wifi>;
+ 		qcom,converged-dt;
+ 		qcom,bus-type=<0>;
+ 
+-- 
+2.17.1
+
