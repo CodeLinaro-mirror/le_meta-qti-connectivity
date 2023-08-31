@@ -6,7 +6,9 @@
 DEVPATH=$(readlink -f /sys/devices/virtual/devcoredump/devcd*)
 timestamp=$(date +%F_%H-%M-%S)
 dev=${DEVPATH##*/}
-if [ "$1" == "fw_rddm" ]; then
+if [ "$1" == "host_rddm" ]; then
+filename=/var/crash/qca-host-error_${dev}_${timestamp}.dump
+elif [ "$1" == "fw_rddm" ]; then
 filename=/var/crash/qca-fw-error_${dev}_${timestamp}.dump
 elif [ "$1" == "fw_sram" ]; then
 filename=/var/crash/qca-fw-sram_${dev}_${timestamp}.dump

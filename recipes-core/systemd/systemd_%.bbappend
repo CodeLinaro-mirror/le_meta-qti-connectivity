@@ -4,7 +4,7 @@ FILESEXTRAPATHS:append := ":${THISDIR}/systemd-230"
 SRC_URI:append += "file://systemd-net-buffer-tune.sh \
                    file://01-fwdump-udev.rules \
                    file://fw-ram-dump.sh \
-                   file://fw-ram-dump-umh.sh \
+                   file://ram-dump-umh.sh \
                   "
 
 do_install:append() {
@@ -15,12 +15,12 @@ do_install:append() {
 	 ${D}${sysconfdir}/udev/rules.d/01-fwdump-udev.rules
 	install -Dm 0755 ${WORKDIR}/fw-ram-dump.sh \
 	 ${D}${sbindir}/fw-ram-dump.sh
-	install -Dm 0755 ${WORKDIR}/fw-ram-dump-umh.sh \
-	 ${D}${sbindir}/fw-ram-dump-umh.sh
+	install -Dm 0755 ${WORKDIR}/ram-dump-umh.sh \
+	 ${D}${sbindir}/ram-dump-umh.sh
 
 }
 
 FILES:${PN} += "${sysconfdir}/profile.d/systemd-net-buffer-tune.sh"
 FILES:${PN} += "${sysconfdir}/udev/rules.d/01-fwdump-udev.rules"
 FILES:${PN} += "${sbindir}/fw-ram-dump.sh"
-FILES:${PN} += "${sbindir}/fw-ram-dump-umh.sh"
+FILES:${PN} += "${sbindir}/ram-dump-umh.sh"
