@@ -20,7 +20,7 @@ Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
  include/linux/dma-mapping.h                        |  39 ++-
  include/linux/elf.h                                |  33 +++
  include/linux/mod_devicetable.h                    |  15 ++
- include/net/cnss2.h                                | 272 +++++++++++++++++++++
+ include/net/cnss2.h                                | 297 +++++++++++++++++++++++
  include/net/cnss_nl.h                              | 112 ++++++++
  include/uapi/linux/coresight-stm.h                 |  13 +-
  include/uapi/linux/qrtr.h                          |  42 ++++
@@ -755,7 +755,7 @@ new file mode 100755
 index 00000000..95e872c
 --- /dev/null
 +++ b/include/net/cnss2.h
-@@ -0,0 +1,272 @@
+@@ -0,0 +1,297 @@
 +/* Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -858,6 +858,8 @@ index 00000000..95e872c
 +	int  (*resume_noirq)(struct pci_dev *pdev);
 +	void (*modem_status)(struct pci_dev *, int state);
 +	void (*update_status)(struct pci_dev *pdev, uint32_t status);
++	int  (*update_event)(struct pci_dev *pdev,
++			     void *uevent);
 +	struct cnss_wlan_runtime_ops *runtime_ops;
 +	const struct pci_device_id *id_table;
 +	enum cnss_driver_mode (*get_driver_mode)(void);
@@ -885,6 +887,29 @@ index 00000000..95e872c
 +	CNSS_LOAD_UNLOAD,
 +	CNSS_RECOVERY,
 +	CNSS_FW_DOWN,
++	CNSS_HANG_EVENT,
++	CNSS_BUS_EVENT,
++};
++
++struct cnss_hang_event {
++	void *hang_event_data;
++	u16 hang_event_data_len;
++};
+
++enum cnss_bus_event_type {
++	BUS_EVENT_PCI_LINK_DOWN = 0,
++	BUS_EVENT_PCI_LINK_RESUME_FAIL = 1,
++	BUS_EVENT_INVALID = 0xFFFF,
++};
++
++struct cnss_bus_event {
++	enum cnss_bus_event_type etype;
++	void *event_data;
++};
++
++struct cnss_uevent_data {
++	enum cnss_driver_status status;
++	void *data;
 +};
 +
 +struct cnss_ce_tgt_pipe_cfg {
