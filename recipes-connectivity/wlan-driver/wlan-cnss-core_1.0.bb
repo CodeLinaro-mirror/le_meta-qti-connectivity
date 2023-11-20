@@ -26,6 +26,7 @@ do_compile:prepend() {
     cp ${S}/inc/cnss_utils.h ${STAGING_KERNEL_DIR}/include/net/
 # head files at kernel is not updated, copy the latest files to kernel   
     cp ${S}/include/linux/mhi.h ${STAGING_KERNEL_DIR}/include/linux/mhi.h
+    cp ${S}/include/linux/ipc_logging.h ${STAGING_KERNEL_DIR}/include/linux/ipc_logging.h
     cp ${S}/include/trace/events/qrtr.h ${STAGING_KERNEL_DIR}/include/trace/events/qrtr.h
 
     sed -in '/Werror/d' ${S}/Kbuild
