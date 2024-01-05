@@ -2,6 +2,7 @@
 FILESEXTRAPATHS:append := ":${THISDIR}/systemd-230"
 
 SRC_URI:append += "file://systemd-net-buffer-tune.sh \
+                   file://ldconf-android-lib.conf \
                    file://01-fwdump-udev.rules \
                    file://fw-ram-dump.sh \
                    file://ram-dump-umh.sh \
@@ -11,6 +12,8 @@ do_install:append() {
   # add a profile fragment to tune the network buffer size
 	install -Dm 0644 ${WORKDIR}/systemd-net-buffer-tune.sh  \
 	 ${D}${sysconfdir}/profile.d/systemd-net-buffer-tune.sh
+	install -Dm 0644 ${WORKDIR}/ldconf-android-lib.conf \
+	 ${D}${sysconfdir}/ld.so.conf.d/ldconf-android-lib.conf
 	install -Dm 0644 ${WORKDIR}/01-fwdump-udev.rules \
 	 ${D}${sysconfdir}/udev/rules.d/01-fwdump-udev.rules
 	install -Dm 0755 ${WORKDIR}/fw-ram-dump.sh \
@@ -21,6 +24,7 @@ do_install:append() {
 }
 
 FILES:${PN} += "${sysconfdir}/profile.d/systemd-net-buffer-tune.sh"
+FILES:${PN} += "${sysconfdir}/ld.so.conf.d/ldconf-android-lib.conf"
 FILES:${PN} += "${sysconfdir}/udev/rules.d/01-fwdump-udev.rules"
 FILES:${PN} += "${sbindir}/fw-ram-dump.sh"
 FILES:${PN} += "${sbindir}/ram-dump-umh.sh"
