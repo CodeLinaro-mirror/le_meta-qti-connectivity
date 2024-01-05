@@ -1,0 +1,45 @@
+From e9b203f3df11b9548fb6739683cfe8a87f91e6af Mon Sep 17 00:00:00 2001
+From: Zhaoyang Liu <quic_zhaoyang@quicinc.com>
+Date: Wed, 11 Oct 2023 13:49:52 +0800
+Subject: [PATCH] libutils.mk change out dir
+
+---
+ git/system/core/debian/libutils.mk | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git git/system/core/debian/libutils.mk git/system/core/debian/libutils.mk
+index e39fd9b..f28520c 100644
+--- git/system/core/debian/libutils.mk
++++ git/system/core/debian/libutils.mk
+@@ -1,5 +1,4 @@
+-
+-include /usr/share/dpkg/architecture.mk
++include ../../rules_yocto.mk
+ 
+ NAME = libutils
+ SOURCES = \
+@@ -36,7 +35,7 @@ CPPFLAGS += \
+ 
+ LDFLAGS += -shared -Wl,-soname,$(NAME).so.0 \
+            -Wl,-rpath=/usr/lib/$(DEB_HOST_MULTIARCH)/android \
+-           -lpthread -L. -llog -lcutils -lbacktrace
++           -lpthread -L$(OUT_DIR)/usr/lib/$(DEB_HOST_MULTIARCH)/android/ -llog -lcutils -lbacktrace
+ 
+ # -latomic should be the last library specified
+ # https://github.com/android/ndk/issues/589
+@@ -48,8 +47,9 @@ ifeq ($(DEB_HOST_ARCH), mipsel)
+ endif
+ 
+ build: $(SOURCES)
+-	$(CXX) $^ -o $(NAME).so.0 $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
+-	ln -s $(NAME).so.0 $(NAME).so
++	$(CXX) $^ -o $(OUT_DIR)/usr/lib/$(DEB_HOST_MULTIARCH)/android/$(NAME).so.0 $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
++	ln -s $(NAME).so.0 $(OUT_DIR)/usr/lib/$(DEB_HOST_MULTIARCH)/android/$(NAME).so
++	cp -r libutils/include/utils $(OUT_DIR)/usr/include/
+ 
+ clean:
+-	$(RM) $(NAME).so*
++	$(RM) $$(OUT_DIR)/usr/lib/$(DEB_HOST_MULTIARCH)/android/(NAME).so*
+-- 
+2.17.1
+

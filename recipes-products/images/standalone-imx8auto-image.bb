@@ -27,6 +27,7 @@ IMAGE_INSTALL += "openssh-sftp-server"
 IMAGE_INSTALL += "iptables"
 IMAGE_INSTALL += "boost"
 IMAGE_INSTALL += "vsomeip"
+IMAGE_INSTALL += "android-common-libs"
 
 #Bluetooth software
 SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/synergy-bt-proprietary')}"
