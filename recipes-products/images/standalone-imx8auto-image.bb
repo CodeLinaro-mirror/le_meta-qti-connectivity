@@ -49,6 +49,7 @@ IMAGE_INSTALL += "qcacld32-ll-hamilton"
 
 #Wlan tools
 IMAGE_INSTALL += "wpa-supplicant"
+IMAGE_INSTALL += "wpa-supplicant-8-lib"
 IMAGE_INSTALL += "wlan-sigmadut"
 IMAGE_INSTALL += "wlan-config"
 IMAGE_INSTALL += "rng-tools"
