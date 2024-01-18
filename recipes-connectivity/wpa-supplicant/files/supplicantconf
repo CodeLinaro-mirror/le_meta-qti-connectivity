@@ -59,7 +59,7 @@ CONFIG_NO_ROAMING=y
 
 CONFIG_AP=y
 
-CONFIG_P2P=y
+#CONFIG_P2P=y
 CONFIG_TDLS=y
 CONFIG_WIFI_DISPLAY=y
 
@@ -93,3 +93,9 @@ CONFIG_IEEE80211BE=y
 
 # Add support for writing debug log to a file (/tmp/wpa_supplicant-log-#.txt)
 CONFIG_DEBUG_FILE=y
+
+# Enable SOMEIP Service
+CONFIG_SOMEIP_SUPPORT=y
+
+# For Debugging
+CONFIG_WPA_TRACE=y
