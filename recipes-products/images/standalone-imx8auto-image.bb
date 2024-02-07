@@ -28,6 +28,7 @@ IMAGE_INSTALL += "iptables"
 IMAGE_INSTALL += "boost"
 IMAGE_INSTALL += "vsomeip"
 IMAGE_INSTALL += "android-common-libs"
+IMAGE_INSTALL += "protobuf"
 IMAGE_INSTALL += "hardware-legacy-headers cld80211-lib wifi-hal-qcom wifi-hal-lib"
 
 #Bluetooth software
