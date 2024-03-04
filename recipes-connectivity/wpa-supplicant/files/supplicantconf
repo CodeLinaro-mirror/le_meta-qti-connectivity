@@ -85,8 +85,5 @@ CONFIG_SAE_PK=y
 CONFIG_SUITEB=y
 CONFIG_SUITEB192=y
 
-# Enable 802.11AX
-CONFIG_IEEE80211AX=y
-
 # Add support for writing debug log to a file (/tmp/wpa_supplicant-log-#.txt)
 CONFIG_DEBUG_FILE=y

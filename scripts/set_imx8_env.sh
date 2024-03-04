@@ -203,8 +203,10 @@ do
 done
 
 # Default MACHINE
-if [[ -z "$MACHINE" || $MACHINE == "imx8mqevk" || $MACHINE == "imxauto" ]]; then
-    MACHINE='imx8mqevk'
+if [[ -z "$MACHINE" || $MACHINE == "imx6qsabresd" || $MACHINE == "imxauto" ]]; then
+    MACHINE='imx6qsabresd'
+elif [ "$MACHINE" == "imx8mqevk" ]; then
+    MACHINE='imx8mqevk'    
 elif [ "$MACHINE" == "imx8qxpmek" ]; then
     MACHINE='imx8qxpmek'
 elif [ "$MACHINE" == "imx8qxpc0mek" ]; then
