@@ -30,6 +30,7 @@ IMAGE_INSTALL += "vsomeip"
 IMAGE_INSTALL += "android-common-libs"
 IMAGE_INSTALL += "protobuf"
 IMAGE_INSTALL += "hardware-legacy-headers cld80211-lib wifi-hal-qcom wifi-hal-lib"
+IMAGE_INSTALL += "wifi-cond-nlmsg-proto wifi-cond-nlmsg-message"
 
 #Bluetooth software
 SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/bt-proprietary/synergy')}"
