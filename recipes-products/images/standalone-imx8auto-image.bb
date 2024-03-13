@@ -50,6 +50,7 @@ IMAGE_INSTALL += "qcacld32-ll-hamilton"
 
 #Wlan tools
 IMAGE_INSTALL += "hardware-legacy-headers cld80211-lib wifi-hal-qcom wifi-hal-lib"
+IMAGE_INSTALL += "wifi-cond-proto wifi-cond-message"
 IMAGE_INSTALL += "wifi-cond-nlmsg-proto wifi-cond-nlmsg-message"
 IMAGE_INSTALL += "wifi-cond-server"
 IMAGE_INSTALL += "wpa-supplicant"
