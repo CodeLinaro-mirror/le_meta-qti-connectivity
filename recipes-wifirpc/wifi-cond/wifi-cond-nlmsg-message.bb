@@ -24,7 +24,7 @@ do_install() {
     install -d ${D}${libdir}
     install -m 0755 ${S}/*.so.0 ${D}/${libdir}
     cd ${D}${libdir}
-    ln -s libqti_wifi_nlmsgInfo_message.so.0 libqti_wifi_nlmsgInfo_message.so
+    ln -s libqti-wifi-nlmsgInfo-message.so.0 libqti-wifi-nlmsgInfo-message.so
 }
 
 FILES:${PN} += "${libdir}/*.so.0 ${includedir}*"
