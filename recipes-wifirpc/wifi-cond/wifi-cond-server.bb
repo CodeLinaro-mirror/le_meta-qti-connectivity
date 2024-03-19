@@ -13,14 +13,20 @@ DEPENDS += "qrpc-util wifi-cond-message wifi-cond-nlmsg-message"
 FILESPATH =+ "${BSPDIR}/sources/wlan-opensource/remotewifi:"
 SRC_URI = "file://wificond"
 S = "${WORKDIR}/wificond"
+COND_RPC_RXMSG_PATH = "/vendor/wifi/rxmsg/"
+COND_RPC_TXMSG_PATH = "/vendor/wifi/txmsg/"
 
 CPPFLAGS += "-I${STAGING_INCDIR}/libnl3 -I${STAGING_INCDIR}/android" 
 CPPFLAGS += "-I${STAGING_INCDIR}/rpc -I${STAGING_INCDIR}/rpc/proto/wificond/ -I${STAGING_INCDIR}/rpc/message/wificond/"
 LDFLAGS += "-L${STAGING_LIBDIR}/android -L${STAGING_LIBDIR}"
 
 do_install() {
+    install -d ${D}/${COND_RPC_RXMSG_PATH}
+    install -d ${D}/${COND_RPC_TXMSG_PATH}
     install -d ${D}/${bindir}
     install -m 0755 ${S}/wificond-someip-service ${D}/${bindir}/
 }
 
 FILES:${PN} += "${bindir}*"
+FILES:${PN} += " ${COND_RPC_RXMSG_PATH}"
+FILES:${PN} += " ${COND_RPC_TXMSG_PATH}"
