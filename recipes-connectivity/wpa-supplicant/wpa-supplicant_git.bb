@@ -21,6 +21,7 @@ SRC_URI += "file://hostapdconf \
            "
 
 S = "${WORKDIR}/wlan-opensource/wpa_supplicant_8"
+SUPPLICANT_CONFIG_PATH = "/data/vendor/wifi/wpa"
 
 do_configure() {
 	install -m 0644 ${WORKDIR}/hostapdconf ${S}/hostapd/.config
@@ -49,4 +50,9 @@ do_install() {
 	install -m 0755 ${S}/hostapd/hostapd_cli ${D}${sbindir}
 	install -d ${D}${bindir}
 	install -m 0755 ${S}/wpa_supplicant/wpa_passphrase ${D}${bindir}
+
+	install -d ${D}${SUPPLICANT_CONFIG_PATH}
+	install -m 0755 ${S}/wpa_supplicant/wpa_supplicant_template.conf ${D}/${SUPPLICANT_CONFIG_PATH}/wpa_supplicant.conf
 }
+
+FILES:${PN} += "${SUPPLICANT_CONFIG_PATH}/*"
