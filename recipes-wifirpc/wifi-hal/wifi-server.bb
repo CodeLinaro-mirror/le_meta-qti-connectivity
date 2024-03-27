@@ -13,7 +13,7 @@ FILESPATH =+ "${BSPDIR}/sources/wlan-opensource/remotewifi:"
 SRC_URI = "file://interfaces/wifi/rpc/server/"
 S = "${WORKDIR}/interfaces/wifi/rpc/server"
 
-EXTRA_OEMAKE += "CONFIG_DEBUG=y“
+EXTRA_OEMAKE += "CONFIG_DEBUG=y"
 
 CPPFLAGS += "-I${STAGING_INCDIR}/android"
 CPPFLAGS += "-I${STAGING_INCDIR}/rpc/util"
