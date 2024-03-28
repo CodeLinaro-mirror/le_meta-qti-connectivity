@@ -52,7 +52,7 @@ IMAGE_INSTALL += "qcacld32-ll-hamilton"
 
 #Wlan tools
 IMAGE_INSTALL += "hardware-legacy-headers cld80211-lib wifi-hal-qcom wifi-hal-lib wifi-ndk-header"
-IMAGE_INSTALL += "qti-wifi-server wifi-someip-service qti-wifi-message qti-wifi-proto"
+IMAGE_INSTALL += "wifi-server wifi-someip-service wifi-message wifi-proto"
 IMAGE_INSTALL += "wifi-cond-proto wifi-cond-message"
 IMAGE_INSTALL += "wifi-cond-nlmsg-proto wifi-cond-nlmsg-message"
 IMAGE_INSTALL += "wifi-cond-server"
