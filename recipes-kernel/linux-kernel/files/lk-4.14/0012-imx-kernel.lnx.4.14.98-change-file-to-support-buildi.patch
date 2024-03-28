@@ -20,7 +20,7 @@ Signed-off-by: Xueqiang Gong <gongx@codeaurora.org>
  include/linux/dma-mapping.h                        |  39 ++-
  include/linux/elf.h                                |  33 +++
  include/linux/mod_devicetable.h                    |  15 ++
- include/net/cnss2.h                                | 297 +++++++++++++++++++++++
+ include/net/cnss2.h                                | 298 +++++++++++++++++++++++
  include/net/cnss_nl.h                              | 112 ++++++++
  include/uapi/linux/coresight-stm.h                 |  13 +-
  include/uapi/linux/qrtr.h                          |  42 ++++
@@ -755,7 +755,7 @@ new file mode 100755
 index 00000000..95e872c
 --- /dev/null
 +++ b/include/net/cnss2.h
-@@ -0,0 +1,297 @@
+@@ -0,0 +1,298 @@
 +/* Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -1052,6 +1052,7 @@ index 00000000..95e872c
 +extern void cnss_usb_wlan_unregister_driver(struct cnss_usb_wlan_driver *
 +					    driver);
 +extern int cnss_set_pcie_gen_speed(struct device *dev, u8 pcie_gen_speed);
++extern int cnss_set_lost_connection(struct device *dev, u8 lost_connection);
 +#endif /* _NET_CNSS2_H */
 diff --git a/include/net/cnss_nl.h b/include/net/cnss_nl.h
 new file mode 100755
