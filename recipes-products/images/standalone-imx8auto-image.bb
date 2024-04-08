@@ -31,13 +31,13 @@ IMAGE_INSTALL += "android-common-libs"
 IMAGE_INSTALL += "dnsmasq"
 IMAGE_INSTALL += "dhcpcd"
 IMAGE_INSTALL += "protobuf"
+IMAGE_INSTALL += "someip-commonsys-intf"
 
 #Bluetooth software
 SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/bt-proprietary/synergy')}"
 IMAGE_INSTALL += "${@bb.utils.contains('SYNERGY_DIR_PRESENT', 'True', 'alsa-lib', '', d)}"
 IMAGE_INSTALL += "${@bb.utils.contains('SYNERGY_DIR_PRESENT', 'True', 'alsa-utils', '', d)}"
 IMAGE_INSTALL += "rfkill"
-IMAGE_INSTALL += "someip-commonsys-intf"
 
 #Wlan driver
 IMAGE_INSTALL += "wlan-cnss-core"
