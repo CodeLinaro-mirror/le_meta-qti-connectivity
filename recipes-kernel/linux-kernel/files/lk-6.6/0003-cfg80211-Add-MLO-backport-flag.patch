@@ -1,0 +1,27 @@
+From 4438172bee3f8e50e5d4380bcccf149c4047d8d4 Mon Sep 17 00:00:00 2001
+From: Xueqiang Gong <quic_gongx@quicinc.com>
+Date: Mon, 12 Jun 2023 13:47:37 +0800
+Subject: [PATCH] cfg80211: Add MLO backport flag
+
+Upstream-Status: Pending
+Signed-off-by: Xueqiang Gong <quic_gongx@quicinc.com>
+---
+ include/net/cfg80211.h   |   2 +
+ 1 files changed, 2 insertions(+)
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index e09ff87146c1..5553a5c6233f 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -38,7 +38,9 @@
+  * Additionally, cfg80211 contains code to help enforce regulatory spectrum
+  * use restrictions.
+  */
++#define CFG80211_SINGLE_NETDEV_MULTI_LINK_SUPPORT 1
+
++#define CFG80211_TX_CONTROL_PORT_LINK_SUPPORT 1
+ 
+ /**
+  * DOC: Device registration
+-- 
+2.17.1

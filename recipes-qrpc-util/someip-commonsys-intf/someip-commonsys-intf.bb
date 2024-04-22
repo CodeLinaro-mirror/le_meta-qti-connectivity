@@ -6,7 +6,6 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/BSD-3-Clause;m
 
 PROVIDES = "someip-commonsys-intf"
 SRCREV = "${AUTOREV}"
-DEPENDS += "bt-rpc-util"
 FILESPATH =+ "${BSPDIR}/sources:"
 SRC_URI += "file://vendor/qcom/opensource/commonsys-intf/someip"
 S = "${WORKDIR}//vendor/qcom/opensource/commonsys-intf/someip"

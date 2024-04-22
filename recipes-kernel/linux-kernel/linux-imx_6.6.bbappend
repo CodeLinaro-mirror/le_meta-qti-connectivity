@@ -1,6 +1,6 @@
 SCMVERSION = "n"
 
-FILESEXTRAPATHS_prepend := "${BSPDIR}/sources:${THISDIR}/files:"
+FILESEXTRAPATHS:prepend := "${BSPDIR}/sources:${THISDIR}/files:"
 
 MAINLINE_PRESENT = "${@os.path.exists('${BSPDIR}/sources/kernel')}"
 
@@ -16,12 +16,15 @@ python __anonymous () {
 
 SRC_URI += "file://config/defconfig_${KERNELVERSION}"
 
+
 SRC_URI += " \
 	file://${PATCH_FOLDER}/0001-update-dts-to-support-Hamilton-Chip.patch \
 	file://${PATCH_FOLDER}/0002-update-dts-to-add-32k-sleep-clock-at-imx8qxpmek.patch \
+	file://${PATCH_FOLDER}/0003-cfg80211-Add-MLO-backport-flag.patch \
+	file://${PATCH_FOLDER}/0004-kernel-export-symbol-stack_trace_save_tsk.patch \
 "
 
 
-do_copy_defconfig_append() {
+do_copy_defconfig:append() {
     cat ${WORKDIR}/config/defconfig_${KERNELVERSION} >> ${B}/.config
 }

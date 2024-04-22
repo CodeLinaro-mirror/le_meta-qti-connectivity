@@ -14,9 +14,10 @@ RDEPENDS:${PN} += "lib7z.so()(64bit)"
 # matches with 10.0.0+r36
 SRCREV_core = "5aa13b053182b758d7a19db0c83e1b9b5bf1ec2e"
 SRCREV_libunwind = "03a963ecf6ea836b38b3537cbcda0ecfd7a77393"
+SRCREV_FORMAT = "core_libunwind"
 
 SRC_URI = " \
-    git://salsa.debian.org/android-tools-team/android-platform-system-core;name=core;protocol=https;nobranch=1;destsuffix=git/system/core \
+    git://salsa.debian.org/android-tools-team/android-platform-system-core.git;name=core;protocol=https;nobranch=1;destsuffix=git/system/core \
     git://salsa.debian.org/android-tools-team/android-platform-external-libunwind.git;protocol=https;name=libunwind;nobranch=1;destsuffix=git/external/libunwind \
     file://libbase_mk_change_out_dir.patch \
     file://libcutils_mk_change_out_dir.patch \
