@@ -4,10 +4,10 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/\
 ${LICENSE};md5=550794465ba0ec5312d6919e203a55f9"
 
 inherit autotools linux-kernel-base pkgconfig
-DEPENDS = "openssl libnl virtual/kernel android-common-libs"
+DEPENDS = "openssl libnl virtual/kernel android-common-libs vsomeip"
 DEPENDS += "wpa-supplicant-8-lib"
 DEPENDS += "qrpc-util"
-DEPENDS += "wpa-supplicant-message"
+DEPENDS += "wpa-supplicant-message wpa-supplicant-vendor-message"
 
 FILESPATH =+ "${BSPDIR}/sources:"
 

@@ -97,5 +97,8 @@ CONFIG_DEBUG_FILE=y
 # Enable SOMEIP Service
 CONFIG_SOMEIP_SUPPORT=y
 
+# Enable Vendor Supplicant
+CONFIG_USE_VENDOR_AIDL=y
+
 # For Debugging
 CONFIG_WPA_TRACE=y
