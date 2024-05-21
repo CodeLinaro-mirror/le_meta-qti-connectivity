@@ -21,6 +21,9 @@ RPROVIDES_${PN} += "${PROVIDES_NAME}"
 EXTRA_OEMAKE += "${@oe.utils.conditional('FEATURE_SINGLE_MSI', '1', 'CONFIG_ONE_MSI_VECTOR=y', '', d)}"
 
 do_compile_prepend() {
+    cp ${S}/inc/net/cnss2.h  ${STAGING_KERNEL_DIR}/include/net/
+    cp ${S}/inc/net/cnss_nl.h ${STAGING_KERNEL_DIR}/include/net/
+    cp ${S}/inc/net/cnss_prealloc.h ${STAGING_KERNEL_DIR}/include/net/
     sed -in '/Werror/d' ${S}/Kbuild
 }
 
