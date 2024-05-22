@@ -15,12 +15,9 @@ S = "${WORKDIR}/interfaces/wifi/rpc/server"
 
 EXTRA_OEMAKE += "CONFIG_DEBUG=y"
 
-CPPFLAGS += "-I${STAGING_INCDIR}/android"
-CPPFLAGS += "-I${STAGING_INCDIR}/rpc/util"
 CPPFLAGS += "-I${STAGING_INCDIR}/rpc/aidl/wifi"
 CPPFLAGS += "-I${STAGING_INCDIR}/rpc/proto/wifi"
 CPPFLAGS += "-I${STAGING_INCDIR}/rpc/message/wifi"
-LDFLAGS += "-L${STAGING_LIBDIR}/android -L${STAGING_LIBDIR}"
 
 do_install() {
     install -d ${D}${includedir}/rpc/server/wifi
