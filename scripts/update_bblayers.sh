@@ -34,7 +34,7 @@
 
 # This script tries to update conf/bblayers.conf for different project.
 
-LCONF_VER=6
+LCONF_VER=7
 
 generate_common_bblayers()
 {
@@ -55,8 +55,6 @@ BBLAYERS = " \\
   \${BSPDIR}/sources/meta-openembedded/meta-networking \\
   \${BSPDIR}/sources/meta-openembedded/meta-python \\
   \${BSPDIR}/sources/meta-openembedded/meta-filesystems \\
-  \\
-  \${BSPDIR}/sources/meta-browser \\
 "
 EOF
 }
@@ -72,7 +70,7 @@ bblayers_for_fsl_meta()
 
     cat >> ${BBLAYERS_CONF} <<EOF
 
-##Freescale Yocto Project Release layer
+# i.MX Yocto Project Release layers
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale "
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale-3rdparty "
 BBLAYERS += " \${BSPDIR}/sources/meta-freescale-distro "
@@ -145,7 +143,7 @@ EOF
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-arm/meta-arm \"" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-arm/meta-arm-toolchain \""  >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-clang \"" >> ${BBLAYERS_CONF}
-            sed -e "s/meta-browser/meta-browser\/meta-chromium/g" -i ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-browser/meta-chromium \"" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-qt6 \"" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-security/meta-parsec \"" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-security/meta-tpm \"" >> ${BBLAYERS_CONF}
