@@ -6,7 +6,7 @@ WLAN_MODULE_NAME = "wlan-hamilton"
 
 PACKAGES =+ "kernel-module-${WLAN_MODULE_NAME}"
 
-DEPENDS += "wlan-cnss-core"
+DEPENDS += "virtual/kernel wlan-cnss-core"
 
 EXTRA_OEMAKE += "CONFIG_QCA_CLD_WLAN_PROFILE=kiwi_v2 CHIP_NAME=kiwi MODNAME=${WLAN_MODULE_NAME}"
 EXTRA_OEMAKE += "CONFIG_CNSS2=y CONFIG_CNSS_KIWI=y"
