@@ -1,10 +1,9 @@
-From d508b6826fffe8f43ab429b6df62948a970492f4 Mon Sep 17 00:00:00 2001
+From d654eb63a5e7caa63d8b16e105d861c24e926c78 Mon Sep 17 00:00:00 2001
 From: Xueqiang Gong <quic_gongx@quicinc.com>
 Date: Thu, 23 May 2024 10:54:34 +0800
 Subject: [PATCH] update dts to support Hamilton Chip
 
 Upstream-Status: Pending
-Change-Id: I9ca239a215b889f69c0252532aedf98f484d5512
 Signed-off-by: Xueqiang Gong <quic_gongx@quicinc.com>
 ---
  arch/arm64/boot/dts/freescale/Makefile        |  2 +-
@@ -53,7 +52,7 @@ index 715a52a5abbe..47cf994059be 100644
  	model = "Freescale i.MX8QXP MEK";
 diff --git a/arch/arm64/boot/dts/freescale/qc-cnss.dts b/arch/arm64/boot/dts/freescale/qc-cnss.dts
 new file mode 100644
-index 000000000000..2cb73ef3577e
+index 000000000000..c0d712038d22
 --- /dev/null
 +++ b/arch/arm64/boot/dts/freescale/qc-cnss.dts
 @@ -0,0 +1,57 @@

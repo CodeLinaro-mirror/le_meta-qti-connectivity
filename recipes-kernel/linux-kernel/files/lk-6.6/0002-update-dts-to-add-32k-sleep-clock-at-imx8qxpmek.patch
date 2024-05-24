@@ -4,7 +4,6 @@ Date: Tue, 11 Apr 2023 14:54:09 +0800
 Subject: [PATCH] update dts to add 32k sleep clock at imx8qxpmek
 
 Upstream-Status: Pending
-Change-Id: I5345afc69b0537e843f5c53c328273ba03403f99
 Signed-off-by: Xueqiang Gong <quic_gongx@quicinc.com>
 ---
  arch/arm64/boot/dts/freescale/Makefile                 |  1 +
