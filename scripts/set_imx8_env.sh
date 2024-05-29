@@ -222,11 +222,13 @@ else
 fi
 
 # Get current BSP kernel version
-get_bsp_kernel_version
-if [ -z "${KERNELVERSION}" ]; then
-    echo "Can't find linux kernel bbfile, use 6.6 by default"
-    KERNELVERSION="6.6"
-fi
+#get_bsp_kernel_version
+#if [ -z "${KERNELVERSION}" ]; then
+#    echo "Can't find linux kernel bbfile, use 6.6 by default"
+#    KERNELVERSION="6.6"
+#fi
+
+KERNELVERSION="6.6"
 
 # Get all required source codes.
 . ${SCRIPT_FOLDER}/extract_sourcecode.sh

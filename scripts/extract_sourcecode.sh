@@ -118,7 +118,7 @@ case ${KERNELVERSION} in
         META_FSL_REV="0a73d1bdd7713a6189482e463c98043c9939a2a2"
         META_FSL_3RD_REV="7725256e3859b62f1ff201db7f2cf7026c17656d"
         META_FSL_DIS_REV="4f1f101ebab5eb054bfbed10b247fc0547b30793"
-	META_NXP_IMX_REV="rel_imx_6.6.3_1.0.0"
+        META_NXP_IMX_REV="rel_imx_6.6.3_1.0.0"
         ;;        
     *)
         echo "Not supported kernel version ${KERNELVERSION}"
