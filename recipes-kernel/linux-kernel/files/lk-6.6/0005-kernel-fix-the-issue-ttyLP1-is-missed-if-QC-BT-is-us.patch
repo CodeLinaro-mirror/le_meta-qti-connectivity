@@ -1,0 +1,29 @@
+From 7f0a2551780837355b257c08c0afebf8febe558e Mon Sep 17 00:00:00 2001
+From: Xueqiang Gong <quic_gongx@quicinc.com>
+Date: Wed, 5 Jun 2024 11:20:55 +0800
+Subject: [PATCH] kernel: fix the issue "ttyLP1" is missed if QC BT is used
+
+Upstream-Status: Pending
+Signed-off-by: Xueqiang Gong <quic_gongx@quicinc.com>
+---
+ arch/arm64/boot/dts/freescale/imx8x-mek.dtsi | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi b/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
+index f5bc4784894b..42b5980edcd8 100644
+--- a/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
+@@ -1035,10 +1035,6 @@ &lpuart1 {
+ 	pinctrl-0 = <&pinctrl_lpuart1>;
+ 	resets = <&modem_reset>;
+ 	status = "okay";
+-
+-	bluetooth {
+-		compatible = "nxp,88w8987-bt";
+-	};
+ };
+ 
+ &lpuart2 {
+-- 
+2.34.1
+

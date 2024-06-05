@@ -22,6 +22,7 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0002-update-dts-to-add-32k-sleep-clock-at-imx8qxpmek.patch \
 	file://${PATCH_FOLDER}/0003-cfg80211-Add-MLO-backport-flag.patch \
 	file://${PATCH_FOLDER}/0004-kernel-export-symbol-stack_trace_save_tsk.patch \
+	file://${PATCH_FOLDER}/0005-kernel-fix-the-issue-ttyLP1-is-missed-if-QC-BT-is-us.patch \
 "
 
 
