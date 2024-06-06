@@ -1,0 +1,57 @@
+From 31e37a680dcbb02ba41d17972dba0b298cf1983d Mon Sep 17 00:00:00 2001
+From: Amar Singhal <asinghal@codeaurora.org>
+Date: Thu, 4 May 2017 14:24:08 -0700
+Subject: reg: qcom: call regulatory callback for self managed hints
+
+Currently, kernel ignores the regulatory hint if wiphy flag
+REGULATORY_WIPHY_SELF_MANAGED is set. This would lead to drop of
+hints sent directly to kernel from user-space. To fix, call the driver
+callback with the request.
+
+CRs-Fixed: 2183721
+Change-Id: Ic6d17ce8c3e9b889f618f3494672020bb1c98c42
+Signed-off-by: Amar Singhal <asinghal@codeaurora.org>
+---
+ net/wireless/reg.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/net/wireless/reg.c b/net/wireless/reg.c
+index 26ac0a4..f3fc9a3 100644
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -2247,7 +2247,7 @@ out_free:
+ 	reg_free_request(reg_request);
+ }
+ 
+-static bool reg_only_self_managed_wiphys(void)
++static bool reg_only_self_managed_wiphys(struct regulatory_request *reg_request)
+ {
+ 	struct cfg80211_registered_device *rdev;
+ 	struct wiphy *wiphy;
+@@ -2257,10 +2257,12 @@ static bool reg_only_self_managed_wiphys(void)
+ 
+ 	list_for_each_entry(rdev, &cfg80211_rdev_list, list) {
+ 		wiphy = &rdev->wiphy;
+-		if (wiphy->regulatory_flags & REGULATORY_WIPHY_SELF_MANAGED)
++		if (wiphy->regulatory_flags & REGULATORY_WIPHY_SELF_MANAGED) {
+ 			self_managed_found = true;
+-		else
++			reg_call_notifier(wiphy, reg_request);
++		} else {
+ 			return false;
++		}
+ 	}
+ 
+ 	/* make sure at least one self-managed wiphy exists */
+@@ -2298,7 +2300,7 @@ static void reg_process_pending_hints(void)
+ 
+ 	spin_unlock(&reg_requests_lock);
+ 
+-	if (reg_only_self_managed_wiphys()) {
++	if (reg_only_self_managed_wiphys(reg_request)) {
+ 		reg_free_request(reg_request);
+ 		return;
+ 	}
+-- 
+cgit v1.1
+
