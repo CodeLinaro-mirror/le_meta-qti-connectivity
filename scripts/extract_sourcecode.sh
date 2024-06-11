@@ -27,6 +27,10 @@
 #OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 #IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+
+#Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+#SPDX-License-Identifier: BSD-3-Clause-Clear
 
 # This script will extract all required open source code.
 # . sources/meta-qti-connectivity/scripts/extract_sourcecode.sh
@@ -75,15 +79,19 @@ META_FSL_DIS_GIT="https://github.com/Freescale/meta-freescale-distro"
 
 META_FSL_BROWSER_GIT="https://github.com/OSSystems/meta-browser"
 
-if [ $MACHINE == 'imx8mqevk' ]; then
+META_FSL_BSP_RELEASE_GIT="https://github.com/nxp-imx/meta-fsl-bsp-release"
+
+if [ $PROJECTID == 'QCA6574AULE26' ]; then
 	META_FSL_REV="407c6cf408969445031a492e2d25e0e2749582ea"
 	META_FSL_3RD_REV="88a29631809d1af0df618245430db29f2a7012b5"
 	META_FSL_DIS_REV="f7e2216e93aff14ac32728a13637a48df436b7f4"
 	META_FSL_BROWSER_REV="75640e14e325479c076b6272b646be7a239c18aa"
+	META_FSL_BSP_RELEASE_REV="rel_imx_4.14.78-1.0.0_ga_gh"
 	download_git_code ${META_FSL_BROWSER_GIT} ${META_FSL_BROWSER_REV}
 	download_git_code ${META_FSL_GIT} ${META_FSL_REV}
 	download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
 	download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
+        download_git_code ${META_FSL_BSP_RELEASE_GIT} ${META_FSL_BSP_RELEASE_REV}
 elif [ $PROJECTID == 'QCA6574AULE221' ]; then
 	META_FSL_REV="a398b50b7fc084a9e68cc3000c218d5028522a25"
 	META_FSL_3RD_REV="68314612e236cab1da82d72a0da62635a3523f84"

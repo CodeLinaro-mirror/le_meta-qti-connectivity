@@ -27,6 +27,10 @@
 #OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 #IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+
+#Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+#SPDX-License-Identifier: BSD-3-Clause-Clear
 
 # Setup Standalone Automotive BSP environment.
 # Create softlink in BSP to QTI connectivity release codes if available.
@@ -41,13 +45,13 @@ usage()
     echo
     echo "script usage for QTI Standalone Auto image"
     echo "${SCRIPT_PARAMS} source ${SCRIPT_FILE} [BUILDDIR]"
-    echo "For example: PROJECT=QCA6574AULE221 source ${SCRIPT_FILE}"
+    echo "For example: PROJECT=QCA6574AULE26 source ${SCRIPT_FILE}"
     echo
     echo "EULA      :  FSL EULA, default 0 if undefined."
     echo "BUILDDIR  :  the build directory location, 'build' by default."
     echo "MACHINE   :  Supported machines, 'imx6qsabresd' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
-    echo "    QCA6574AULE221 : QCA6574AU.LE.2.2.1 SP"
+    echo "QCA6574AULE26: QCA6574AU.LE.2.6 SP"
 }
 
 execute_command()
@@ -148,13 +152,13 @@ esac
 
 
 case $PROJECT in
-    "QCA6574AULE221" | "")
+    "QCA6574AULE26" | "")
         {
             if [ -z "$PROJECT" ]; then
-                echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
+                echo "No PROJECT provided, use default PROJECT=QCA6574AULE26"
             fi
             DISTRO=fsl-imx-xwayland
-            export PROJECTID=QCA6574AULE221
+            export PROJECTID=QCA6574AULE26
         } ;;
     *)
         {

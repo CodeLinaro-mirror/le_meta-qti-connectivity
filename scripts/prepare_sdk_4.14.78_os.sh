@@ -25,11 +25,15 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+
+#Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+#SPDX-License-Identifier: BSD-3-Clause-Clear
 
 #!/bin/sh
 
 echo 'BBLAYERS += " ${BSPDIR}/sources/meta-qti-connectivity "' >>  conf/bblayers.conf
-echo 'export PROJECTID="QCA6574AULE221"' >> conf/bblayers.conf
+echo 'export PROJECTID="QCA6574AULE26"' >> conf/bblayers.conf
 echo 'BBMASK ="meta-qti-connectivity/recipes-products/images/automotive-connx-image.bb"
 BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-msm-4.4_git.bbappend"
 BBMASK.="|meta-qti-connectivity/recipes-kernel/lk/lk_git.bbappend"

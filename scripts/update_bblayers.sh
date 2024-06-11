@@ -27,6 +27,10 @@
 #OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 #IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+
+#Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+#SPDX-License-Identifier: BSD-3-Clause-Clear
 
 # This script tries to update conf/bblayers.conf for different project.
 
@@ -56,7 +60,7 @@ EOF
 }
 
 
-bblayers_for_qca6574aule221()
+bblayers_for_qca6574aule26()
 {
     cat >> ${BBLAYERS_CONF} <<EOF
 
@@ -135,10 +139,10 @@ BBLAYERS_CONF=conf/bblayers.conf
 echo '' > ${BBLAYERS_CONF}
 
 case $1 in
-    "QCA6574AULE221")
+    "QCA6574AULE26")
         {
             generate_common_bblayers >> ${BBLAYERS_CONF}
-            bblayers_for_qca6574aule221
+            bblayers_for_qca6574aule26
             bblayers_for_qti_meta
             echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> ${BBLAYERS_CONF}
         } ;;
