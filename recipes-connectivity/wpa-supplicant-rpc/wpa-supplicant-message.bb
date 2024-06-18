@@ -16,7 +16,7 @@ S = "${WORKDIR}"
 
 AIDL_PATH = "/wlan-opensource/remotewifi/interfaces/wifi/supplicant/aidl/android/hardware/wifi/supplicant"
 
-EXTRA_OEMAKE += "CONFIG_SUPPLICANT=y CONFIG_SUPPLICANT_STA_IFACE=y CONFIG_SUPPLICANT_STA_NETWORK=y"
+EXTRA_OEMAKE += "CONFIG_SUPPLICANT=y CONFIG_SUPPLICANT_STA_IFACE=y CONFIG_SUPPLICANT_STA_NETWORK=y CONFIG_NON_STANDARD_CERT=y"
 
 CPPFLAGS += "-I${STAGING_INCDIR}/rpc/aidl/wpa_supplicant -I${STAGING_INCDIR}/rpc/proto/wpa_supplicant -I${STAGING_INCDIR}/rpc/util"
 LDFLAGS += "-L${STAGING_LIBDIR}"
