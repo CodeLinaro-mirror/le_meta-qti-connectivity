@@ -71,7 +71,7 @@ download_git_code()
     echo "Download ${GIT_NAME} completed"
 }
 
-META_FSL_GIT="git://git.yoctoproject.org/meta-freescale"
+META_FSL_GIT="https://github.com/Freescale/meta-freescale"
 
 META_FSL_3RD_GIT="https://github.com/Freescale/meta-freescale-3rdparty"
 
