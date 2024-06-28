@@ -57,3 +57,6 @@ CONFIG_IEEE80211BE=y
 
 # Add support for writing debug log to a file (/tmp/hostapd.log)
 CONFIG_DEBUG_FILE=y
+
+# Enable SOMEIP Service
+CONFIG_SOMEIP_SUPPORT=y
