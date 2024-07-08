@@ -38,6 +38,8 @@ SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/bt-proprietary/syner
 IMAGE_INSTALL += "${@bb.utils.contains('SYNERGY_DIR_PRESENT', 'True', 'alsa-lib', '', d)}"
 IMAGE_INSTALL += "${@bb.utils.contains('SYNERGY_DIR_PRESENT', 'True', 'alsa-utils', '', d)}"
 IMAGE_INSTALL += "rfkill"
+IMAGE_INSTALL += "bluetooth-proto"
+IMAGE_INSTALL += "bluetooth-message"
 
 #Wlan driver
 IMAGE_INSTALL += "wlan-cnss-core"
