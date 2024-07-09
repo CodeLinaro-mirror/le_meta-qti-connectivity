@@ -207,12 +207,12 @@ do
 done
 
 # Default MACHINE
-if [[ -z "$MACHINE" || $MACHINE == "imx8qxpmek" || $MACHINE == "imxauto" ]]; then
-    MACHINE='imx8qxpmek'
+if [[ -z "$MACHINE" || $MACHINE == "imx8qxpc0mek" || $MACHINE == "imxauto" ]]; then
+    MACHINE='imx8qxpc0mek'
 elif [ "$MACHINE" == "imx8mqevk" ]; then
     MACHINE='imx8mqevk'
-elif [ "$MACHINE" == "imx8qxpc0mek" ]; then
-    MACHINE='imx8qxpc0mek'
+elif [ "$MACHINE" == "imx8qxpmek" ]; then
+    MACHINE='imx8qxpmek'
 else
     check_machine_valid
     if [ "$?" != "0" ]; then
