@@ -28,8 +28,6 @@ IMAGE_INSTALL += "iptables"
 IMAGE_INSTALL += "boost"
 IMAGE_INSTALL += "vsomeip"
 IMAGE_INSTALL += "android-common-libs"
-IMAGE_INSTALL += "dnsmasq"
-IMAGE_INSTALL += "dhcpcd"
 IMAGE_INSTALL += "protobuf"
 IMAGE_INSTALL += "someip-commonsys-intf"
 
