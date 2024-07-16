@@ -7,7 +7,7 @@ inherit autotools linux-kernel-base pkgconfig
 DEPENDS = "openssl libnl virtual/kernel android-common-libs vsomeip"
 DEPENDS += "wpa-supplicant-8-lib"
 DEPENDS += "qrpc-util"
-DEPENDS += "wpa-supplicant-message wpa-supplicant-vendor-message"
+DEPENDS += "wpa-supplicant-message wpa-supplicant-vendor-message hostapd-message"
 
 FILESPATH =+ "${BSPDIR}/sources:"
 
@@ -22,6 +22,7 @@ SRC_URI += "file://hostapdconf \
 
 S = "${WORKDIR}/wlan-opensource/wpa_supplicant_8"
 SUPPLICANT_CONFIG_PATH = "/data/vendor/wifi/wpa"
+HOSTAPD_CONFIG_PATH = "/data/vendor/wifi/hostapd"
 
 do_configure() {
 	install -m 0644 ${WORKDIR}/hostapdconf ${S}/hostapd/.config
@@ -30,7 +31,9 @@ do_configure() {
 	sed  -i -e 's/\-I\/usr\/include\/libnl3//g' ${S}/src/drivers/drivers.mak
 	echo "CFLAGS +=\"-I${STAGING_INCDIR}/libnl3\"" >> ${S}/hostapd/.config
 	echo "CFLAGS +=\"-I${STAGING_INCDIR}/libnl3\"" >> ${S}/wpa_supplicant/.config
+	echo "CFLAGS +=\"-I${STAGING_INCDIR}/android\"" >> ${S}/hostapd/.config
 	echo "CFLAGS +=\"-I${STAGING_INCDIR}/android\"" >> ${S}/wpa_supplicant/.config
+	echo "LDFLAGS +=\"-L${STAGING_LIBDIR}/android\"" >> ${S}/hostapd/.config
 	echo "LDFLAGS +=\"-L${STAGING_LIBDIR}/android\"" >> ${S}/wpa_supplicant/.config
 }
 
@@ -53,6 +56,9 @@ do_install() {
 
 	install -d ${D}${SUPPLICANT_CONFIG_PATH}
 	install -m 0755 ${S}/wpa_supplicant/wpa_supplicant_template.conf ${D}/${SUPPLICANT_CONFIG_PATH}/wpa_supplicant.conf
+	install -d ${D}${HOSTAPD_CONFIG_PATH}
+	install -m 0755 ${S}/hostapd/hostapd.conf ${D}/${HOSTAPD_CONFIG_PATH}/hostapd.conf
 }
 
 FILES:${PN} += "${SUPPLICANT_CONFIG_PATH}/*"
+FILES:${PN} += "${HOSTAPD_CONFIG_PATH}/*"
