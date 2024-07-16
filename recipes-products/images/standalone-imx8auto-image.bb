@@ -25,8 +25,6 @@ IMAGE_INSTALL += "openssh"
 IMAGE_INSTALL += "packagegroup-core-ssh-openssh"
 IMAGE_INSTALL += "openssh-sftp-server"
 IMAGE_INSTALL += "iptables"
-IMAGE_INSTALL += "dnsmasq"
-IMAGE_INSTALL += "dhcpcd"
 
 #Bluetooth software
 SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/bt-proprietary/synergy')}"
