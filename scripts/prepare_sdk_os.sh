@@ -84,11 +84,15 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iptables"
 # Use PROJECTID for specific package, will optimize this part.
 PROJECTID=$1
 if [ -z "${PROJECTID}" ]; then
-    echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
-    PROJECTID="QCA6574AULE221"
+    echo "No PROJECT provided, use default PROJECT=QCA6574AULE30"
+    PROJECTID="QCA6574AULE30"
 fi
 
 case ${PROJECTID} in
+    "QCA6574AULE30")
+        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-rome\"" >> conf/local.conf
+        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-hl-rome\"" >> conf/local.conf
+        ;;
     "QCA6574AULE221")
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-rome\"" >> conf/local.conf
       	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-hl-rome\"" >> conf/local.conf
@@ -109,8 +113,8 @@ esac
 
 get_bsp_kernel_version
 if [ -z "${KERNELVERSION}" ]; then
-    echo "Can't find linux kernel bbfile, use 5.4 by default"
-    KERNELVERSION="5.4"
+    echo "Can't find linux kernel bbfile, use 5.10 by default"
+    KERNELVERSION="5.10"
 fi
 
 # wirless-tools only available with specific package
