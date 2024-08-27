@@ -10,7 +10,7 @@ FILESPATH =+ "${BSPDIR}/sources:"
 SRC_URI += "file://vendor/qcom/opensource/commonsys-intf/someip"
 S = "${WORKDIR}//vendor/qcom/opensource/commonsys-intf/someip"
 
-SOMEIP_CONFIG_PATH = "/vendor/etc/someip"
+SOMEIP_CONFIG_PATH = "/etc/someip"
 inherit pkgconfig
 
 do_install(){
