@@ -13,6 +13,7 @@ DEPENDS = "clang-cross-${TARGET_ARCH}"
 DEPENDS += "libnl openssl"
 DEPENDS += "android-common-libs"
 DEPENDS += "hardware-legacy-headers cld80211-lib"
+DEPENDS += "qrpc-util"
 
 FILESPATH =+ "${BSPDIR}/sources/wlan-opensource/remotewifi:"
 SRC_URI = "file://qwlan/qcwcn/wifi_hal/"
