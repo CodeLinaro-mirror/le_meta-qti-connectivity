@@ -8,6 +8,7 @@ PR = "r0"
 inherit autotools pkgconfig
 
 DEPENDS = "libnl"
+DEPENDS += "qrpc-util"
 
 FILESPATH =+ "${BSPDIR}/sources/wlan-opensource/remotewifi:"
 SRC_URI = "file://qwlan/cld80211-lib/"
