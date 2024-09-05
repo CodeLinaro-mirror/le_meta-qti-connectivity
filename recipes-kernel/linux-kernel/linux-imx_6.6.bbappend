@@ -26,6 +26,7 @@ SRC_URI += " \
         file://${PATCH_FOLDER}/0006-Add-configuration-support-for-BT-I2S-slave-master.patch \
         file://${PATCH_FOLDER}/0008-Use-IMX8QXP-M.2-pin23-GPIO-for-BT_EN-Control.patch \
         file://${PATCH_FOLDER}/0009-Add-btpower-driver-for-QCA-chip-BT-power-ctrl.patch \
+        file://${PATCH_FOLDER}/00010-Control-WLAN-EP-power-in-RC-driver.patch \
 "
 
 SRC_URI += "${@bb.utils.contains('FEATURE_CNSS_STANDALONE', '1', 'file://${PATCH_FOLDER}/0007-update-kernel-for-build-standalone-cnss-driver.patch', '', d)}"
