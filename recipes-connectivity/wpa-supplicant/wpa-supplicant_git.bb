@@ -7,7 +7,7 @@ inherit autotools linux-kernel-base pkgconfig
 DEPENDS = "openssl libnl virtual/kernel android-common-libs vsomeip"
 DEPENDS += "wpa-supplicant-8-lib"
 DEPENDS += "qrpc-util"
-DEPENDS += "wpa-supplicant-message wpa-supplicant-vendor-message hostapd-message"
+DEPENDS += "wpa-supplicant-message wpa-supplicant-vendor-message hostapd-message hostapd-vendor-message"
 
 FILESPATH =+ "${BSPDIR}/sources:"
 
