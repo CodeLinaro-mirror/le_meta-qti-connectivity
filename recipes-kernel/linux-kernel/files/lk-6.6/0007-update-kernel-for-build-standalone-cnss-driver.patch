@@ -1,0 +1,1760 @@
+From 371d6aaaa6c516fb1f1d98fccb73e608da1d6720 Mon Sep 17 00:00:00 2001
+From: Xueqiang Gong <quic_gongx@quicinc.com>
+Date: Wed, 11 Sep 2024 10:33:22 +0800
+Subject: [PATCH] update kernel for build standalone cnss driver
+
+Upstream-Status: Pending
+Signed-off-by: Xueqiang Gong <quic_gongx@quicinc.com>
+
+1. copy ipc_logging related code to kernel
+2. enable qmi related code as default
+---
+ drivers/soc/qcom/Makefile          |    2 +-
+ include/linux/ipc_logging.h        |  287 ++++++++
+ kernel/trace/Kconfig               |   12 +
+ kernel/trace/Makefile              |    3 +
+ kernel/trace/ipc_logging.c         | 1012 ++++++++++++++++++++++++++++
+ kernel/trace/ipc_logging_debug.c   |  196 ++++++
+ kernel/trace/ipc_logging_private.h |  166 +++++
+ 7 files changed, 1677 insertions(+), 1 deletion(-)
+ create mode 100644 include/linux/ipc_logging.h
+ create mode 100644 kernel/trace/ipc_logging.c
+ create mode 100644 kernel/trace/ipc_logging_debug.c
+ create mode 100644 kernel/trace/ipc_logging_private.h
+
+diff --git a/drivers/soc/qcom/Makefile b/drivers/soc/qcom/Makefile
+index bbca2e1e55bb..cda046ce82fd 100644
+--- a/drivers/soc/qcom/Makefile
++++ b/drivers/soc/qcom/Makefile
+@@ -9,7 +9,7 @@ obj-$(CONFIG_QCOM_OCMEM)	+= ocmem.o
+ obj-$(CONFIG_QCOM_PDR_HELPERS)	+= pdr_interface.o
+ obj-$(CONFIG_QCOM_PMIC_GLINK)	+= pmic_glink.o
+ obj-$(CONFIG_QCOM_PMIC_GLINK)	+= pmic_glink_altmode.o
+-obj-$(CONFIG_QCOM_QMI_HELPERS)	+= qmi_helpers.o
++obj-y	+= qmi_helpers.o
+ qmi_helpers-y	+= qmi_encdec.o qmi_interface.o
+ obj-$(CONFIG_QCOM_RAMP_CTRL)	+= ramp_controller.o
+ obj-$(CONFIG_QCOM_RMTFS_MEM)	+= rmtfs_mem.o
+diff --git a/include/linux/ipc_logging.h b/include/linux/ipc_logging.h
+new file mode 100644
+index 000000000000..29d5f8868e26
+--- /dev/null
++++ b/include/linux/ipc_logging.h
+@@ -0,0 +1,287 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Copyright (c) 2012-2015,2017-2020 The Linux Foundation. All rights reserved.
++ */
++
++#ifndef _IPC_LOGGING_H
++#define _IPC_LOGGING_H
++
++#include <linux/errno.h>
++#include <linux/types.h>
++
++#define MAX_MSG_SIZE 255
++
++enum {
++	TSV_TYPE_MSG_START = 1,
++	TSV_TYPE_SKB = TSV_TYPE_MSG_START,
++	TSV_TYPE_STRING,
++	TSV_TYPE_MSG_END = TSV_TYPE_STRING,
++};
++
++struct tsv_header {
++	unsigned char type;
++	unsigned char size; /* size of data field */
++};
++
++struct encode_context {
++	struct tsv_header hdr;
++	char buff[MAX_MSG_SIZE];
++	int offset;
++};
++
++struct decode_context {
++	int output_format;      /* 0 = debugfs */
++	char *buff;             /* output buffer */
++	int size;               /* size of output buffer */
++};
++
++#if IS_ENABLED(CONFIG_IPC_LOGGING)
++/*
++ * ipc_log_context_create: Create a debug log context
++ *                         Should not be called from atomic context
++ *
++ * @max_num_pages: Number of pages of logging space required (max. 10)
++ * @mod_name     : Name of the directory entry under DEBUGFS
++ * @feature_version : First 16 bit for version number of user-defined message
++ *		      formats and next 16 bit for enabling minidump
++ *
++ * returns context id on success, NULL on failure
++ */
++void *ipc_log_context_create(int max_num_pages, const char *modname,
++		uint32_t feature_version);
++
++/*
++ * msg_encode_start: Start encoding a log message
++ *
++ * @ectxt: Temporary storage to hold the encoded message
++ * @type:  Root event type defined by the module which is logging
++ */
++void msg_encode_start(struct encode_context *ectxt, uint32_t type);
++
++/*
++ * tsv_timestamp_write: Writes the current timestamp count
++ *
++ * @ectxt: Context initialized by calling msg_encode_start()
++ */
++int tsv_timestamp_write(struct encode_context *ectxt);
++
++/*
++ * tsv_qtimer_write: Writes the current QTimer timestamp count
++ *
++ * @ectxt: Context initialized by calling msg_encode_start()
++ */
++int tsv_qtimer_write(struct encode_context *ectxt);
++
++/*
++ * tsv_pointer_write: Writes a data pointer
++ *
++ * @ectxt:   Context initialized by calling msg_encode_start()
++ * @pointer: Pointer value to write
++ */
++int tsv_pointer_write(struct encode_context *ectxt, void *pointer);
++
++/*
++ * tsv_int32_write: Writes a 32-bit integer value
++ *
++ * @ectxt: Context initialized by calling msg_encode_start()
++ * @n:     Integer to write
++ */
++int tsv_int32_write(struct encode_context *ectxt, int32_t n);
++
++/*
++ * tsv_byte_array_write: Writes a byte array
++ *
++ * @ectxt:     Context initialized by calling msg_encode_start()
++ * @data:      Pointer to byte array
++ * @data_size: Size of byte array
++ */
++int tsv_byte_array_write(struct encode_context *ectxt,
++			 void *data, int data_size);
++
++/*
++ * msg_encode_end: Complete the message encode process
++ *
++ * @ectxt: Temporary storage which holds the encoded message
++ */
++void msg_encode_end(struct encode_context *ectxt);
++
++/*
++ * ipc_log_write: Commits message to logging ring buffer
++ *
++ * @ctxt:  Logging context
++ * @ectxt: Temporary storage which holds the encoded message
++ */
++void ipc_log_write(void *ctxt, struct encode_context *ectxt);
++
++/*
++ * ipc_log_string: Helper function to log a string
++ *
++ * @ilctxt: Debug Log Context created using ipc_log_context_create()
++ * @fmt:    Data specified using format specifiers
++ */
++int ipc_log_string(void *ilctxt, const char *fmt, ...) __printf(2, 3);
++
++/**
++ * ipc_log_extract - Reads and deserializes log
++ *
++ * @ilctxt:  logging context
++ * @buff:    buffer to receive the data
++ * @size:    size of the buffer
++ * @returns: 0 if no data read; >0 number of bytes read; < 0 error
++ *
++ * If no data is available to be read, then the ilctxt::read_avail
++ * completion is reinitialized.  This allows clients to block
++ * until new log data is save.
++ */
++int ipc_log_extract(void *ilctxt, char *buff, int size);
++
++/*
++ * Print a string to decode context.
++ * @dctxt   Decode context
++ * @args   printf args
++ */
++#define IPC_SPRINTF_DECODE(dctxt, args...) \
++do { \
++	int i; \
++	i = scnprintf(dctxt->buff, dctxt->size, args); \
++	dctxt->buff += i; \
++	dctxt->size -= i; \
++} while (0)
++
++/*
++ * tsv_timestamp_read: Reads a timestamp
++ *
++ * @ectxt:  Context retrieved by reading from log space
++ * @dctxt:  Temporary storage to hold the decoded message
++ * @format: Output format while dumping through DEBUGFS
++ */
++void tsv_timestamp_read(struct encode_context *ectxt,
++			struct decode_context *dctxt, const char *format);
++
++/*
++ * tsv_qtimer_read: Reads a QTimer timestamp
++ *
++ * @ectxt:  Context retrieved by reading from log space
++ * @dctxt:  Temporary storage to hold the decoded message
++ * @format: Output format while dumping through DEBUGFS
++ */
++void tsv_qtimer_read(struct encode_context *ectxt,
++		     struct decode_context *dctxt, const char *format);
++
++/*
++ * tsv_pointer_read: Reads a data pointer
++ *
++ * @ectxt:  Context retrieved by reading from log space
++ * @dctxt:  Temporary storage to hold the decoded message
++ * @format: Output format while dumping through DEBUGFS
++ */
++void tsv_pointer_read(struct encode_context *ectxt,
++		      struct decode_context *dctxt, const char *format);
++
++/*
++ * tsv_int32_read: Reads a 32-bit integer value
++ *
++ * @ectxt:  Context retrieved by reading from log space
++ * @dctxt:  Temporary storage to hold the decoded message
++ * @format: Output format while dumping through DEBUGFS
++ */
++int32_t tsv_int32_read(struct encode_context *ectxt,
++		       struct decode_context *dctxt, const char *format);
++
++/*
++ * tsv_byte_array_read: Reads a byte array
++ *
++ * @ectxt:  Context retrieved by reading from log space
++ * @dctxt:  Temporary storage to hold the decoded message
++ * @format: Output format while dumping through DEBUGFS
++ */
++void tsv_byte_array_read(struct encode_context *ectxt,
++			 struct decode_context *dctxt, const char *format);
++
++/*
++ * add_deserialization_func: Register a deserialization function to
++ *                           unpack the subevents of a main event
++ *
++ * @ctxt: Debug log context to which the deserialization function has
++ *        to be registered
++ * @type: Main/Root event, defined by the module which is logging, to
++ *        which this deserialization function has to be registered.
++ * @dfune: Deserialization function to be registered
++ *
++ * return 0 on success, -ve value on FAILURE
++ */
++int add_deserialization_func(void *ctxt, int type,
++			void (*dfunc)(struct encode_context *,
++				      struct decode_context *));
++
++/*
++ * ipc_log_context_destroy: Destroy debug log context
++ *
++ * @ctxt: debug log context created by calling ipc_log_context_create API.
++ */
++int ipc_log_context_destroy(void *ctxt);
++
++#else
++
++static inline void *ipc_log_context_create(int max_num_pages,
++	const char *modname, uint32_t feature_version)
++{ return NULL; }
++
++static inline void msg_encode_start(struct encode_context *ectxt,
++	uint32_t type) { }
++
++static inline int tsv_timestamp_write(struct encode_context *ectxt)
++{ return -EINVAL; }
++
++static inline int tsv_qtimer_write(struct encode_context *ectxt)
++{ return -EINVAL; }
++
++static inline int tsv_pointer_write(struct encode_context *ectxt, void *pointer)
++{ return -EINVAL; }
++
++static inline int tsv_int32_write(struct encode_context *ectxt, int32_t n)
++{ return -EINVAL; }
++
++static inline int tsv_byte_array_write(struct encode_context *ectxt,
++			 void *data, int data_size)
++{ return -EINVAL; }
++
++static inline void msg_encode_end(struct encode_context *ectxt) { }
++
++static inline void ipc_log_write(void *ctxt, struct encode_context *ectxt) { }
++
++static inline int ipc_log_string(void *ilctxt, const char *fmt, ...)
++{ return -EINVAL; }
++
++static inline int ipc_log_extract(void *ilctxt, char *buff, int size)
++{ return -EINVAL; }
++
++#define IPC_SPRINTF_DECODE(dctxt, args...) do { } while (0)
++
++static inline void tsv_timestamp_read(struct encode_context *ectxt,
++			struct decode_context *dctxt, const char *format) { }
++
++static inline void tsv_qtimer_read(struct encode_context *ectxt,
++			struct decode_context *dctxt, const char *format) { }
++
++static inline void tsv_pointer_read(struct encode_context *ectxt,
++		      struct decode_context *dctxt, const char *format) { }
++
++static inline int32_t tsv_int32_read(struct encode_context *ectxt,
++		       struct decode_context *dctxt, const char *format)
++{ return 0; }
++
++static inline void tsv_byte_array_read(struct encode_context *ectxt,
++			 struct decode_context *dctxt, const char *format) { }
++
++static inline int add_deserialization_func(void *ctxt, int type,
++			void (*dfunc)(struct encode_context *,
++				      struct decode_context *))
++{ return 0; }
++
++static inline int ipc_log_context_destroy(void *ctxt)
++{ return 0; }
++
++#endif
++
++#endif
+diff --git a/kernel/trace/Kconfig b/kernel/trace/Kconfig
+index 61c541c36596..e5bdb46335d9 100644
+--- a/kernel/trace/Kconfig
++++ b/kernel/trace/Kconfig
+@@ -138,6 +138,18 @@ config RING_BUFFER_ALLOW_SWAP
+ 	 Allow the use of ring_buffer_swap_cpu.
+ 	 Adds a very slight overhead to tracing when enabled.
+ 
++config IPC_LOGGING
++	tristate "Debug Logging for IPC Drivers"
++	select GENERIC_TRACER
++	depends on DEBUG_FS
++	help
++	  IPC Logging driver provides a logging option for IPC Drivers.
++	  This provides a cyclic buffer based logging support in a driver
++	  specific context. This driver also provides a debugfs interface
++	  to dump the logs in a live fashion.
++
++	  If in doubt, say no.
++
+ config PREEMPTIRQ_TRACEPOINTS
+ 	bool
+ 	depends on TRACE_PREEMPT_TOGGLE || TRACE_IRQFLAGS
+diff --git a/kernel/trace/Makefile b/kernel/trace/Makefile
+index 057cd975d014..73b4fce33a56 100644
+--- a/kernel/trace/Makefile
++++ b/kernel/trace/Makefile
+@@ -110,4 +110,7 @@ obj-$(CONFIG_FPROBE_EVENTS) += trace_fprobe.o
+ obj-$(CONFIG_TRACEPOINT_BENCHMARK) += trace_benchmark.o
+ obj-$(CONFIG_RV) += rv/
+ 
++obj-$(CONFIG_IPC_LOGGING) += qcom_ipc_logging.o
++qcom_ipc_logging-y := ipc_logging.o  ipc_logging_debug.o
++
+ libftrace-y := ftrace.o
+diff --git a/kernel/trace/ipc_logging.c b/kernel/trace/ipc_logging.c
+new file mode 100644
+index 000000000000..7cf73c071611
+--- /dev/null
++++ b/kernel/trace/ipc_logging.c
+@@ -0,0 +1,1012 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
++ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
++ */
++
++#include <asm/arch_timer.h>
++#include <linux/slab.h>
++#include <linux/uaccess.h>
++#include <linux/module.h>
++#include <linux/fs.h>
++#include <linux/kernel.h>
++#include <linux/errno.h>
++#include <linux/jiffies.h>
++#include <linux/debugfs.h>
++#include <linux/io.h>
++#include <linux/idr.h>
++#include <linux/string.h>
++#include <linux/sched.h>
++#include <linux/wait.h>
++#include <linux/delay.h>
++#include <linux/completion.h>
++#include <linux/sched/clock.h>
++#include <linux/ipc_logging.h>
++#ifdef SUPPORT_MINIDUMP
++#include <soc/qcom/minidump.h>
++#endif
++
++#ifdef CONFIG_WLAN_CNSS_CORE
++#undef EXPORT_SYMBOL
++#define EXPORT_SYMBOL(x)
++#endif
++
++#include "ipc_logging_private.h"
++
++#define LOG_PAGE_DATA_SIZE	sizeof(((struct ipc_log_page *)0)->data)
++#define LOG_PAGE_FLAG (1 << 31)
++#ifdef SUPPORT_MINIDUMP
++#define MAX_MINIDUMP_BUFFERS CONFIG_IPC_LOG_MINIDUMP_BUFFERS
++#else
++#define MAX_MINIDUMP_BUFFERS 0
++#endif
++/*16th bit is used for minidump feature*/
++#define FEATURE_MASK 0x10000
++
++static int minidump_buf_cnt;
++static LIST_HEAD(ipc_log_context_list);
++static DEFINE_RWLOCK(context_list_lock_lha1);
++static void *get_deserialization_func(struct ipc_log_context *ilctxt,
++				      int type);
++
++static struct ipc_log_page *get_first_page(struct ipc_log_context *ilctxt)
++{
++	struct ipc_log_page_header *p_pghdr;
++	struct ipc_log_page *pg = NULL;
++
++	if (!ilctxt)
++		return NULL;
++	p_pghdr = list_first_entry(&ilctxt->page_list,
++				   struct ipc_log_page_header, list);
++	pg = container_of(p_pghdr, struct ipc_log_page, hdr);
++	return pg;
++}
++
++/**
++ * is_nd_read_empty - Returns true if no data is available to read in log
++ *
++ * @ilctxt: logging context
++ * @returns: > 1 if context is empty; 0 if not empty; <0 for failure
++ *
++ * This is for the debugfs read pointer which allows for a non-destructive read.
++ * There may still be data in the log, but it may have already been read.
++ */
++static int is_nd_read_empty(struct ipc_log_context *ilctxt)
++{
++	if (!ilctxt)
++		return -EINVAL;
++
++	return ((ilctxt->nd_read_page == ilctxt->write_page) &&
++		(ilctxt->nd_read_page->hdr.nd_read_offset ==
++		 ilctxt->write_page->hdr.write_offset));
++}
++
++/**
++ * is_read_empty - Returns true if no data is available in log
++ *
++ * @ilctxt: logging context
++ * @returns: > 1 if context is empty; 0 if not empty; <0 for failure
++ *
++ * This is for the actual log contents.  If it is empty, then there
++ * is no data at all in the log.
++ */
++static int is_read_empty(struct ipc_log_context *ilctxt)
++{
++	if (!ilctxt)
++		return -EINVAL;
++
++	return ((ilctxt->read_page == ilctxt->write_page) &&
++		(ilctxt->read_page->hdr.read_offset ==
++		 ilctxt->write_page->hdr.write_offset));
++}
++
++/**
++ * is_nd_read_equal_read - Return true if the non-destructive read is equal to
++ * the destructive read
++ *
++ * @ilctxt: logging context
++ * @returns: true if nd read is equal to read; false otherwise
++ */
++static bool is_nd_read_equal_read(struct ipc_log_context *ilctxt)
++{
++	uint16_t read_offset;
++	uint16_t nd_read_offset;
++
++	if (ilctxt->nd_read_page == ilctxt->read_page) {
++		read_offset = ilctxt->read_page->hdr.read_offset;
++		nd_read_offset = ilctxt->nd_read_page->hdr.nd_read_offset;
++
++		if (read_offset == nd_read_offset)
++			return true;
++	}
++
++	return false;
++}
++
++
++static struct ipc_log_page *get_next_page(struct ipc_log_context *ilctxt,
++					  struct ipc_log_page *cur_pg)
++{
++	struct ipc_log_page_header *p_pghdr;
++	struct ipc_log_page *pg = NULL;
++
++	if (!ilctxt || !cur_pg)
++		return NULL;
++
++	if (ilctxt->last_page == cur_pg)
++		return ilctxt->first_page;
++
++	p_pghdr = list_first_entry(&cur_pg->hdr.list,
++			struct ipc_log_page_header, list);
++	pg = container_of(p_pghdr, struct ipc_log_page, hdr);
++
++	return pg;
++}
++
++#ifdef SUPPORT_MINIDUMP
++static void register_minidump(u64 vaddr, u64 size,
++			      const char *buf_name, int index)
++{
++	struct md_region md_entry;
++	int ret;
++
++	if (msm_minidump_enabled()
++	    && (minidump_buf_cnt < MAX_MINIDUMP_BUFFERS)) {
++		scnprintf(md_entry.name, sizeof(md_entry.name), "%s_%d",
++			  buf_name, index);
++		md_entry.virt_addr = vaddr;
++		md_entry.phys_addr = virt_to_phys((void *)vaddr);
++		md_entry.size = size;
++
++		ret = msm_minidump_add_region(&md_entry);
++		if (ret < 0) {
++			pr_err(
++		 "Failed to register log buffer %s_%d in Minidump ret %d\n",
++		  buf_name, index, ret);
++
++			return;
++		}
++		minidump_buf_cnt++;
++	}
++}
++#else
++static void register_minidump(u64 vaddr, u64 size,
++			      const char *buf_name, int index)
++{
++	return;
++}
++#endif
++
++/**
++ * ipc_log_read - do non-destructive read of the log
++ *
++ * @ilctxt:  Logging context
++ * @data:  Data pointer to receive the data
++ * @data_size:  Number of bytes to read (must be <= bytes available in log)
++ *
++ * This read will update a runtime read pointer, but will not affect the actual
++ * contents of the log which allows for reading the logs continuously while
++ * debugging and if the system crashes, then the full logs can still be
++ * extracted.
++ */
++static void ipc_log_read(struct ipc_log_context *ilctxt,
++			 void *data, int data_size)
++{
++	int bytes_to_read;
++
++	bytes_to_read = MIN(LOG_PAGE_DATA_SIZE
++				- ilctxt->nd_read_page->hdr.nd_read_offset,
++			      data_size);
++
++	memcpy(data, (ilctxt->nd_read_page->data +
++		ilctxt->nd_read_page->hdr.nd_read_offset), bytes_to_read);
++
++	if (bytes_to_read != data_size) {
++		/* not enough space, wrap read to next page */
++		ilctxt->nd_read_page->hdr.nd_read_offset = 0;
++		ilctxt->nd_read_page = get_next_page(ilctxt,
++			ilctxt->nd_read_page);
++		if (WARN_ON(ilctxt->nd_read_page == NULL))
++			return;
++
++		memcpy((data + bytes_to_read),
++			   (ilctxt->nd_read_page->data +
++			ilctxt->nd_read_page->hdr.nd_read_offset),
++			   (data_size - bytes_to_read));
++		bytes_to_read = (data_size - bytes_to_read);
++	}
++	ilctxt->nd_read_page->hdr.nd_read_offset += bytes_to_read;
++}
++
++/**
++ * ipc_log_drop - do destructive read of the log
++ *
++ * @ilctxt:  Logging context
++ * @data:  Data pointer to receive the data (or NULL)
++ * @data_size:  Number of bytes to read (must be <= bytes available in log)
++ */
++static void ipc_log_drop(struct ipc_log_context *ilctxt, void *data,
++		int data_size)
++{
++	int bytes_to_read;
++	bool push_nd_read;
++
++	bytes_to_read = MIN(LOG_PAGE_DATA_SIZE
++				- ilctxt->read_page->hdr.read_offset,
++			      data_size);
++	if (data)
++		memcpy(data, (ilctxt->read_page->data +
++			ilctxt->read_page->hdr.read_offset), bytes_to_read);
++
++	if (bytes_to_read != data_size) {
++		/* not enough space, wrap read to next page */
++		push_nd_read = is_nd_read_equal_read(ilctxt);
++
++		ilctxt->read_page->hdr.read_offset = 0;
++		if (push_nd_read) {
++			ilctxt->read_page->hdr.nd_read_offset = 0;
++			ilctxt->read_page = get_next_page(ilctxt,
++				ilctxt->read_page);
++			if (WARN_ON(ilctxt->read_page == NULL))
++				return;
++			ilctxt->nd_read_page = ilctxt->read_page;
++		} else {
++			ilctxt->read_page = get_next_page(ilctxt,
++				ilctxt->read_page);
++			if (WARN_ON(ilctxt->read_page == NULL))
++				return;
++		}
++
++		if (data)
++			memcpy((data + bytes_to_read),
++				   (ilctxt->read_page->data +
++				ilctxt->read_page->hdr.read_offset),
++				   (data_size - bytes_to_read));
++
++		bytes_to_read = (data_size - bytes_to_read);
++	}
++
++	/* update non-destructive read pointer if necessary */
++	push_nd_read = is_nd_read_equal_read(ilctxt);
++	ilctxt->read_page->hdr.read_offset += bytes_to_read;
++	ilctxt->write_avail += data_size;
++
++	if (push_nd_read)
++		ilctxt->nd_read_page->hdr.nd_read_offset += bytes_to_read;
++}
++
++/**
++ * msg_read - Reads a message.
++ *
++ * If a message is read successfully, then the message context
++ * will be set to:
++ *     .hdr    message header .size and .type values
++ *     .offset beginning of message data
++ *
++ * @ilctxt	Logging context
++ * @ectxt   Message context
++ *
++ * @returns 0 - no message available; >0 message size; <0 error
++ */
++static int msg_read(struct ipc_log_context *ilctxt,
++	     struct encode_context *ectxt)
++{
++	struct tsv_header hdr;
++
++	if (!ectxt)
++		return -EINVAL;
++
++	if (is_nd_read_empty(ilctxt))
++		return 0;
++
++	ipc_log_read(ilctxt, &hdr, sizeof(hdr));
++	ectxt->hdr.type = hdr.type;
++	ectxt->hdr.size = hdr.size;
++	ectxt->offset = sizeof(hdr);
++	ipc_log_read(ilctxt, (ectxt->buff + ectxt->offset),
++			 (int)hdr.size);
++
++	return sizeof(hdr) + (int)hdr.size;
++}
++
++/**
++ * msg_drop - Drops a message.
++ *
++ * @ilctxt	Logging context
++ */
++static void msg_drop(struct ipc_log_context *ilctxt)
++{
++	struct tsv_header hdr;
++
++	if (!is_read_empty(ilctxt)) {
++		ipc_log_drop(ilctxt, &hdr, sizeof(hdr));
++		ipc_log_drop(ilctxt, NULL, (int)hdr.size);
++	}
++}
++
++/*
++ * Commits messages to the FIFO.  If the FIFO is full, then enough
++ * messages are dropped to create space for the new message.
++ */
++void ipc_log_write(void *ctxt, struct encode_context *ectxt)
++{
++	struct ipc_log_context *ilctxt = (struct ipc_log_context *)ctxt;
++	int bytes_to_write;
++	unsigned long flags;
++
++	if (!ilctxt || !ectxt) {
++		pr_err("%s: Invalid ipc_log or encode context\n", __func__);
++		return;
++	}
++
++	read_lock_irqsave(&context_list_lock_lha1, flags);
++	spin_lock(&ilctxt->context_lock_lhb1);
++	while (ilctxt->write_avail <= ectxt->offset)
++		msg_drop(ilctxt);
++
++	bytes_to_write = MIN(LOG_PAGE_DATA_SIZE
++				- ilctxt->write_page->hdr.write_offset,
++				ectxt->offset);
++	memcpy((ilctxt->write_page->data +
++		ilctxt->write_page->hdr.write_offset),
++		ectxt->buff, bytes_to_write);
++
++	if (bytes_to_write != ectxt->offset) {
++		uint64_t t_now = sched_clock();
++
++		ilctxt->write_page->hdr.write_offset += bytes_to_write;
++		ilctxt->write_page->hdr.end_time = t_now;
++
++		ilctxt->write_page = get_next_page(ilctxt, ilctxt->write_page);
++		if (WARN_ON(ilctxt->write_page == NULL)) {
++			spin_unlock(&ilctxt->context_lock_lhb1);
++			read_unlock_irqrestore(&context_list_lock_lha1, flags);
++			return;
++		}
++		ilctxt->write_page->hdr.write_offset = 0;
++		ilctxt->write_page->hdr.start_time = t_now;
++		memcpy((ilctxt->write_page->data +
++			ilctxt->write_page->hdr.write_offset),
++		       (ectxt->buff + bytes_to_write),
++		       (ectxt->offset - bytes_to_write));
++		bytes_to_write = (ectxt->offset - bytes_to_write);
++	}
++	ilctxt->write_page->hdr.write_offset += bytes_to_write;
++	ilctxt->write_avail -= ectxt->offset;
++	complete(&ilctxt->read_avail);
++	spin_unlock(&ilctxt->context_lock_lhb1);
++	read_unlock_irqrestore(&context_list_lock_lha1, flags);
++}
++EXPORT_SYMBOL(ipc_log_write);
++
++/*
++ * Starts a new message after which you can add serialized data and
++ * then complete the message by calling msg_encode_end().
++ */
++void msg_encode_start(struct encode_context *ectxt, uint32_t type)
++{
++	if (!ectxt) {
++		pr_err("%s: Invalid encode context\n", __func__);
++		return;
++	}
++
++	ectxt->hdr.type = type;
++	ectxt->hdr.size = 0;
++	ectxt->offset = sizeof(ectxt->hdr);
++}
++EXPORT_SYMBOL(msg_encode_start);
++
++/*
++ * Completes the message
++ */
++void msg_encode_end(struct encode_context *ectxt)
++{
++	if (!ectxt) {
++		pr_err("%s: Invalid encode context\n", __func__);
++		return;
++	}
++
++	/* finalize data size */
++	ectxt->hdr.size = ectxt->offset - sizeof(ectxt->hdr);
++	memcpy(ectxt->buff, &ectxt->hdr, sizeof(ectxt->hdr));
++}
++EXPORT_SYMBOL(msg_encode_end);
++
++/*
++ * Helper function used to write data to a message context.
++ *
++ * @ectxt context initialized by calling msg_encode_start()
++ * @data  data to write
++ * @size  number of bytes of data to write
++ */
++static inline int tsv_write_data(struct encode_context *ectxt,
++				 void *data, uint32_t size)
++{
++	if (!ectxt) {
++		pr_err("%s: Invalid encode context\n", __func__);
++		return -EINVAL;
++	}
++	if ((ectxt->offset + size) > MAX_MSG_SIZE) {
++		pr_err("%s: No space to encode further\n", __func__);
++		return -EINVAL;
++	}
++
++	memcpy((void *)(ectxt->buff + ectxt->offset), data, size);
++	ectxt->offset += size;
++	return 0;
++}
++
++/*
++ * Helper function that writes a type to the context.
++ *
++ * @ectxt context initialized by calling msg_encode_start()
++ * @type  primitive type
++ * @size  size of primitive in bytes
++ */
++static inline int tsv_write_header(struct encode_context *ectxt,
++				   uint32_t type, uint32_t size)
++{
++	struct tsv_header hdr;
++
++	hdr.type = (unsigned char)type;
++	hdr.size = (unsigned char)size;
++	return tsv_write_data(ectxt, &hdr, sizeof(hdr));
++}
++
++/*
++ * Writes the current timestamp count.
++ *
++ * @ectxt   context initialized by calling msg_encode_start()
++ */
++int tsv_timestamp_write(struct encode_context *ectxt)
++{
++	int ret;
++	uint64_t t_now = sched_clock();
++
++	ret = tsv_write_header(ectxt, TSV_TYPE_TIMESTAMP, sizeof(t_now));
++	if (ret)
++		return ret;
++	return tsv_write_data(ectxt, &t_now, sizeof(t_now));
++}
++EXPORT_SYMBOL(tsv_timestamp_write);
++
++/*
++ * Writes the current QTimer timestamp count.
++ *
++ * @ectxt   context initialized by calling msg_encode_start()
++ */
++int tsv_qtimer_write(struct encode_context *ectxt)
++{
++	int ret;
++	uint64_t t_now = __arch_counter_get_cntvct();
++
++	ret = tsv_write_header(ectxt, TSV_TYPE_QTIMER, sizeof(t_now));
++	if (ret)
++		return ret;
++	return tsv_write_data(ectxt, &t_now, sizeof(t_now));
++}
++EXPORT_SYMBOL(tsv_qtimer_write);
++
++/*
++ * Writes a data pointer.
++ *
++ * @ectxt   context initialized by calling msg_encode_start()
++ * @pointer pointer value to write
++ */
++int tsv_pointer_write(struct encode_context *ectxt, void *pointer)
++{
++	int ret;
++
++	ret = tsv_write_header(ectxt, TSV_TYPE_POINTER, sizeof(pointer));
++	if (ret)
++		return ret;
++	return tsv_write_data(ectxt, &pointer, sizeof(pointer));
++}
++EXPORT_SYMBOL(tsv_pointer_write);
++
++/*
++ * Writes a 32-bit integer value.
++ *
++ * @ectxt context initialized by calling msg_encode_start()
++ * @n     integer to write
++ */
++int tsv_int32_write(struct encode_context *ectxt, int32_t n)
++{
++	int ret;
++
++	ret = tsv_write_header(ectxt, TSV_TYPE_INT32, sizeof(n));
++	if (ret)
++		return ret;
++	return tsv_write_data(ectxt, &n, sizeof(n));
++}
++EXPORT_SYMBOL(tsv_int32_write);
++
++/*
++ * Writes a byte array.
++ *
++ * @ectxt context initialized by calling msg_write_start()
++ * @data  Beginning address of data
++ * @data_size Size of data to be written
++ */
++int tsv_byte_array_write(struct encode_context *ectxt,
++			 void *data, int data_size)
++{
++	int ret;
++
++	ret = tsv_write_header(ectxt, TSV_TYPE_BYTE_ARRAY, data_size);
++	if (ret)
++		return ret;
++	return tsv_write_data(ectxt, data, data_size);
++}
++EXPORT_SYMBOL(tsv_byte_array_write);
++
++/*
++ * Helper function to log a string
++ *
++ * @ilctxt ipc_log_context created using ipc_log_context_create()
++ * @fmt Data specified using format specifiers
++ */
++int ipc_log_string(void *ilctxt, const char *fmt, ...)
++{
++	struct encode_context ectxt;
++	int avail_size, data_size, hdr_size = sizeof(struct tsv_header);
++	va_list arg_list;
++
++	if (!ilctxt)
++		return -EINVAL;
++
++	msg_encode_start(&ectxt, TSV_TYPE_STRING);
++	tsv_timestamp_write(&ectxt);
++	tsv_qtimer_write(&ectxt);
++	avail_size = (MAX_MSG_SIZE - (ectxt.offset + hdr_size));
++	va_start(arg_list, fmt);
++	data_size = vscnprintf((ectxt.buff + ectxt.offset + hdr_size),
++				avail_size, fmt, arg_list);
++	va_end(arg_list);
++	tsv_write_header(&ectxt, TSV_TYPE_BYTE_ARRAY, data_size);
++	ectxt.offset += data_size;
++	msg_encode_end(&ectxt);
++	ipc_log_write(ilctxt, &ectxt);
++	return 0;
++}
++EXPORT_SYMBOL(ipc_log_string);
++
++/**
++ * ipc_log_extract - Reads and deserializes log
++ *
++ * @ctxt:  logging context
++ * @buff:    buffer to receive the data
++ * @size:    size of the buffer
++ * @returns: 0 if no data read; >0 number of bytes read; < 0 error
++ *
++ * If no data is available to be read, then the ilctxt::read_avail
++ * completion is reinitialized.  This allows clients to block
++ * until new log data is save.
++ */
++int ipc_log_extract(void *ctxt, char *buff, int size)
++{
++	struct encode_context ectxt;
++	struct decode_context dctxt;
++	void (*deserialize_func)(struct encode_context *ectxt,
++				 struct decode_context *dctxt);
++	struct ipc_log_context *ilctxt = (struct ipc_log_context *)ctxt;
++	unsigned long flags;
++	int ret;
++
++	if (size < MAX_MSG_DECODED_SIZE)
++		return -EINVAL;
++
++	dctxt.output_format = OUTPUT_DEBUGFS;
++	dctxt.buff = buff;
++	dctxt.size = size;
++	read_lock_irqsave(&context_list_lock_lha1, flags);
++	spin_lock(&ilctxt->context_lock_lhb1);
++	if (ilctxt->destroyed) {
++		ret = -EIO;
++		goto done;
++	}
++
++	while (dctxt.size >= MAX_MSG_DECODED_SIZE &&
++	       !is_nd_read_empty(ilctxt)) {
++		msg_read(ilctxt, &ectxt);
++		deserialize_func = get_deserialization_func(ilctxt,
++							ectxt.hdr.type);
++		spin_unlock(&ilctxt->context_lock_lhb1);
++		read_unlock_irqrestore(&context_list_lock_lha1, flags);
++		if (deserialize_func)
++			deserialize_func(&ectxt, &dctxt);
++		else
++			pr_err("%s: unknown message 0x%x\n",
++				__func__, ectxt.hdr.type);
++		read_lock_irqsave(&context_list_lock_lha1, flags);
++		spin_lock(&ilctxt->context_lock_lhb1);
++	}
++	ret = size - dctxt.size;
++	if (ret == 0) {
++		if (!ilctxt->destroyed)
++			reinit_completion(&ilctxt->read_avail);
++		else
++			ret = -EIO;
++	}
++done:
++	spin_unlock(&ilctxt->context_lock_lhb1);
++	read_unlock_irqrestore(&context_list_lock_lha1, flags);
++	return ret;
++}
++EXPORT_SYMBOL(ipc_log_extract);
++
++/*
++ * Helper function used to read data from a message context.
++ *
++ * @ectxt  context initialized by calling msg_read()
++ * @data  data to read
++ * @size  number of bytes of data to read
++ */
++static void tsv_read_data(struct encode_context *ectxt,
++			  void *data, uint32_t size)
++{
++	if (WARN_ON((ectxt->offset + size) > MAX_MSG_SIZE)) {
++		memcpy(data, (ectxt->buff + ectxt->offset),
++			MAX_MSG_SIZE - ectxt->offset - 1);
++		ectxt->offset += MAX_MSG_SIZE - ectxt->offset - 1;
++		return;
++	}
++	memcpy(data, (ectxt->buff + ectxt->offset), size);
++	ectxt->offset += size;
++}
++
++/*
++ * Helper function that reads a type from the context and updates the
++ * context pointers.
++ *
++ * @ectxt  context initialized by calling msg_read()
++ * @hdr   type header
++ */
++static void tsv_read_header(struct encode_context *ectxt,
++			    struct tsv_header *hdr)
++{
++	if (WARN_ON((ectxt->offset + sizeof(*hdr)) > MAX_MSG_SIZE)) {
++		memcpy(hdr, (ectxt->buff + ectxt->offset),
++			MAX_MSG_SIZE - ectxt->offset - 1);
++		ectxt->offset += MAX_MSG_SIZE - ectxt->offset - 1;
++		return;
++	}
++	memcpy(hdr, (ectxt->buff + ectxt->offset), sizeof(*hdr));
++	ectxt->offset += sizeof(*hdr);
++}
++
++/*
++ * Reads a timestamp.
++ *
++ * @ectxt   context initialized by calling msg_read()
++ * @dctxt   deserialization context
++ * @format output format (appended to %6u.09u timestamp format)
++ */
++void tsv_timestamp_read(struct encode_context *ectxt,
++			struct decode_context *dctxt, const char *format)
++{
++	struct tsv_header hdr;
++	uint64_t val;
++	unsigned long nanosec_rem;
++
++	tsv_read_header(ectxt, &hdr);
++	if (WARN_ON(hdr.type != TSV_TYPE_TIMESTAMP))
++		return;
++	tsv_read_data(ectxt, &val, sizeof(val));
++	nanosec_rem = do_div(val, 1000000000U);
++	IPC_SPRINTF_DECODE(dctxt, "[%6u.%09lu%s/",
++			(unsigned int)val, nanosec_rem, format);
++}
++EXPORT_SYMBOL(tsv_timestamp_read);
++
++/*
++ * Reads a QTimer timestamp.
++ *
++ * @ectxt   context initialized by calling msg_read()
++ * @dctxt   deserialization context
++ * @format output format (appended to %#18llx timestamp format)
++ */
++void tsv_qtimer_read(struct encode_context *ectxt,
++		     struct decode_context *dctxt, const char *format)
++{
++	struct tsv_header hdr;
++	uint64_t val;
++
++	tsv_read_header(ectxt, &hdr);
++	if (WARN_ON(hdr.type != TSV_TYPE_QTIMER))
++		return;
++	tsv_read_data(ectxt, &val, sizeof(val));
++
++	/*
++	 * This gives 16 hex digits of output. The # prefix prepends
++	 * a 0x, and these characters count as part of the number.
++	 */
++	IPC_SPRINTF_DECODE(dctxt, "%#18llx]%s", val, format);
++}
++EXPORT_SYMBOL(tsv_qtimer_read);
++
++/*
++ * Reads a data pointer.
++ *
++ * @ectxt   context initialized by calling msg_read()
++ * @dctxt   deserialization context
++ * @format output format
++ */
++void tsv_pointer_read(struct encode_context *ectxt,
++		      struct decode_context *dctxt, const char *format)
++{
++	struct tsv_header hdr;
++	void *val;
++
++	tsv_read_header(ectxt, &hdr);
++	if (WARN_ON(hdr.type != TSV_TYPE_POINTER))
++		return;
++	tsv_read_data(ectxt, &val, sizeof(val));
++
++	IPC_SPRINTF_DECODE(dctxt, format, val);
++}
++EXPORT_SYMBOL(tsv_pointer_read);
++
++/*
++ * Reads a 32-bit integer value.
++ *
++ * @ectxt   context initialized by calling msg_read()
++ * @dctxt   deserialization context
++ * @format output format
++ */
++int32_t tsv_int32_read(struct encode_context *ectxt,
++		       struct decode_context *dctxt, const char *format)
++{
++	struct tsv_header hdr;
++	int32_t val;
++
++	tsv_read_header(ectxt, &hdr);
++	if (WARN_ON(hdr.type != TSV_TYPE_INT32))
++		return -EINVAL;
++	tsv_read_data(ectxt, &val, sizeof(val));
++
++	IPC_SPRINTF_DECODE(dctxt, format, val);
++	return val;
++}
++EXPORT_SYMBOL(tsv_int32_read);
++
++/*
++ * Reads a byte array/string.
++ *
++ * @ectxt   context initialized by calling msg_read()
++ * @dctxt   deserialization context
++ * @format output format
++ */
++void tsv_byte_array_read(struct encode_context *ectxt,
++			 struct decode_context *dctxt, const char *format)
++{
++	struct tsv_header hdr;
++
++	tsv_read_header(ectxt, &hdr);
++	if (WARN_ON(hdr.type != TSV_TYPE_BYTE_ARRAY))
++		return;
++	tsv_read_data(ectxt, dctxt->buff, hdr.size);
++	dctxt->buff += hdr.size;
++	dctxt->size -= hdr.size;
++}
++EXPORT_SYMBOL(tsv_byte_array_read);
++
++int add_deserialization_func(void *ctxt, int type,
++			void (*dfunc)(struct encode_context *,
++				      struct decode_context *))
++{
++	struct ipc_log_context *ilctxt = (struct ipc_log_context *)ctxt;
++	struct dfunc_info *df_info;
++	unsigned long flags;
++
++	if (!ilctxt || !dfunc)
++		return -EINVAL;
++
++	df_info = kmalloc(sizeof(struct dfunc_info), GFP_KERNEL);
++	if (!df_info)
++		return -ENOSPC;
++
++	read_lock_irqsave(&context_list_lock_lha1, flags);
++	spin_lock(&ilctxt->context_lock_lhb1);
++	df_info->type = type;
++	df_info->dfunc = dfunc;
++	list_add_tail(&df_info->list, &ilctxt->dfunc_info_list);
++	spin_unlock(&ilctxt->context_lock_lhb1);
++	read_unlock_irqrestore(&context_list_lock_lha1, flags);
++	return 0;
++}
++EXPORT_SYMBOL(add_deserialization_func);
++
++static void *get_deserialization_func(struct ipc_log_context *ilctxt,
++				      int type)
++{
++	struct dfunc_info *df_info = NULL;
++
++	if (!ilctxt)
++		return NULL;
++
++	list_for_each_entry(df_info, &ilctxt->dfunc_info_list, list) {
++		if (df_info->type == type)
++			return df_info->dfunc;
++	}
++	return NULL;
++}
++
++/**
++ * ipc_log_context_create: Create a debug log context if context does not exist.
++ *                         Should not be called from atomic context
++ *
++ * @max_num_pages: Number of pages of logging space required (max. 10)
++ * @mod_name     : Name of the directory entry under DEBUGFS
++ * @feature_version : First 16 bit for version number of user-defined message
++ *		      formats and next 16 bit for enabling minidump
++ *
++ * returns context id on success, NULL on failure
++ */
++void *ipc_log_context_create(int max_num_pages,
++			     const char *mod_name, uint32_t feature_version)
++{
++	struct ipc_log_context *ctxt = NULL, *tmp;
++	struct ipc_log_page *pg = NULL;
++	int page_cnt;
++	unsigned long flags;
++	int enable_minidump;
++
++	/* check if ipc ctxt already exists */
++	read_lock_irq(&context_list_lock_lha1);
++	list_for_each_entry(tmp, &ipc_log_context_list, list)
++		if (!strcmp(tmp->name, mod_name)) {
++			ctxt = tmp;
++			break;
++		}
++	read_unlock_irq(&context_list_lock_lha1);
++
++	if (ctxt)
++		return ctxt;
++
++	ctxt = kzalloc(sizeof(struct ipc_log_context), GFP_KERNEL);
++	if (!ctxt)
++		return 0;
++
++	init_completion(&ctxt->read_avail);
++	INIT_LIST_HEAD(&ctxt->page_list);
++	INIT_LIST_HEAD(&ctxt->dfunc_info_list);
++	spin_lock_init(&ctxt->context_lock_lhb1);
++
++	enable_minidump = feature_version & FEATURE_MASK;
++
++	spin_lock_irqsave(&ctxt->context_lock_lhb1, flags);
++	if (enable_minidump) {
++		register_minidump((u64)ctxt, sizeof(struct ipc_log_context),
++				  "ipc_ctxt", minidump_buf_cnt);
++	}
++	spin_unlock_irqrestore(&ctxt->context_lock_lhb1, flags);
++
++	for (page_cnt = 0; page_cnt < max_num_pages; page_cnt++) {
++		pg = kzalloc(sizeof(struct ipc_log_page), GFP_KERNEL);
++		if (!pg)
++			goto release_ipc_log_context;
++		pg->hdr.log_id = (uint64_t)(uintptr_t)ctxt;
++		pg->hdr.page_num = LOG_PAGE_FLAG | page_cnt;
++		pg->hdr.ctx_offset = (int64_t)((uint64_t)(uintptr_t)ctxt -
++			(uint64_t)(uintptr_t)&pg->hdr);
++
++		/* set magic last to signal that page init is complete */
++		pg->hdr.magic = IPC_LOGGING_MAGIC_NUM;
++		pg->hdr.nmagic = ~(IPC_LOGGING_MAGIC_NUM);
++
++		spin_lock_irqsave(&ctxt->context_lock_lhb1, flags);
++		list_add_tail(&pg->hdr.list, &ctxt->page_list);
++
++		if (enable_minidump) {
++			register_minidump((u64)pg, sizeof(struct ipc_log_page),
++					  mod_name, minidump_buf_cnt);
++		}
++		spin_unlock_irqrestore(&ctxt->context_lock_lhb1, flags);
++	}
++
++	ctxt->log_id = (uint64_t)(uintptr_t)ctxt;
++	ctxt->version = IPC_LOG_VERSION;
++	strscpy(ctxt->name, mod_name, IPC_LOG_MAX_CONTEXT_NAME_LEN);
++	ctxt->user_version = feature_version & 0xffff;
++	ctxt->first_page = get_first_page(ctxt);
++	ctxt->last_page = pg;
++	ctxt->write_page = ctxt->first_page;
++	ctxt->read_page = ctxt->first_page;
++	ctxt->nd_read_page = ctxt->first_page;
++	ctxt->write_avail = max_num_pages * LOG_PAGE_DATA_SIZE;
++	ctxt->header_size = sizeof(struct ipc_log_page_header);
++	kref_init(&ctxt->refcount);
++	ctxt->destroyed = false;
++	create_ctx_debugfs(ctxt, mod_name);
++
++	/* set magic last to signal context init is complete */
++	ctxt->magic = IPC_LOG_CONTEXT_MAGIC_NUM;
++	ctxt->nmagic = ~(IPC_LOG_CONTEXT_MAGIC_NUM);
++
++	write_lock_irqsave(&context_list_lock_lha1, flags);
++	if (enable_minidump  && (minidump_buf_cnt < MAX_MINIDUMP_BUFFERS))
++		list_add(&ctxt->list, &ipc_log_context_list);
++	else
++		list_add_tail(&ctxt->list, &ipc_log_context_list);
++	write_unlock_irqrestore(&context_list_lock_lha1, flags);
++
++	return (void *)ctxt;
++
++release_ipc_log_context:
++	while (page_cnt-- > 0) {
++		pg = get_first_page(ctxt);
++		list_del(&pg->hdr.list);
++		kfree(pg);
++	}
++	kfree(ctxt);
++	return 0;
++}
++EXPORT_SYMBOL(ipc_log_context_create);
++
++void ipc_log_context_free(struct kref *kref)
++{
++	struct ipc_log_context *ilctxt = container_of(kref,
++				struct ipc_log_context, refcount);
++	struct ipc_log_page *pg = NULL;
++
++	while (!list_empty(&ilctxt->page_list)) {
++		pg = get_first_page(ilctxt);
++		list_del(&pg->hdr.list);
++		kfree(pg);
++	}
++
++	kfree(ilctxt);
++}
++
++/*
++ * Destroy debug log context
++ *
++ * @ctxt: debug log context created by calling ipc_log_context_create API.
++ */
++int ipc_log_context_destroy(void *ctxt)
++{
++	struct ipc_log_context *ilctxt = (struct ipc_log_context *)ctxt;
++	struct dfunc_info *df_info = NULL, *tmp = NULL;
++	unsigned long flags;
++
++	if (!ilctxt)
++		return 0;
++
++	debugfs_remove_recursive(ilctxt->dent);
++
++	spin_lock(&ilctxt->context_lock_lhb1);
++	ilctxt->destroyed = true;
++	complete_all(&ilctxt->read_avail);
++	list_for_each_entry_safe(df_info, tmp, &ilctxt->dfunc_info_list, list) {
++		list_del(&df_info->list);
++		kfree(df_info);
++	}
++	spin_unlock(&ilctxt->context_lock_lhb1);
++
++	write_lock_irqsave(&context_list_lock_lha1, flags);
++	list_del(&ilctxt->list);
++	write_unlock_irqrestore(&context_list_lock_lha1, flags);
++
++	ipc_log_context_put(ilctxt);
++
++	return 0;
++}
++EXPORT_SYMBOL(ipc_log_context_destroy);
++
++#ifndef CONFIG_WLAN_CNSS_CORE
++static int __init ipc_logging_init(void)
++{
++	check_and_create_debugfs();
++
++	register_minidump((u64)&ipc_log_context_list, sizeof(struct list_head),
++			  "ipc_log_ctxt_list", minidump_buf_cnt);
++
++	return 0;
++}
++
++module_init(ipc_logging_init);
++
++MODULE_DESCRIPTION("ipc logging");
++MODULE_LICENSE("GPL v2");
++#endif
+diff --git a/kernel/trace/ipc_logging_debug.c b/kernel/trace/ipc_logging_debug.c
+new file mode 100644
+index 000000000000..9ff9473adea4
+--- /dev/null
++++ b/kernel/trace/ipc_logging_debug.c
+@@ -0,0 +1,196 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2012-2015, 2017-2019, The Linux Foundation. All rights reserved.
++ */
++
++#include <linux/slab.h>
++#include <linux/uaccess.h>
++#include <linux/module.h>
++#include <linux/fs.h>
++#include <linux/kernel.h>
++#include <linux/errno.h>
++#include <linux/jiffies.h>
++#include <linux/debugfs.h>
++#include <linux/io.h>
++#include <linux/idr.h>
++#include <linux/string.h>
++#include <linux/sched.h>
++#include <linux/wait.h>
++#include <linux/delay.h>
++#include <linux/completion.h>
++#include <linux/ipc_logging.h>
++
++#include "ipc_logging_private.h"
++
++#ifdef CONFIG_WLAN_CNSS_CORE
++#undef EXPORT_SYMBOL
++#define EXPORT_SYMBOL(x)
++#endif
++
++static DEFINE_MUTEX(ipc_log_debugfs_init_lock);
++static struct dentry *root_dent;
++
++static int debug_log(struct ipc_log_context *ilctxt,
++		     char *buff, int size, int cont)
++{
++	int i = 0;
++	int ret;
++
++	if (size < MAX_MSG_DECODED_SIZE) {
++		pr_err("%s: buffer size %d < %d\n", __func__, size,
++			MAX_MSG_DECODED_SIZE);
++		return -ENOMEM;
++	}
++	do {
++		i = ipc_log_extract(ilctxt, buff, size - 1);
++		if (cont && i == 0) {
++			ret = wait_for_completion_interruptible(
++				&ilctxt->read_avail);
++			if (ret < 0)
++				return ret;
++		}
++	} while (cont && i == 0);
++
++	return i;
++}
++
++/*
++ * VFS Read operation helper which dispatches the call to the debugfs
++ * read command stored in file->private_data.
++ *
++ * @file  File structure
++ * @buff   user buffer
++ * @count size of user buffer
++ * @ppos  file position to read from (only a value of 0 is accepted)
++ * @cont  1 = continuous mode (don't return 0 to signal end-of-file)
++ *
++ * @returns ==0 end of file
++ *           >0 number of bytes read
++ *           <0 error
++ */
++static ssize_t debug_read_helper(struct file *file, char __user *buff,
++				 size_t count, loff_t *ppos, int cont)
++{
++	struct ipc_log_context *ilctxt;
++	struct dentry *d = file->f_path.dentry;
++	char *buffer;
++	int bsize;
++	int r;
++
++	r = debugfs_file_get(d);
++	if (r)
++		return r;
++
++	ilctxt = file->private_data;
++	r = kref_get_unless_zero(&ilctxt->refcount) ? 0 : -EIO;
++	if (r) {
++		debugfs_file_put(d);
++		return r;
++	}
++
++	buffer = kmalloc(count, GFP_KERNEL);
++	if (!buffer) {
++		bsize = -ENOMEM;
++		goto done;
++	}
++
++	bsize = debug_log(ilctxt, buffer, count, cont);
++
++	if (bsize > 0) {
++		if (copy_to_user(buff, buffer, bsize)) {
++			bsize = -EFAULT;
++			kfree(buffer);
++			goto done;
++		}
++		*ppos += bsize;
++	}
++	kfree(buffer);
++
++done:
++	ipc_log_context_put(ilctxt);
++	debugfs_file_put(d);
++	return bsize;
++}
++
++static ssize_t debug_read(struct file *file, char __user *buff,
++			  size_t count, loff_t *ppos)
++{
++	return debug_read_helper(file, buff, count, ppos, 0);
++}
++
++static ssize_t debug_read_cont(struct file *file, char __user *buff,
++			       size_t count, loff_t *ppos)
++{
++	return debug_read_helper(file, buff, count, ppos, 1);
++}
++
++static const struct file_operations debug_ops = {
++	.read = debug_read,
++	.open = simple_open,
++};
++
++static const struct file_operations debug_ops_cont = {
++	.read = debug_read_cont,
++	.open = simple_open,
++};
++
++static void debug_create(const char *name, mode_t mode,
++			 struct dentry *dent,
++			 struct ipc_log_context *ilctxt,
++			 const struct file_operations *fops)
++{
++	debugfs_create_file_unsafe(name, mode, dent, ilctxt, fops);
++}
++
++static void dfunc_string(struct encode_context *ectxt,
++			 struct decode_context *dctxt)
++{
++	tsv_timestamp_read(ectxt, dctxt, "");
++	tsv_qtimer_read(ectxt, dctxt, " ");
++	tsv_byte_array_read(ectxt, dctxt, "");
++
++	/* add trailing \n if necessary */
++	if (*(dctxt->buff - 1) != '\n') {
++		if (dctxt->size) {
++			++dctxt->buff;
++			--dctxt->size;
++		}
++		*(dctxt->buff - 1) = '\n';
++	}
++}
++
++void check_and_create_debugfs(void)
++{
++	mutex_lock(&ipc_log_debugfs_init_lock);
++	if (!root_dent) {
++		root_dent = debugfs_create_dir("ipc_logging", 0);
++
++		if (IS_ERR(root_dent)) {
++			pr_err("%s: unable to create debugfs %ld\n",
++				__func__, PTR_ERR(root_dent));
++			root_dent = NULL;
++		}
++	}
++	mutex_unlock(&ipc_log_debugfs_init_lock);
++}
++EXPORT_SYMBOL(check_and_create_debugfs);
++
++void create_ctx_debugfs(struct ipc_log_context *ctxt,
++			const char *mod_name)
++{
++	if (!root_dent)
++		check_and_create_debugfs();
++
++	if (root_dent) {
++		ctxt->dent = debugfs_create_dir(mod_name, root_dent);
++		if (!IS_ERR(ctxt->dent)) {
++			debug_create("log", 0444, ctxt->dent,
++				     ctxt, &debug_ops);
++			debug_create("log_cont", 0444, ctxt->dent,
++				     ctxt, &debug_ops_cont);
++		}
++	}
++	add_deserialization_func((void *)ctxt,
++				 TSV_TYPE_STRING, dfunc_string);
++}
++EXPORT_SYMBOL(create_ctx_debugfs);
+diff --git a/kernel/trace/ipc_logging_private.h b/kernel/trace/ipc_logging_private.h
+new file mode 100644
+index 000000000000..9f5e401b764c
+--- /dev/null
++++ b/kernel/trace/ipc_logging_private.h
+@@ -0,0 +1,166 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
++ */
++#ifndef _IPC_LOGGING_PRIVATE_H
++#define _IPC_LOGGING_PRIVATE_H
++
++#include <linux/ipc_logging.h>
++
++#define IPC_LOG_VERSION 0x0003
++#define IPC_LOG_MAX_CONTEXT_NAME_LEN 32
++
++/**
++ * struct ipc_log_page_header - Individual log page header
++ *
++ * @magic: Magic number (used for log extraction)
++ * @nmagic: Inverse of magic number (used for log extraction)
++ * @page_num: Index of page (0.. N - 1) (note top bit is always set)
++ * @read_offset:  Read offset in page
++ * @write_offset: Write offset in page (or 0xFFFF if full)
++ * @log_id: ID of logging context that owns this page
++ * @start_time:  Scheduler clock for first write time in page
++ * @end_time:  Scheduler clock for last write time in page
++ * @ctx_offset:  Signed offset from page to the logging context.  Used to
++ *               optimize ram-dump extraction.
++ *
++ * @list:  Linked list of pages that make up a log
++ * @nd_read_offset:  Non-destructive read offset used for debugfs
++ *
++ * The first part of the structure defines data that is used to extract the
++ * logs from a memory dump and elements in this section should not be changed
++ * or re-ordered.  New local data structures can be added to the end of the
++ * structure since they will be ignored by the extraction tool.
++ */
++struct ipc_log_page_header {
++	uint32_t magic;
++	uint32_t nmagic;
++	uint32_t page_num;
++	uint16_t read_offset;
++	uint16_t write_offset;
++	uint64_t log_id;
++	uint64_t start_time;
++	uint64_t end_time;
++	int64_t ctx_offset;
++
++	/* add local data structures after this point */
++	struct list_head list;
++	uint16_t nd_read_offset;
++};
++
++/**
++ * struct ipc_log_page - Individual log page
++ *
++ * @hdr: Log page header
++ * @data: Log data
++ *
++ * Each log consists of 1 to N log pages.  Data size is adjusted to always fit
++ * the structure into a single kernel page.
++ */
++struct ipc_log_page {
++	struct ipc_log_page_header hdr;
++	char data[PAGE_SIZE - sizeof(struct ipc_log_page_header)];
++};
++
++/**
++ * struct ipc_log_context - main logging context
++ *
++ * @magic:  Magic number (used for log extraction)
++ * @nmagic:  Inverse of magic number (used for log extraction)
++ * @version:  IPC Logging version of log format
++ * @user_version:  Version number for user-defined messages
++ * @header_size:  Size of the log header which is used to determine the offset
++ *                of ipc_log_page::data
++ * @log_id:  Log ID (assigned when log is created)
++ * @name:  Name of the log used to uniquely identify the log during extraction
++ *
++ * @list:  List of log contexts (struct ipc_log_context)
++ * @page_list:  List of log pages (struct ipc_log_page)
++ * @first_page:  First page in list of logging pages
++ * @last_page:  Last page in list of logging pages
++ * @write_page:  Current write page
++ * @read_page:  Current read page (for internal reads)
++ * @nd_read_page:  Current debugfs extraction page (non-destructive)
++ *
++ * @write_avail:  Number of bytes available to write in all pages
++ * @dent:  Debugfs node for run-time log extraction
++ * @dfunc_info_list:  List of deserialization functions
++ * @context_lock_lhb1:  Lock for entire structure
++ * @read_avail:  Completed when new data is added to the log
++ */
++struct ipc_log_context {
++	uint32_t magic;
++	uint32_t nmagic;
++	uint32_t version;
++	uint16_t user_version;
++	uint16_t header_size;
++	uint64_t log_id;
++	char name[IPC_LOG_MAX_CONTEXT_NAME_LEN];
++
++	/* add local data structures after this point */
++	struct list_head list;
++	struct list_head page_list;
++	struct ipc_log_page *first_page;
++	struct ipc_log_page *last_page;
++	struct ipc_log_page *write_page;
++	struct ipc_log_page *read_page;
++	struct ipc_log_page *nd_read_page;
++
++	uint32_t write_avail;
++	struct dentry *dent;
++	struct list_head dfunc_info_list;
++	spinlock_t context_lock_lhb1;
++	struct completion read_avail;
++	struct kref refcount;
++	bool destroyed;
++};
++
++struct dfunc_info {
++	struct list_head list;
++	int type;
++	void (*dfunc)(struct encode_context *enc, struct decode_context *dec);
++};
++
++enum {
++	TSV_TYPE_INVALID,
++	TSV_TYPE_TIMESTAMP,
++	TSV_TYPE_POINTER,
++	TSV_TYPE_INT32,
++	TSV_TYPE_BYTE_ARRAY,
++	TSV_TYPE_QTIMER,
++};
++
++enum {
++	OUTPUT_DEBUGFS,
++};
++
++#define IPC_LOG_CONTEXT_MAGIC_NUM 0x25874452
++#define IPC_LOGGING_MAGIC_NUM 0x52784425
++#define MIN(x, y) ((x) < (y) ? (x) : (y))
++#define IS_MSG_TYPE(x) (((x) > TSV_TYPE_MSG_START) && \
++			((x) < TSV_TYPE_MSG_END))
++#define MAX_MSG_DECODED_SIZE (MAX_MSG_SIZE*4)
++
++void ipc_log_context_free(struct kref *kref);
++
++static inline void ipc_log_context_put(struct ipc_log_context *ilctxt)
++{
++	kref_put(&ilctxt->refcount, ipc_log_context_free);
++}
++
++#if (defined(CONFIG_DEBUG_FS))
++void check_and_create_debugfs(void);
++
++void create_ctx_debugfs(struct ipc_log_context *ctxt,
++			const char *mod_name);
++#else
++void check_and_create_debugfs(void)
++{
++}
++
++void create_ctx_debugfs(struct ipc_log_context *ctxt, const char *mod_name)
++{
++}
++#endif
++
++#endif
+-- 
+2.34.1
+

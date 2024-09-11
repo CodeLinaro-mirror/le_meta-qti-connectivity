@@ -16,8 +16,7 @@ S = "${WORKDIR}/wlan-cnss-core"
 
 FILES:${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/wlan_cnss_core_pci.ko"
 
-EXTRA_OEMAKE += "${@oe.utils.conditional('FEATURE_RCPM', '1', 'CONFIG_WLAN_EN=y', '', d)}"
-EXTRA_OEMAKE += "${@oe.utils.conditional('FEATURE_RCPM', '1', 'CONFIG_PCI_RC_SUPPORT_PM=y', '', d)}"
+EXTRA_OEMAKE += "${@oe.utils.conditional('FEATURE_CNSS_STANDALONE', '1', 'full_tech=0', 'full_tech=1', d)}"
 
 do_compile:prepend() {
 

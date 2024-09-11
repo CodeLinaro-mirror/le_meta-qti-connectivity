@@ -186,15 +186,15 @@ case $PROJECT in
         } ;;
 esac
 
-FEATURE_RCPM="0"
+FEATURE_CNSS_STANDALONE="0"
 
 addons=(${ADDON//''/ })
 for feature in ${addons[@]}
 do
     case $feature in
-        "RCPM")
+        "CNSS_STANDALONE")
             {
-                FEATURE_RCPM="1"
+                FEATURE_CNSS_STANDALONE="1"
             } ;;
         *)
             {
@@ -299,10 +299,10 @@ else
    echo "KERNELVERSION = \"$KERNELVERSION\"" >> conf/local.conf
 fi
 
-if grep -q 'FEATURE_RCPM' conf/local.conf; then
-   sed -e "s/^FEATURE_RCPM\s*=.*/FEATURE_RCPM = \"$FEATURE_RCPM\"/g" -i conf/local.conf
+if grep -q 'FEATURE_CNSS_STANDALONE' conf/local.conf; then
+   sed -e "s/^FEATURE_CNSS_STANDALONE\s*=.*/FEATURE_CNSS_STANDALONE = \"$FEATURE_CNSS_STANDALONE\"/g" -i conf/local.conf
 else
-   echo "FEATURE_RCPM = \"$FEATURE_RCPM\"" >> conf/local.conf
+   echo "FEATURE_CNSS_STANDALONE = \"$FEATURE_CNSS_STANDALONE\"" >> conf/local.conf
 fi
 # Update bblayers.conf
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh

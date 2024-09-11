@@ -14,7 +14,7 @@ python __anonymous () {
         d.setVar("S", "${WORKDIR}/kernel")
 }
 
-SRC_URI += "file://config/defconfig_${KERNELVERSION}"
+SRC_URI += "${@bb.utils.contains('FEATURE_CNSS_STANDALONE', '1', 'file://config/defconfig_${KERNELVERSION}_cnss_standalone', 'file://config/defconfig_${KERNELVERSION}', d)}"
 
 
 SRC_URI += " \
@@ -26,6 +26,7 @@ SRC_URI += " \
         file://${PATCH_FOLDER}/0006-Add-configuration-support-for-BT-I2S-slave-master.patch \
 "
 
+SRC_URI += "${@bb.utils.contains('FEATURE_CNSS_STANDALONE', '1', 'file://${PATCH_FOLDER}/0007-update-kernel-for-build-standalone-cnss-driver.patch', '', d)}"
 
 do_copy_defconfig:append() {
     cat ${WORKDIR}/config/defconfig_${KERNELVERSION} >> ${B}/.config
