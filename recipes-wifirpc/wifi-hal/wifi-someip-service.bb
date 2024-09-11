@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = " \
 
 PR = "r0"
 
-inherit clang
+inherit clang systemd
 TOOLCHAIN = "clang"
 DEPENDS = "clang-cross-${TARGET_ARCH}"
 DEPENDS += "libnl android-common-libs"
@@ -25,7 +25,15 @@ LDFLAGS += "-L${STAGING_LIBDIR}/android -L${STAGING_LIBDIR}"
 
 do_install() {
     install -d ${D}/${bindir}
+    install -d ${D}/${systemd_unitdir}
+    install -d ${D}/${systemd_unitdir}/system
+    install -d ${D}/${systemd_unitdir}/system/multi-user.target.wants
     install -m 0755 ${S}/wifihal-someip-service ${D}/${bindir}/
+    install -m 0755 ${S}/script/ip_config_wlan.sh ${D}${bindir}
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'true', 'false', d)}; then
+        install -m 0644 -p -D ${S}/script/wifihal-someip-service.service ${D}${systemd_unitdir}/system/wifihal-someip-service.service
+        ln -sf ${systemd_unitdir}/system/wifihal-someip-service.service ${D}${systemd_unitdir}/system/multi-user.target.wants/wifihal-someip-service.service
+    fi
 }
 
-FILES:${PN} += "${bindir}*"
+FILES:${PN} += "${bindir}* ${systemd_unitdir}/system/*"
