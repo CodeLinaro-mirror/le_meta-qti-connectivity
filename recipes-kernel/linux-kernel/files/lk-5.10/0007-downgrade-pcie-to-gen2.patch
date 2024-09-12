@@ -1,0 +1,26 @@
+From ef7d119e6f1a06a4ba7bbced8556a11b5857ed7d Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Thu, 4 Jul 2024 19:47:09 +0800
+Subject: [PATCH] downgrade pcie to gen2
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi b/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
+index 4a4a64362b74..f0b92e94a5cb 100644
+--- a/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
+@@ -126,7 +126,7 @@ hsio_subsys: bus@5f000000 {
+ 				<&pd IMX_SC_R_SERDES_1>,
+ 				<&pd IMX_SC_R_HSIO_GPIO>;
+ 		power-domain-names = "pcie", "pcie_phy", "hsio_gpio";
+-		fsl,max-link-speed = <3>;
++		fsl,max-link-speed = <2>;
+ 		hsio-cfg = <PCIEAX2PCIEBX1>;
+ 		local-addr = <0x80000000>;
+ 		status = "disabled";
+-- 
+2.17.1
+

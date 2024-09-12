@@ -23,6 +23,7 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0004-Add-MSM-bt-power-module.patch \
 	file://${PATCH_FOLDER}/0005-Enable-configure-for-rx-fcs-error-report.patch \
 	file://${PATCH_FOLDER}/0006-Add-32k-support-for-imx8qxp.patch \
+	file://${PATCH_FOLDER}/0007-downgrade-pcie-to-gen2.patch \
 	file://${ADDON_FOLDER}/rcpm_msi.patch \
 	file://${ADDON_FOLDER}/Set-PERST-low-when-RC-suspend.patch \
 	file://${ADDON_FOLDER}/Add-CONFIG_PCI_QC_ENHANCE.patch \
