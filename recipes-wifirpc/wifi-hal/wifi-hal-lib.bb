@@ -7,7 +7,7 @@ PR = "r0"
 inherit clang
 TOOLCHAIN = "clang"
 DEPENDS = "clang-cross-${TARGET_ARCH}"
-DEPENDS += "libnl android-common-libs"
+DEPENDS += "libnl android-common-libs qrpc-util"
 DEPENDS += "hardware-legacy-headers cld80211-lib wifi-hal-qcom"
 
 FILESPATH =+ "${BSPDIR}/sources/wlan-opensource/remotewifi:"
