@@ -57,3 +57,8 @@ CONFIG_IEEE80211BE=y
 
 # Add support for writing debug log to a file (/tmp/hostapd.log)
 CONFIG_DEBUG_FILE=y
+
+CONFIG_WNM=y
+
+# For Debugging
+CONFIG_WPA_TRACE=y

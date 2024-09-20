@@ -96,3 +96,6 @@ CONFIG_IEEE80211BE=y
 
 # Add support for writing debug log to a file (/tmp/wpa_supplicant-log-#.txt)
 CONFIG_DEBUG_FILE=y
+
+# For Debugging
+CONFIG_WPA_TRACE=y
