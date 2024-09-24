@@ -17,10 +17,10 @@ diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freesc
 index 025a2a8b0739..ba6f05e2c2d5 100644
 --- a/arch/arm64/boot/dts/freescale/Makefile
 +++ b/arch/arm64/boot/dts/freescale/Makefile
-@@ -488,7 +488,7 @@ dtb-$(CONFIG_ARCH_MXC) += imx95-19x19-titan-adv7535-ap1302.dtb
- 
- imx95-19x19-titan-os08a20-dtbs := imx95-19x19-titan.dtb imx95-19x19-titan-os08a20.dtbo
- dtb-$(CONFIG_ARCH_MXC) += imx95-19x19-titan-os08a20.dtb
+@@ -556,7 +556,7 @@ dtb-$(CONFIG_ARCH_MXC) += imx95-19x19-evk-rpmsg.dtb imx95-19x19-evk-rpmsg-lpv.dt
+
+ imx95-19x19-verdin-rm692c9-dtbs := imx95-19x19-verdin.dtb imx95-19x19-verdin-rm692c9.dtbo
+ dtb-$(CONFIG_ARCH_MXC) += imx95-19x19-verdin-rm692c9.dtb
 -
 +dtb-$(CONFIG_ARCH_MXC) += qc-cnss.dtb
  dtb-$(CONFIG_ARCH_S32) += s32g274a-evb.dtb
