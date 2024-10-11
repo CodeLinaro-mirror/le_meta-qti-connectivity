@@ -27,7 +27,7 @@ IMAGE_INSTALL += "openssh-sftp-server"
 IMAGE_INSTALL += "iptables"
 
 #Bluetooth software
-SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/synergy-bt-proprietary')}"
+SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/bt-proprietary/synergy')}"
 IMAGE_INSTALL += "${@bb.utils.contains('SYNERGY_DIR_PRESENT', 'True', 'alsa-lib', '', d)}"
 IMAGE_INSTALL += "${@bb.utils.contains('SYNERGY_DIR_PRESENT', 'True', 'alsa-utils', '', d)}"
 IMAGE_INSTALL += "rfkill"

@@ -1,0 +1,65 @@
+From 623d5cb9c4931a76daf82254b55b7b7d0e9cd213 Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Thu, 19 Sep 2024 15:25:44 +0800
+Subject: [PATCH] dts configure for hsp wlan card
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ .../boot/dts/freescale/imx8-ss-hsio.dtsi      | 41 +++++++++++++++++++
+ 1 file changed, 41 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi b/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
+index cfb50203b8a6..7a2ed9b6ee6b 100644
+--- a/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
+@@ -157,6 +157,47 @@ pcieb: pcie@5f010000 {
+ 		status = "disabled";
+ 	};
+ 
++        mhi: qcom,mhi {
++		compatible = "qcom,mhi";
++		status = "okay";
++	};
++
++        ipc_router: qcom,ipc_router_external_modem_xprt2 {
++                compatible = "qcom,ipc_router_mhi_xprt";
++                qcom,ch-name = "IPCRTR";
++                qcom,out-chan-id = <20>;
++                qcom,in-chan-id = <21>;
++                qcom,xprt-remote = "external-wlan";
++                qcom,xprt-linkid = <1>;
++                qcom,xprt-version = <3>;
++                status = "okay";
++        };
++
++        diag_mhi: qcom,diag-mhi {
++                compatible = "qcom,diag-mhi";
++                status = "okay";
++        };
++
++        cnss2: qcom,cnss-qca-converged {
++                compatible = "qcom,cnss-qca-converged";
++                pinctrl-names = "default";
++                pinctrl-0 = <&pinctrl_wifi>;
++                qcom,converged-dt;
++                qcom,bus-type=<0>;
++
++                status = "okay";
++
++                /* Support Hasting Device */
++                chip_cfg@1 {
++                        supported-ids = <0x1101>;
++                };
++
++                /* Support Hasting Prime Device */
++                chip_cfg@3 {
++                        supported-ids = <0x1103>;
++                };
++        };
++
+ 	pcieb_ep: pcie_ep@5f010000 {
+ 		compatible = "fsl,imx8qxp-pcie-ep";
+ 		reg = <0x5f010000 0x00010000>,
+-- 
+2.34.1
+

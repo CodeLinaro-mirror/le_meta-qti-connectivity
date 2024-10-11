@@ -34,7 +34,7 @@
 # Export QTI Software Product specific PROJECTID.
 
 #Changes from Qualcomm Innovation Center are provided under the following license:
-#Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+#Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
 #SPDX-License-Identifier: BSD-3-Clause-Clear
 
 umask 022
@@ -49,7 +49,7 @@ usage()
     echo
     echo "EULA      :  FSL EULA, default 0 if undefined."
     echo "BUILDDIR  :  the build directory location, 'build' by default."
-    echo "MACHINE   :  Supported machines, 'imx8mqevk' by default. reference command \$list_machines"
+    echo "MACHINE   :  Supported machines, 'imx8qxpc0mek' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
     echo "ADDON     :  Connectivity add-on feature names (separate in space)."
     echo "QCA6698AULE11 : QCA6698AU.LE.1.1 SP"
@@ -207,12 +207,12 @@ do
 done
 
 # Default MACHINE
-if [[ -z "$MACHINE" || $MACHINE == "imx8mqevk" || $MACHINE == "imxauto" ]]; then
+if [[ -z "$MACHINE" || $MACHINE == "imx8qxpc0mek" || $MACHINE == "imxauto" ]]; then
+    MACHINE='imx8qxpc0mek'
+elif [ "$MACHINE" == "imx8mqevk" ]; then
     MACHINE='imx8mqevk'
 elif [ "$MACHINE" == "imx8qxpmek" ]; then
     MACHINE='imx8qxpmek'
-elif [ "$MACHINE" == "imx8qxpc0mek" ]; then
-    MACHINE='imx8qxpc0mek'
 else
     check_machine_valid
     if [ "$?" != "0" ]; then
@@ -222,11 +222,13 @@ else
 fi
 
 # Get current BSP kernel version
-get_bsp_kernel_version
-if [ -z "${KERNELVERSION}" ]; then
-    echo "Can't find linux kernel bbfile, use 6.1 by default"
-    KERNELVERSION="6.1"
-fi
+#get_bsp_kernel_version
+#if [ -z "${KERNELVERSION}" ]; then
+#    echo "Can't find linux kernel bbfile, use 6.6 by default"
+#    KERNELVERSION="6.6"
+#fi
+
+KERNELVERSION="6.6"
 
 # Get all required source codes.
 . ${SCRIPT_FOLDER}/extract_sourcecode.sh

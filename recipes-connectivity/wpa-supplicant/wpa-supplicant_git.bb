@@ -3,7 +3,7 @@ LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/\
 ${LICENSE};md5=550794465ba0ec5312d6919e203a55f9"
 
-inherit autotools linux-kernel-base
+inherit autotools linux-kernel-base pkgconfig
 DEPENDS = "openssl libnl virtual/kernel"
 
 FILESPATH =+ "${BSPDIR}/sources:"
@@ -37,11 +37,12 @@ do_compile() {
 }
 
 do_install() {
-    install -d ${D}${sbindir}
+	install -d ${D}${sbindir}
 	install -m 0755 ${S}/wpa_supplicant/wpa_supplicant ${D}${sbindir}
 	install -m 0755 ${S}/wpa_supplicant/wpa_cli ${D}${sbindir}
 	install -m 0755 ${S}/hostapd/hostapd ${D}${sbindir}
 	install -m 0755 ${S}/hostapd/hostapd_cli ${D}${sbindir}
-    install -d ${D}${bindir}
-    install -m 0755 ${S}/wpa_supplicant/wpa_passphrase ${D}${bindir}
+	install -d ${D}${bindir}
+	install -m 0755 ${S}/wpa_supplicant/wpa_passphrase ${D}${bindir}
+
 }

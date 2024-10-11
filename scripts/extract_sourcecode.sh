@@ -32,7 +32,7 @@
 # . sources/meta-qti-connectivity/scripts/extract_sourcecode.sh
 
 #Changes from Qualcomm Innovation Center are provided under the following license:
-#Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+#Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
 #SPDX-License-Identifier: BSD-3-Clause-Clear
 
 download_git_code()
@@ -74,6 +74,7 @@ download_git_code()
 META_FSL_GIT="https://github.com/Freescale/meta-freescale"
 META_FSL_3RD_GIT="https://github.com/Freescale/meta-freescale-3rdparty"
 META_FSL_DIS_GIT="https://github.com/Freescale/meta-freescale-distro"
+META_NXP_IMX_GIT="https://github.com/nxp-imx/meta-imx"
 
 case ${KERNELVERSION} in
     "4.9")
@@ -112,6 +113,13 @@ case ${KERNELVERSION} in
         META_FSL_3RD_REV="96c1f6a6c2cad246687cd695e0873fcc6cdde935"
         META_FSL_DIS_REV="1069c2f210b18cd707a4d8a82140a684a42a4ff6"
         ;;        
+    "6.6")
+        #For manifest: imx_6.6.36_2.1.0.xml
+        META_FSL_REV="0f8091c63dd8805610c09b08409bc58492a3b16f"
+        META_FSL_3RD_REV="6c063450d464eb2f380443c7d9af1b94ce9b9d75"
+        META_FSL_DIS_REV="b9d6a5d9931922558046d230c1f5f4ef6ee72345"
+        META_NXP_IMX_REV="rel_imx_6.6.36_2.1.0"
+        ;;        
     *)
         echo "Not supported kernel version ${KERNELVERSION}"
         return 1
@@ -121,3 +129,4 @@ esac
 download_git_code ${META_FSL_GIT} ${META_FSL_REV}
 download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
 download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
+download_git_code ${META_NXP_IMX_GIT} ${META_NXP_IMX_REV}

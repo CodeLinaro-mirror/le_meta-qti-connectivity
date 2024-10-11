@@ -3,6 +3,7 @@ From: Ming Jiang <quic_mjiang@quicinc.com>
 Date: Mon, 5 Dec 2022 15:09:10 +0800
 Subject: [PATCH] RX FCS mpdus support
 
+Upstream-Status: Pending
 Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
 ---
  station.c | 11 +++++++++++
