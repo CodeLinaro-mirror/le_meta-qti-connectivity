@@ -8,9 +8,9 @@ Signed-off-by: mingjian <quic_mingjian@quicinc.com>
 ---
  drivers/bluetooth/Kconfig   |   10 +
  drivers/bluetooth/Makefile  |    1 +
- drivers/bluetooth/btpower.c | 1323 +++++++++++++++++++++++++++++++++++
+ drivers/bluetooth/btpower.c | 1342 +++++++++++++++++++++++++++++++++++
  include/linux/btpower.h     |   92 +++
- 4 files changed, 1427 insertions(+)
+ 4 files changed, 1445 insertions(+)
  create mode 100644 drivers/bluetooth/btpower.c
  create mode 100644 include/linux/btpower.h
 
@@ -51,7 +51,7 @@ new file mode 100644
 index 000000000000..047bcf2ce75d
 --- /dev/null
 +++ b/drivers/bluetooth/btpower.c
-@@ -0,0 +1,1323 @@
+@@ -0,0 +1,1342 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/* Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
 + * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
@@ -291,7 +291,7 @@ index 000000000000..047bcf2ce75d
 +
 +		rc = regulator_enable(vreg->reg);
 +		if (rc < 0) {
-+			pr_err("regulator_enable(%s) failed. rc=%d\n",
++			pr_err("%s: regulator_enable(%s) failed. rc=%d\n",
 +					__func__, vreg->name, rc);
 +			goto out;
 +		}
@@ -467,6 +467,8 @@ index 000000000000..047bcf2ce75d
 +	int bt_sw_ctrl_gpio  =  bt_power_pdata->bt_gpio_sw_ctrl;
 +	int bt_debug_gpio  =  bt_power_pdata->bt_gpio_debug;
 +	int assert_dbg_gpio = 0;
++       int bt_rst_gpio_cansleep = gpiod_cansleep(gpio_to_desc(bt_reset_gpio));
++       int bt_rst_gpio_value = 0;
 +
 +	if (on) {
 +		rc = gpio_request(bt_reset_gpio, "bt_sys_rst_n");
@@ -478,18 +480,21 @@ index 000000000000..047bcf2ce75d
 +
 +		pr_info("BTON:Turn Bt OFF asserting BT_EN to low\n");
 +		pr_info("bt-reset-gpio(%d) value(%d)\n", bt_reset_gpio,
-+			gpio_get_value(bt_reset_gpio));
++                       bt_rst_gpio_cansleep? gpio_get_value_cansleep(bt_reset_gpio):\
++                       gpio_get_value(bt_reset_gpio));
 +		rc = gpio_direction_output(bt_reset_gpio, 0);
 +		if (rc) {
 +			pr_err("%s: Unable to set direction\n", __func__);
 +			return rc;
 +		}
 +		PWR_SRC_STATUS_SET(BT_RESET_GPIO,
-+			gpio_get_value(bt_reset_gpio));
++			bt_rst_gpio_cansleep? gpio_get_value_cansleep(bt_reset_gpio):\
++                       gpio_get_value(bt_reset_gpio));
 +		msleep(50);
 +		pr_info("BTON:Turn Bt OFF post asserting BT_EN to low\n");
 +		pr_info("bt-reset-gpio(%d) value(%d)\n", bt_reset_gpio,
-+			gpio_get_value(bt_reset_gpio));
++			bt_rst_gpio_cansleep? gpio_get_value_cansleep(bt_reset_gpio):\
++                       gpio_get_value(bt_reset_gpio));
 +
 +		if (bt_sw_ctrl_gpio >= 0) {
 +			PWR_SRC_STATUS_SET(BT_SW_CTRL_GPIO,
@@ -514,12 +519,15 @@ index 000000000000..047bcf2ce75d
 +				return rc;
 +			}
 +			PWR_SRC_STATUS_SET(BT_RESET_GPIO,
-+				gpio_get_value(bt_reset_gpio));
++				bt_rst_gpio_cansleep? gpio_get_value_cansleep(bt_reset_gpio):\
++                               gpio_get_value(bt_reset_gpio));
 +			btpower_set_xo_reset_gpio_state(false);
 +		}
 +
 +		if ((wl_reset_gpio >= 0) && (gpio_get_value(wl_reset_gpio) == 0)) {
-+			if (gpio_get_value(bt_reset_gpio)) {
++                       int gpio_value = bt_rst_gpio_cansleep? gpio_get_value_cansleep(bt_reset_gpio):\
++                                        gpio_get_value(bt_reset_gpio);
++			if (gpio_value) {
 +				pr_info("BTON: WLAN OFF and BT ON are too close\n");
 +				pr_info("reset BT_EN, enable it after delay\n");
 +				rc = gpio_direction_output(bt_reset_gpio, 0);
@@ -529,7 +537,8 @@ index 000000000000..047bcf2ce75d
 +					return rc;
 +				}
 +				PWR_SRC_STATUS_SET(BT_RESET_GPIO,
-+					gpio_get_value(bt_reset_gpio));
++					bt_rst_gpio_cansleep? gpio_get_value_cansleep(bt_reset_gpio):\
++                                       gpio_get_value(bt_reset_gpio));
 +			}
 +			pr_info("BTON: WLAN OFF waiting for 100ms delay\n");
 +			pr_info("for AON output to fully discharge\n");
@@ -542,7 +551,8 @@ index 000000000000..047bcf2ce75d
 +				return rc;
 +			}
 +			bt_power_src_status[BT_RESET_GPIO] =
-+				gpio_get_value(bt_reset_gpio);
++				bt_rst_gpio_cansleep? gpio_get_value_cansleep(bt_reset_gpio):\
++                               gpio_get_value(bt_reset_gpio);
 +			btpower_set_xo_reset_gpio_state(false);
 +		}
 +
@@ -550,7 +560,9 @@ index 000000000000..047bcf2ce75d
 +		 * BT_EN is about to pull high. so above two if conditions are
 +		 * not executed.
 +		 */
-+		if (!gpio_get_value(bt_reset_gpio)) {
++               bt_rst_gpio_value = bt_rst_gpio_cansleep? gpio_get_value_cansleep(bt_reset_gpio):\
++                                   gpio_get_value(bt_reset_gpio);
++		if (!bt_rst_gpio_value) {
 +			btpower_set_xo_reset_gpio_state(true);
 +			pr_info("BTON: WLAN ON and BT ON are too close\n");
 +			pr_info("Asserting BT_EN to high\n");
@@ -560,7 +572,8 @@ index 000000000000..047bcf2ce75d
 +				return rc;
 +			}
 +			PWR_SRC_STATUS_SET(BT_RESET_GPIO,
-+				gpio_get_value(bt_reset_gpio));
++				bt_rst_gpio_cansleep? gpio_get_value_cansleep(bt_reset_gpio):\
++                               gpio_get_value(bt_reset_gpio));
 +			btpower_set_xo_reset_gpio_state(false);
 +		}
 +
@@ -589,7 +602,8 @@ index 000000000000..047bcf2ce75d
 +			}
 +		}
 +		pr_info("BTON:Turn Bt On bt-reset-gpio(%d) value(%d)\n",
-+			bt_reset_gpio, gpio_get_value(bt_reset_gpio));
++			bt_reset_gpio, bt_rst_gpio_cansleep? gpio_get_value_cansleep(bt_reset_gpio):\
++                       gpio_get_value(bt_reset_gpio));
 +		if (bt_sw_ctrl_gpio >= 0) {
 +			PWR_SRC_STATUS_SET(BT_SW_CTRL_GPIO,
 +				gpio_get_value(bt_sw_ctrl_gpio));
@@ -598,10 +612,15 @@ index 000000000000..047bcf2ce75d
 +				bt_power_src_status[BT_SW_CTRL_GPIO]);
 +		}
 +	} else {
-+		gpio_set_value(bt_reset_gpio, 0);
++		if(bt_rst_gpio_cansleep) {
++                   gpio_set_value_cansleep(bt_reset_gpio, 0);
++               } else {
++                   gpio_set_value(bt_reset_gpio, 0);
++               }
 +		msleep(100);
 +		pr_info("BT-OFF:bt-reset-gpio(%d) value(%d)\n",
-+			bt_reset_gpio, gpio_get_value(bt_reset_gpio));
++			bt_reset_gpio, bt_rst_gpio_cansleep? gpio_get_value_cansleep(bt_reset_gpio):\
++                       gpio_get_value(bt_reset_gpio));
 +		if (bt_sw_ctrl_gpio >= 0) {
 +			pr_info("BT-OFF:bt-sw-ctrl-gpio(%d) value(%d)\n",
 +				bt_sw_ctrl_gpio,
@@ -1096,7 +1115,7 @@ index 000000000000..047bcf2ce75d
 +			ldo_vol = regulator_get_voltage(handle->reg);
 +			PWR_SRC_STATUS_SET(ldo_index, ldo_vol);
 +			pr_err("%s(%d) value(%d)\n", handle->name,
-+				handle, ldo_vol);
++				(unsigned int)handle, ldo_vol);
 +		} else {
 +			pr_err("%s:%s is_enabled: %d\n",
 +				__func__, handle->name,
