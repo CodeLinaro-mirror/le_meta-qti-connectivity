@@ -310,6 +310,11 @@ if grep -q 'SRC_URI = "git' ${CRACK_BBFILE}; then
     sed -i 's/master/main/g' ${CRACK_BBFILE}
 fi
 
+GLSLANG_BBFILE=${WORK_SPACE}/sources/poky/meta/recipes-graphics/glslang/glslang_1.3.216.0.bb
+if grep -q 'SRC_URI = "git' ${GLSLANG_BBFILE}; then
+    sed -i 's/master/main/g' ${GLSLANG_BBFILE}
+fi
+
 #Workaround to fix KW build Error by remove "ERROR" in poky/meta/lib/oe/rootfs.py
 #The "ERROR" will be tracked by log check, which will make build failed.
 ROOTFSFILE=${WORK_SPACE}/sources/poky/meta/lib/oe/rootfs.py
