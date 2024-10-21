@@ -265,6 +265,12 @@ fi
 # Update bblayers.conf
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh
 
+BMAP_BBFILE=${WORK_SPACE}/sources/poky/meta/recipes-support/bmap-tools/bmap-tools_3.5.bb
+if grep -q 'SRC_URI = "git' ${BMAP_BBFILE}; then
+    sed -i '/SRC_URI = "git/d' ${BMAP_BBFILE}
+    sed -i '/LIC_FILES_CHKSUM/a \\nSRC_URI = "git://github.com/intel/${BPN};branch=main;protocol=https"' ${BMAP_BBFILE}
+fi
+
 #Workaround to fix KW build Error by remove "ERROR" in poky/meta/lib/oe/rootfs.py
 #The "ERROR" will be tracked by log check, which will make build failed.
 ROOTFSFILE=${WORK_SPACE}/sources/poky/meta/lib/oe/rootfs.py
