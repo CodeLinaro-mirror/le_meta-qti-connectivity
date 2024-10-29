@@ -1,0 +1,35 @@
+This patch file is from Qualcomm Innovation Center, Inc. and is provided under the following license:
+
+Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause-Clear
+
+From 0fc4b471010d2eb2273137c7131f8ad0e9fcd978 Mon Sep 17 00:00:00 2001
+From: Dongyuan Li <quic_dongyuan@quicinc.com>
+Date: Mon, 28 Oct 2024 17:22:28 +0800
+Subject: [PATCH] dhcpcd: Disable auto IP configuration
+
+Disable auto IP configuration on eth0, wlan2 and wlan3
+
+Upstream-Status: Pending
+Change-Id: I1523468186957ea15eec692cac0ec897d03fad2d
+Signed-off-by: Dongyuan Li <quic_dongyuan@quicinc.com>
+---
+ src/dhcpcd.conf | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/dhcpcd.conf b/src/dhcpcd.conf
+index 916e82da..940df049 100644
+--- a/src/dhcpcd.conf
++++ b/src/dhcpcd.conf
+@@ -46,3 +46,8 @@ require dhcp_server_identifier
+ #slaac hwaddr
+ # OR generate Stable Private IPv6 Addresses based from the DUID
+ slaac private
++
++# Disable auto IP configuration on eth0, wlan2 and wlan3
++denyinterfaces eth0
++denyinterfaces wlan2
++denyinterfaces wlan3
+-- 
+2.34.1
+
