@@ -75,28 +75,29 @@ META_FSL_DIS_GIT="https://github.com/Freescale/meta-freescale-distro"
 
 META_FSL_BROWSER_GIT="https://github.com/OSSystems/meta-browser"
 
+if [ $PROJECTID == 'QCA6595AULE01' ]; then
+	if [ $MACHINE == 'imx8mqevk' ]||[ $MACHINE == 'imx8qxpmek' ]||[ $MACHINE == 'imx8qxpc0mek' ]; then
+		if [ $KERNELVERSION == "4.9" ]; then
+			META_FSL_REV="49ac225a38f6d84519798e3264f2e4d19b84f70a"
+			META_FSL_3RD_REV="1d6d5961dbf82624b28bb318b4950a64abc31d12"
+			META_FSL_DIS_REV="0ec6d7e206705702b5b534611754de0787f92b72"
+			META_FSL_BROWSER_REV="d6f9aed41c73b75a97d71bff060b03a66ee087b1"
 
-if [ $MACHINE == 'imx8mqevk' ]&&[ $PROJECTID == 'QCA6595AULE01' ]; then
-	if [ $KERNELVERSION == "4.9" ]; then
-		META_FSL_REV="49ac225a38f6d84519798e3264f2e4d19b84f70a"
-		META_FSL_3RD_REV="1d6d5961dbf82624b28bb318b4950a64abc31d12"
-		META_FSL_DIS_REV="0ec6d7e206705702b5b534611754de0787f92b72"
-		META_FSL_BROWSER_REV="d6f9aed41c73b75a97d71bff060b03a66ee087b1"
-
-		download_git_code ${META_FSL_BROWSER_GIT} ${META_FSL_BROWSER_REV}
-		download_git_code ${META_FSL_GIT} ${META_FSL_REV}
-		download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
-		download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
-	elif [ $KERNELVERSION == "4.14" ]; then
-		META_FSL_REV="86772601e7f6ea188dfaf64097edafc05e15aef3"
-		META_FSL_3RD_REV="82037216280a39957fb4272581637abec734ad50"
-		META_FSL_DIS_REV="f7e2216e93aff14ac32728a13637a48df436b7f4"
-		META_FSL_BROWSER_REV="75640e14e325479c076b6272b646be7a239c18aa"
-		
-		download_git_code ${META_FSL_BROWSER_GIT} ${META_FSL_BROWSER_REV}
-		download_git_code ${META_FSL_GIT} ${META_FSL_REV}
-		download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
-		download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
+			download_git_code ${META_FSL_BROWSER_GIT} ${META_FSL_BROWSER_REV}
+			download_git_code ${META_FSL_GIT} ${META_FSL_REV}
+			download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
+			download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
+		elif [ $KERNELVERSION == "4.14" ]; then
+			META_FSL_REV="86772601e7f6ea188dfaf64097edafc05e15aef3"
+			META_FSL_3RD_REV="82037216280a39957fb4272581637abec734ad50"
+			META_FSL_DIS_REV="f7e2216e93aff14ac32728a13637a48df436b7f4"
+			META_FSL_BROWSER_REV="75640e14e325479c076b6272b646be7a239c18aa"
+			
+			download_git_code ${META_FSL_BROWSER_GIT} ${META_FSL_BROWSER_REV}
+			download_git_code ${META_FSL_GIT} ${META_FSL_REV}
+			download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
+			download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
+		fi
 	fi
 elif [ $MACHINE == 'imx8mqevk' ]; then
 	META_FSL_REV="407c6cf408969445031a492e2d25e0e2749582ea"
