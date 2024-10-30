@@ -52,9 +52,6 @@ do_install() {
 	install -m 0755 ${S}/hostapd/hostapd ${D}${sbindir}
 	install -m 0755 ${S}/hostapd/hostapd_cli ${D}${sbindir}
 	install -d ${D}${bindir}
-	install -d ${D}/${systemd_unitdir}
-	install -d ${D}/${systemd_unitdir}/system
-	install -d ${D}/${systemd_unitdir}/system/multi-user.target.wants
 	install -m 0755 ${S}/wpa_supplicant/wpa_passphrase ${D}${bindir}
 
 	install -d ${D}${SUPPLICANT_CONFIG_PATH}
@@ -65,9 +62,8 @@ do_install() {
 	if ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'true', 'false', d)}; then
         	install -m 0644 -p -D ${S}/hostapd/script/hostapd.service ${D}${systemd_unitdir}/system/hostapd.service
 		install -m 0644 -p -D ${S}/wpa_supplicant/script/wpa_supplicant.service ${D}${systemd_unitdir}/system/wpa_supplicant.service
-		ln -sf ${systemd_unitdir}/system/hostapd.service ${D}${systemd_unitdir}/system/multi-user.target.wants/hostapd.service
-		ln -sf ${systemd_unitdir}/system/wpa_supplicant.service ${D}${systemd_unitdir}/system/multi-user.target.wants/wpa_supplicant.service
 	fi
 }
 
 FILES:${PN} += "${SUPPLICANT_CONFIG_PATH}/* ${HOSTAPD_CONFIG_PATH}/* ${systemd_unitdir}/system/*"
+SYSTEMD_SERVICE:${PN} += "wpa_supplicant.service hostapd.service"
