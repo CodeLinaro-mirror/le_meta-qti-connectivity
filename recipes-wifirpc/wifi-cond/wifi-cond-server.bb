@@ -24,16 +24,13 @@ do_install() {
     install -d ${D}/${COND_RPC_RXMSG_PATH}
     install -d ${D}/${COND_RPC_TXMSG_PATH}
     install -d ${D}/${bindir}
-    install -d ${D}/${systemd_unitdir}
-    install -d ${D}/${systemd_unitdir}/system
-    install -d ${D}/${systemd_unitdir}/system/multi-user.target.wants
     install -m 0755 ${S}/wificond-someip-service ${D}/${bindir}/
     if ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'true', 'false', d)}; then
         install -m 0644 -p -D ${S}/script/wificond-someip-service.service ${D}${systemd_unitdir}/system/wificond-someip-service.service
-        ln -sf ${systemd_unitdir}/system/wificond-someip-service.service ${D}${systemd_unitdir}/system/multi-user.target.wants/wificond-someip-service.service
     fi
 }
 
 FILES:${PN} += "${bindir}* ${systemd_unitdir}/system/*"
 FILES:${PN} += " ${COND_RPC_RXMSG_PATH}"
 FILES:${PN} += " ${COND_RPC_TXMSG_PATH}"
+SYSTEMD_SERVICE:${PN} += "wificond-someip-service.service"
