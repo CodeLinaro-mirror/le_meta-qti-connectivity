@@ -10,8 +10,8 @@ DEPENDS = "clang-cross-${TARGET_ARCH}"
 DEPENDS += "qrpc-util"
 
 FILESPATH =+ "${BSPDIR}/sources:"
-SRC_URI += "file://wlan-opensource/wpa_supplicant_8/wpa_supplicant/qrpc_server/aidl_sock/"
-S = "${WORKDIR}/wlan-opensource/wpa_supplicant_8/wpa_supplicant/qrpc_server/aidl_sock"
+SRC_URI += "file://vendor/qcom/opensource/rpc-util/aidl_sock/"
+S = "${WORKDIR}/vendor/qcom/opensource/rpc-util/aidl_sock/"
 
 do_install() {
     install -d ${D}${libdir}
@@ -26,3 +26,4 @@ do_install() {
 
 FILES:${PN} += "${libdir}/*.so.0 ${includedir}/*"
 FILES:${PN}-dev += "${libdir}/*.so"
+FILES:${PN}-dev-dbg += "${libdir}/.debug/*.so"
