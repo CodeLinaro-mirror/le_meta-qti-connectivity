@@ -116,7 +116,7 @@ index a1d100401418..892f2d219175
 +               compatible = "qcom,cnss-qca-converged";
 +       
 +               pinctrl-names = "default";
-+               pinctrl-0 = <&pinctrl_wifi>;
++
 +
 +               qcom,converged-dt;
 +               qcom,bus-type=<0>;
