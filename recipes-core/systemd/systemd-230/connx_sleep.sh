@@ -9,6 +9,11 @@ case $1/$2 in
     # Stop BT Service to power off the chip
     systemctl stop bt-hal-service.service
 
+    # disable WLAN interface
+    for iface in `iw dev | grep Interface | awk '{print $2}'`
+    do
+         ifconfig $iface down
+    done
     ;;
   post/*)
     echo "Exiting from $2..."
@@ -16,5 +21,7 @@ case $1/$2 in
     # Start BT Service to bootup the chip
     systemctl restart bt-hal-service.service
 
+    # enable WLAN interface
+    ifconfig wlan0 up
     ;;
 esac
