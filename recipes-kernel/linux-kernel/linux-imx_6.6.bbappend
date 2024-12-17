@@ -24,7 +24,9 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0004-kernel-export-symbol-stack_trace_save_tsk.patch \
 	file://${PATCH_FOLDER}/0005-kernel-fix-the-issue-ttyLP1-is-missed-if-QC-BT-is-us.patch \
         file://${PATCH_FOLDER}/0006-Add-configuration-support-for-BT-I2S-slave-master.patch \
-        file://${PATCH_FOLDER}/0007-Control-WLAN-EP-power-in-RC-driver.patch \
+        file://${PATCH_FOLDER}/0008-Use-IMX8QXP-M.2-pin23-GPIO-for-BT_EN-Control.patch \
+        file://${PATCH_FOLDER}/0009-Add-btpower-driver-for-QCA-chip-BT-power-ctrl.patch \
+        file://${PATCH_FOLDER}/0010-Control-WLAN-EP-power-in-RC-driver.patch \
 "
 
 

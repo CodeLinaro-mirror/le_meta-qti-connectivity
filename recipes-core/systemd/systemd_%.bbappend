@@ -3,6 +3,7 @@ FILESEXTRAPATHS:append := ":${THISDIR}/systemd-230"
 
 SRC_URI:append += "file://systemd-net-buffer-tune.sh \
                    file://ram-dump-umh.sh \
+                   file://connx_sleep.sh \
                   "
 
 do_install:append() {
@@ -11,7 +12,10 @@ do_install:append() {
 	 ${D}${sysconfdir}/profile.d/systemd-net-buffer-tune.sh
 	install -Dm 0755 ${WORKDIR}/ram-dump-umh.sh \
 	 ${D}${sbindir}/ram-dump-umh.sh
-
+	# add script to handle system suspend and resume
+	install -d ${D}/${base_libdir}/systemd/system-sleep
+	install -Dm 0755 ${WORKDIR}/connx_sleep.sh \
+	 ${D}/${base_libdir}/systemd/system-sleep/connx_sleep.sh
 }
 
 FILES:${PN} += "${sysconfdir}/profile.d/systemd-net-buffer-tune.sh"

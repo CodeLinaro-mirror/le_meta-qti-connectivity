@@ -99,3 +99,6 @@ CONFIG_DEBUG_FILE=y
 
 # For Debugging
 CONFIG_WPA_TRACE=y
+
+# Update EAP_TLS min version
+CONFIG_EAP_TLSV1_3=y

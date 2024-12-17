@@ -1,0 +1,32 @@
+From 525a5f409008582e35d868a0bc70c2ba3a6a9e55 Mon Sep 17 00:00:00 2001
+From: mingjian <quic_mingjian@quicinc.com>
+Date: Fri, 13 Sep 2024 14:59:34 +0800
+Subject: [PATCH] Use IMX8QXP M.2 pin23 GPIO for BT_EN Control
+
+Signed-off-by: mingjian <quic_mingjian@quicinc.com>
+
+---
+ arch/arm64/boot/dts/freescale/imx8x-mek.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi b/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
+index cc2c1cae7c3a..d4df6dd00053 100644
+--- a/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
+@@ -233,6 +233,13 @@ simple-audio-card,codec {
+ 		};
+ 	};
+ 
++        bluetooth: bt-qca-auto-converged {
++                compatible = "qcom,qca-auto-converged";
++                pinctrl-names = "default";
++                qcom,bt-reset-gpio = <&pca9557_a 0 GPIO_ACTIVE_HIGH>;
++                status = "okay";
++        };
++
+ 	sound-cs42888 {
+ 		compatible = "fsl,imx8qm-sabreauto-cs42888",
+ 				"fsl,imx-audio-cs42888";
+-- 
+2.34.1
+
