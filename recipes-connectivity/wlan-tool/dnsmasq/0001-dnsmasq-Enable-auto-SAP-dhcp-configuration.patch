@@ -1,0 +1,45 @@
+From fc3a3fed0ee1088680f0403036196685f7f45446 Mon Sep 17 00:00:00 2001
+From: Yifei Zhao <quic_yifezhao@quicinc.com>
+Date: Tue, 31 Dec 2024 14:25:19 +0800
+Subject: [PATCH] dnsmasq:Enable auto SAP dhcp configuration
+
+Enable auto SAP dhcp configuration on ap_br_wlan2
+
+Upstream-Status: Pending
+Change-Id: I5a6ac7641206a49c5a91200d9ff4d010b21801f6
+Signed-off-by:Yifei Zhao <quic_yifezhao@quicinc.com>
+---
+ meta-networking/recipes-support/dnsmasq/files/dnsmasq.conf | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/meta-networking/recipes-support/dnsmasq/files/dnsmasq.conf b/meta-networking/recipes-support/dnsmasq/files/dnsmasq.conf
+index 2897b9030..b5ef97694 100755
+--- a/meta-networking/recipes-support/dnsmasq/files/dnsmasq.conf
++++ b/meta-networking/recipes-support/dnsmasq/files/dnsmasq.conf
+@@ -77,12 +77,12 @@ bogus-priv
+ # If you want dnsmasq to listen for requests only on specified interfaces
+ # (and the loopback) give the name of the interface (eg eth0) here. 
+ # Repeat the line for more than one interface.
+-#interface=
++interface=ap_br_wlan2
+ # Or you can specify which interface _not_ to listen on
+ #except-interface=
+ # Or which to listen on by address (remember to include 127.0.0.1 if
+ # you use this.)
+-#listen-address=127.0.0.1
++listen-address=10.43.3.1
+ 
+ # On systems which support it, dnsmasq binds the wildcard address,
+ # even when it is listening on only some interfaces. It then discards
+@@ -118,7 +118,7 @@ bogus-priv
+ # a lease time. If you have more than one network, you will need to
+ # repeat this for each network on which you want to supply DHCP
+ # service.
+-#dhcp-range=192.168.0.50,192.168.0.150,12h
++dhcp-range=10.43.3.11,10.43.3.200,48h
+ #dhcp-range=10.0.0.10,10.0.0.200,2h
+ 
+ # This is an example of a DHCP range where the netmask is given. This
+-- 
+2.34.1
+
