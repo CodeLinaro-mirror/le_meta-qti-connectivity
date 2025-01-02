@@ -1,6 +1,3 @@
-# Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause-Clear
-
 # Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -28,6 +25,9 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+# Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
 
 #!/bin/sh
 
@@ -78,19 +78,14 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iperf2 iperf3"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rng-tools"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-sigmadut"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-config"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "bridge-utils"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "openssh"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "packagegroup-core-ssh-openssh"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "openssh-sftp-server"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iptables"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "tcpdump"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rfkill"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "boost vsomeip protobuf android-common-libs"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "dnsmasq dhcpcd"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "someip-commonsys-intf"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "hardware-legacy-headers cld80211-lib wifi-hal-qcom wifi-hal-lib wifi-ndk-header"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wifi-server wifi-someip-service wifi-message wifi-proto"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wifi-cond-proto wifi-cond-message wifi-cond-nlmsg-proto wifi-cond-nlmsg-message wifi-cond-server"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wpa-supplicant-8-lib wpa-supplicant-proto wpa-supplicant-message wpa-supplicant"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wpa-supplicant"
 ' >> conf/local.conf
 
 # Use PROJECTID for specific package, will optimize this part.
@@ -120,10 +115,10 @@ case ${PROJECTID} in
 	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf
 	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-hsp\"" >> conf/local.conf
 	;;
-    "QCA67x7AULE11")
+    "QCA67x7AULE10")
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-hamilton\"" >> conf/local.conf
-        ;;	
+	;;
 esac
 
 get_bsp_kernel_version
