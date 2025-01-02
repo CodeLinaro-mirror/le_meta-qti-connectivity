@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
+#Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
 
 #Redistribution and use in source and binary forms, with or without
 #modification, are permitted provided that the following conditions are
@@ -32,7 +32,7 @@
 # . sources/meta-qti-connectivity/scripts/extract_sourcecode.sh
 
 #Changes from Qualcomm Innovation Center are provided under the following license:
-#Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+#Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
 #SPDX-License-Identifier: BSD-3-Clause-Clear
 
 download_git_code()
@@ -112,14 +112,14 @@ case ${KERNELVERSION} in
         META_FSL_REV="09c47379218167dda9fb0098129909a667fea2ec"
         META_FSL_3RD_REV="96c1f6a6c2cad246687cd695e0873fcc6cdde935"
         META_FSL_DIS_REV="1069c2f210b18cd707a4d8a82140a684a42a4ff6"
-        ;;        
+        ;;
     "6.6")
-        #For manifest: imx_6.6.36_2.1.0.xml
-        META_FSL_REV="0f8091c63dd8805610c09b08409bc58492a3b16f"
+        #For manifest: imx_6.6.52_2.2.0.xml
+        META_FSL_REV="0627128b341cfb2bef7a0832ce8cac0ce1127f13"
         META_FSL_3RD_REV="6c063450d464eb2f380443c7d9af1b94ce9b9d75"
         META_FSL_DIS_REV="b9d6a5d9931922558046d230c1f5f4ef6ee72345"
-        META_NXP_IMX_REV="rel_imx_6.6.36_2.1.0"
-        ;;        
+        META_NXP_IMX_REV="rel_imx_6.6.52_2.2.0"
+        ;;
     *)
         echo "Not supported kernel version ${KERNELVERSION}"
         return 1
