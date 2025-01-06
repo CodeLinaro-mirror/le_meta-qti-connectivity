@@ -1,5 +1,6 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/dnsmasq:"
+SRC_URI += "file://dnsmasq_current.conf"
 
-SRC_URI += " \
-    file://0001-dnsmasq-Enable-auto-SAP-dhcp-configuration.patch \
-"
+do_install:append () {
+        install -Dm 0644 ${WORKDIR}/dnsmasq_current.conf ${D}${sysconfdir}/dnsmasq.conf
+}
