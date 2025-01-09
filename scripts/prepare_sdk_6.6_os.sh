@@ -91,6 +91,7 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "hardware-legacy-headers cld80211-lib wif
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wifi-server wifi-someip-service wifi-message wifi-proto"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wifi-cond-proto wifi-cond-message wifi-cond-nlmsg-proto wifi-cond-nlmsg-message wifi-cond-server"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wpa-supplicant-8-lib wpa-supplicant-proto wpa-supplicant-message wpa-supplicant"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "procps"
 ' >> conf/local.conf
 
 # Use PROJECTID for specific package, will optimize this part.
