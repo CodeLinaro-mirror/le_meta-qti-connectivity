@@ -32,7 +32,6 @@ IMAGE_INSTALL += "protobuf"
 IMAGE_INSTALL += "someip-commonsys-intf"
 IMAGE_INSTALL += "dhcpcd"
 IMAGE_INSTALL += "dnsmasq"
-IMAGE_INSTALL += "procps"
 
 #Bluetooth software
 SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/bt-proprietary/synergy')}"
