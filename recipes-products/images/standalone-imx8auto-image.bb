@@ -30,7 +30,6 @@ IMAGE_INSTALL += "vsomeip"
 IMAGE_INSTALL += "android-common-libs"
 IMAGE_INSTALL += "protobuf"
 IMAGE_INSTALL += "someip-commonsys-intf"
-IMAGE_INSTALL += "dhcpcd"
 IMAGE_INSTALL += "dnsmasq"
 IMAGE_INSTALL += "procps"
 
