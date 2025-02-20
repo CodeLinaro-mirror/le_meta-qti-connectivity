@@ -323,6 +323,12 @@ if grep -q 'SRC_URI = "http:' ../sources/poky/meta/recipes-extended/bzip2/bzip2_
     sed -i -e 's/SRC_URI = "http:/SRC_URI = "https:/g' ../sources/poky/meta/recipes-extended/bzip2/bzip2_1.0.6.bb
 fi
 
+SYSTEMD_BBFILE=${WORK_SPACE}/sources/poky/meta/recipes-core/systemd/systemd.inc
+if grep -q 'SRC_URI = "git' ${SYSTEMD_BBFILE}; then
+    sed -i '/SRC_URI = "git/d' ${SYSTEMD_BBFILE}
+    sed -i '/SRCREV/a \\nSRC_URI = "git://github.com/systemd/systemd.git;protocol=git;branch=main"' ${SYSTEMD_BBFILE}
+fi
+
 if grep -q 'FEATURE_SINGLE_MSI' conf/local.conf; then
    sed -e "s/^FEATURE_SINGLE_MSI\s*=.*/FEATURE_SINGLE_MSI = \"$FEATURE_SINGLE_MSI\"/g" -i conf/local.conf
 else
