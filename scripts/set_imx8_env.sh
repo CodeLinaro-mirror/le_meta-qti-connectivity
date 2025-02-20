@@ -228,6 +228,12 @@ if grep -q 'SRC_URI = "http:' ${BZIP_BBFILE}; then
     sed -i -e 's/SRC_URI = "http:/SRC_URI = "https:/g' ${BZIP_BBFILE}
 fi
 
+SYSTEMD_BBFILE=${WORK_SPACE}/sources/poky/meta/recipes-core/systemd/systemd.inc
+if grep -q 'SRC_URI = "git' ${SYSTEMD_BBFILE}; then
+    sed -i '/SRC_URI = "git/d' ${SYSTEMD_BBFILE}
+    sed -i '/SRCREV/a \\nSRC_URI = "git://github.com/systemd/systemd.git;protocol=git;branch=main"' ${SYSTEMD_BBFILE}
+fi
+
 # Update bblayers.conf
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh ${PROJECTID}
 
