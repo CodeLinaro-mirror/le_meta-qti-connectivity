@@ -19,7 +19,9 @@ SRC_URI = "file://qcacld-3.0/ \
           "
 S = "${WORKDIR}/qcacld-3.0"
 
+FILES:${PN}     += "lib/firmware/*"
 FILES:${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/${WLAN_MODULE_NAME}.ko"
+RPROVIDES:${PN}  += "kernel-module-${WLAN_MODULE_NAME} kernel-module-${WLAN_MODULE_NAME}-${KERNEL_VERSION}"
 
 EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y CONFIG_MULTI_IF_LOG=y"
 
