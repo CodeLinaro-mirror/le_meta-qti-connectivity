@@ -1,8 +1,9 @@
-From 38c82b0b4ca8e292e5cb519f74a297683e0050f9 Mon Sep 17 00:00:00 2001
+From 4da550b18a97071e993cc22de46588b78924e92b Mon Sep 17 00:00:00 2001
 From: Ming Jiang <quic_mjiang@quicinc.com>
 Date: Thu, 16 Jan 2025 18:36:57 -0800
 Subject: [PATCH] imx8mq-evk.conf: Restore imx8mqevk conf for 3GDDR board
 
+Change-Id: Ia68588bc9ca1748240b44a9e3b99bdf169f673b9
 Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
 ---
  conf/machine/imx8mq-evk.conf | 5 +++++

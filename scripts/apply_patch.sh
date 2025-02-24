@@ -12,8 +12,8 @@
 #       disclaimer in the documentation and/or other materials provided
 #       with the distribution.
 #
-#     * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
-#       contributors may be used to endorse or promote products derived
+#     * Neither the name of Qualcomm Innovation Center, Inc. nor the names of
+#       its contributors may be used to endorse or promote products derived
 #       from this software without specific prior written permission.
 #
 # NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
@@ -35,88 +35,144 @@ ERROR_NO_GIT=400
 ERROR_INVALID_BASE=401
 ERROR_CHANGE_APPLIED=402
 
+_LAST()
+{
+	echo $1 | awk -F'/' '{print $NF}'
+}
+
 # params: git_repo_path change_id
 lookup_change_id()
 {
-        if [ $# -lt 2 ]; then
-                return ${ERROR_INVALID_PARAMS}
-        fi
+	if [ $# -lt 2 ]; then
+		return ${ERROR_INVALID_PARAMS}
+	fi
 
-        if [ $# -eq 3 ]; then
-                depth="-n $3"
-                echo -e "[KW] poky path: "$1"|"
-                echo -e "[KW] CID: "$2"|"
-                echo -e "[KW] depth: "${depth}"|"
-        fi
+	PATCH_FOLDER=$(_LAST $1)
+	echo -e "git path: "${PATCH_FOLDER}"|"
+	echo -e "changeid: "$2"|"
 
-        echo -e "[KW] Lookup CID"
-        HEAD=$(cat $1/.git/HEAD)
-        if [ "${HEAD}" == "269265c00091fa65f93de6cad32bf24f1e7f72a3" ]; then
-                echo -e "[KW] Patch not applied"
-                return 0
-        else
-                echo -e "[KW] patch already applied"
-                return 1
-        fi
+	cid=$2
+	top_cid="$(git -C $1 log -n 1 | grep "Change-Id"|awk '{print $2}')"
+	echo -e "top cid: "${top_cid}"|"
+	if [ "${top_cid}" == "${cid}" ]; then
+		echo -e "Found qc patch on ${PATCH_FOLDER}"
+		return 1
+	else
+		echo -e "Patch was not applied on ${PATCH_FOLDER}"
+		return 0
+		fi
 }
 
 # params: git_patch change_id
 get_change_id_from_patch()
 {
-        echo "$(cat $1 | grep "Change-Id"|awk '{print $2}')"
+	echo "$(cat $1 | grep "Change-Id"|awk '{print $2}')"
 }
 
 # params: folder_path patch_name, base_commit_id
 git_apply_patch()
 {
-        if [ $# -lt 2 ]; then
-                return ${ERROR_INVALID_PARAMS}
-        fi
+	if [ $# -lt 2 ]; then
+		return ${ERROR_INVALID_PARAMS}
+	fi
 
-        cd $1
-        echo -e "[KW] check git repo"
-        COMMIT_ID=$(git rev-parse --verify HEAD)
-        echo -e "[KW] finish check git repo"
-        if [ ! $? -eq 0 ]; then
-                echo -e "git repo is not found"
-                cd -
-                return ${ERROR_NO_GIT}
-        fi
+	cd $1
+	echo -e "check git repo"
+	COMMIT_ID=$(git rev-parse --verify HEAD)
+	echo -e "finish check git repo"
+	if [ ! $? -eq 0 ]; then
+		echo -e "git repo is not found"
+		cd -
+		return ${ERROR_NO_GIT}
+	fi
 
-        FILE=$2
-        echo -e "Apply ${FILE}"
-        git am ${FILE}  > /dev/null 2>&1
-        if [ ! $? -eq 0 ]; then
-                git am --abort
-                echo -e "Patch not applied"
-                echo -e "Poky TOP commit "${COMMIT_ID}
-                if [ $# -eq 3 ]; then
-                        echo -e "Expected Top commit "$3
-                fi
-        else
-                echo -e "Apply patch successfully"
-        fi
-        cd -
+	FILE=$2
+	echo -e "Apply "$(_LAST ${FILE})
+	git am ${FILE}  > /dev/null 2>&1
+	if [ ! $? -eq 0 ]; then
+		git am --abort
+		echo -e "Patch not applied"
+		echo -e "Poky TOP commit "${COMMIT_ID}
+		if [ $# -eq 3 ]; then
+			echo -e "Expected Top commit "$3
+		fi
+	else
+		echo -e "Apply patch successfully"
+	fi
+	cd -
 }
 
 declare -A P1
-P1=( ["path"]="${WORK_SPACE}/sources/poky"
-     ["name"]="${WORK_SPACE}/${SCRIPT_FOLDER}/files/0001-Address-do_rootfs-error-when-length-of-source-root-d.patch"
-     ["base"]="269265c00091fa65f93de6cad32bf24f1e7f72a3" )
+P1=(
+["path"]="${WORK_SPACE}/sources/poky"
+["name"]="${WORK_SPACE}/${SCRIPT_FOLDER}/files/"\
+"0001-Address-do_rootfs-error-when-length-of-source-root-d.patch"
+)
+
+declare -A P2
+P2=(
+["path"]="${WORK_SPACE}/sources/meta-freescale"
+["name"]="${WORK_SPACE}/sources/meta-qti-connectivity/recipes-kernel/"\
+"linux-kernel/files/lk-6.6/"\
+"4001-imx8mq-evk.conf-Restore-imx8mqevk-conf-for-3GDDR-boa.patch"
+)
+
+declare -A P3
+P3=(
+["path"]="${WORK_SPACE}/sources/meta-imx"
+["name"]="${WORK_SPACE}/sources/meta-qti-connectivity/recipes-kernel/"\
+"linux-kernel/files/lk-6.6/"\
+"4002-imx8mqevk.conf-Restore-imx8mqevk-configure-for-3GDDR.patch"
+)
 
 # align length check with the valie defined in patch file
-# apply P1 patch to address KW build error when length of root folder is too long
+# apply P1 patch to address KW build error when length of root folder is too
+# long
 LIMIT_LENGTH=150
 DDIR="${WORK_SPACE}/build/tmp/deploy/deb"
 PATH_LENGTH=${#DDIR}
 
+if [ ${KERNELVERSION} == "5.10" ]; then
 if [ ! ${PATH_LENGTH} -lt ${LIMIT_LENGTH} ]; then
-        CHANGE_ID=$(get_change_id_from_patch ${P1["name"]})
-        lookup_change_id ${P1["path"]} ${CHANGE_ID} 1
-        if [ $? -eq 0 ]; then
-                git_apply_patch ${P1["path"]} ${P1["name"]} ${P1["base"]}
-        fi
-        echo -e "[KW] prepare done"
+	CHANGE_ID=$(get_change_id_from_patch ${P1["name"]})
+	lookup_change_id ${P1["path"]} ${CHANGE_ID}
+	if [ $? -eq 0 ]; then
+		git_apply_patch ${P1["path"]} ${P1["name"]}
+	fi
+	echo -e "[KW] prepare done"
 else
-        echo -e "ROOT path length ${PATH_LENGTH} looks fine"
+	echo -e "ROOT path length ${PATH_LENGTH} looks fine"
+fi
+fi
+
+if [ ${MACHINE} == "imx8mqevk" -a ${KERNELVERSION} == "6.6" ]; then
+	CHANGE_ID=$(get_change_id_from_patch ${P2["name"]})
+	lookup_change_id ${P2["path"]} ${CHANGE_ID}
+	if [ $? -eq 0 ]; then
+		git_apply_patch ${P2["path"]} ${P2["name"]}
+	fi
+
+	CHANGE_ID=$(get_change_id_from_patch ${P3["name"]})
+	lookup_change_id ${P3["path"]} ${CHANGE_ID}
+	if [ $? -eq 0 ]; then
+		git_apply_patch ${P3["path"]} ${P3["name"]}
+	fi
+else
+	CHANGE_ID=$(get_change_id_from_patch ${P2["name"]})
+	lookup_change_id ${P2["path"]} ${CHANGE_ID}
+	if [ $? -eq 1 ]; then
+		echo -e "Revoke "$(_LAST ${P2["name"]})
+		cd ${P2["path"]}
+		git reset --hard HEAD~1
+		cd -
+	fi
+
+	CHANGE_ID=$(get_change_id_from_patch ${P3["name"]})
+	lookup_change_id ${P3["path"]} ${CHANGE_ID}
+	if [ $? -eq 1 ]; then
+		echo -e "Revoke "$(_LAST ${P3["name"]})
+		cd ${P3["path"]}
+		git reset --hard HEAD~1
+		cd -
+	fi
 fi
