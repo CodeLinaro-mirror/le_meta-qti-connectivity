@@ -313,9 +313,7 @@ ROOTFSFILE=${WORK_SPACE}/sources/poky/meta/lib/oe/rootfs.py
 sed -e "s/ERROR: |Error: |Error |ERROR/Error: |Error/g" -i ${ROOTFSFILE}
 
 # Apply patches to 3rd codes
-if [ ${KERNELVERSION} == "5.10" ]; then
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/apply_patch.sh
-fi
 
 cleanenv
 
