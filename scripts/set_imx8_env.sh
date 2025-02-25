@@ -228,7 +228,7 @@ fi
 #    KERNELVERSION="6.6"
 #fi
 
-KERNELVERSION="6.1"
+KERNELVERSION="6.6"
 
 # Get all required source codes.
 . ${SCRIPT_FOLDER}/extract_sourcecode.sh
