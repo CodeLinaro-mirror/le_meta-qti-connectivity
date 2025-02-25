@@ -23,6 +23,7 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0004-kernel-export-symbol-stack_trace_save_tsk.patch \
 	file://${PATCH_FOLDER}/0005-kernel-fix-the-issue-ttyLP1-is-missed-if-QC-BT-is-us.patch \
         file://${PATCH_FOLDER}/0006-Add-configuration-support-for-BT-I2S-slave-master.patch \
+	file://${PATCH_FOLDER}/0010-imx8mq.dtsi-Add-wlan-mhi-resource.patch \
 "
 
 do_copy_defconfig:append() {
