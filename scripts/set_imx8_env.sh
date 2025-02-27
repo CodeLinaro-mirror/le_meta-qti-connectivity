@@ -49,7 +49,7 @@ usage()
     echo
     echo "EULA      :  FSL EULA, default 0 if undefined."
     echo "BUILDDIR  :  the build directory location, 'build' by default."
-    echo "MACHINE   :  Supported machines, 'imx8qxpc0mek' by default. reference command \$list_machines"
+    echo "MACHINE   :  Supported machines, 'imx8mqevk' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
     echo "ADDON     :  Connectivity add-on feature names (separate in space)."
     echo "QCA6698AULE11 : QCA6698AU.LE.1.1 SP"
@@ -207,12 +207,12 @@ do
 done
 
 # Default MACHINE
-if [[ -z "$MACHINE" || $MACHINE == "imx8qxpc0mek" || $MACHINE == "imxauto" ]]; then
-    MACHINE='imx8qxpc0mek'
-elif [ "$MACHINE" == "imx8mqevk" ]; then
+if [[ -z "$MACHINE" || $MACHINE == "imx8mqevk" || $MACHINE == "imxauto" ]]; then
     MACHINE='imx8mqevk'
 elif [ "$MACHINE" == "imx8qxpmek" ]; then
     MACHINE='imx8qxpmek'
+elif [ "$MACHINE" == "imx8qxpc0mek" ]; then
+    MACHINE='imx8qxpc0mek'
 else
     check_machine_valid
     if [ "$?" != "0" ]; then
