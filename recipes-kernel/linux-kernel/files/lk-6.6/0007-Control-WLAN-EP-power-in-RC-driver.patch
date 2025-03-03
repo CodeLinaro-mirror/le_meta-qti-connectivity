@@ -1,24 +1,41 @@
-From 2dbdb0ec409cf4fe51ee445cf0ffabb589101d3c Mon Sep 17 00:00:00 2001
+From e461fae0d29b4b82ffaba5c2abe533dda22f59ab Mon Sep 17 00:00:00 2001
 From: Ming Jiang <quic_mjiang@quicinc.com>
 Date: Wed, 28 Aug 2024 18:31:25 +0800
 Subject: [PATCH] Control WLAN EP power in RC driver
 
+Add wlan ep power control api
+Unify code for shutdown and wow with micro
+Remove irq interrupt resource which used by rc
+
 Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
 ---
+ arch/arm64/boot/dts/freescale/imx8mq-evk.dts |  1 -
  arch/arm64/boot/dts/freescale/imx8x-mek.dtsi |  1 +
  drivers/pci/controller/dwc/Makefile          |  2 +-
- drivers/pci/controller/dwc/pci-imx6.c        | 11 ++-
+ drivers/pci/controller/dwc/pci-imx6.c        | 19 ++++-
  drivers/pci/controller/dwc/pcie-ep-power.c   | 74 ++++++++++++++++++++
  drivers/pci/controller/dwc/pcie-ep-power.h   |  7 ++
- 5 files changed, 92 insertions(+), 3 deletions(-)
+ 6 files changed, 100 insertions(+), 4 deletions(-)
  create mode 100644 drivers/pci/controller/dwc/pcie-ep-power.c
  create mode 100644 drivers/pci/controller/dwc/pcie-ep-power.h
 
+diff --git a/arch/arm64/boot/dts/freescale/imx8mq-evk.dts b/arch/arm64/boot/dts/freescale/imx8mq-evk.dts
+index 89b8594c7a11..40a4b1c0671b 100644
+--- a/arch/arm64/boot/dts/freescale/imx8mq-evk.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mq-evk.dts
+@@ -627,7 +627,6 @@ &pcie1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_pcie1>;
+ 	reset-gpio = <&gpio5 12 GPIO_ACTIVE_LOW>;
+-	host-wake-gpio = <&gpio5 11 GPIO_ACTIVE_LOW>;
+ 	clocks = <&clk IMX8MQ_CLK_PCIE2_ROOT>,
+ 		 <&pcie0_refclk>,
+ 		 <&clk IMX8MQ_CLK_PCIE2_PHY>,
 diff --git a/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi b/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
-index cc2c1cae7c3a..f857ec47de7e 100644
+index e1c32521351f..f6f271783d68 100644
 --- a/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
 +++ b/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
-@@ -1098,6 +1098,7 @@ &pcieb {
+@@ -1093,6 +1093,7 @@ &pcieb {
  	pinctrl-names = "default";
  	pinctrl-0 = <&pinctrl_pcieb>;
  	reset-gpio = <&lsio_gpio4 0 GPIO_ACTIVE_LOW>;
@@ -40,7 +57,7 @@ index bf5c311875a1..586f6fbbdd26 100644
  obj-$(CONFIG_PCI_KEYSTONE) += pci-keystone.o
  obj-$(CONFIG_PCI_LAYERSCAPE) += pci-layerscape.o
 diff --git a/drivers/pci/controller/dwc/pci-imx6.c b/drivers/pci/controller/dwc/pci-imx6.c
-index 3ff2fbeda70d..9df3a6157f86 100644
+index c87b0392b8d9..d170891402ad 100644
 --- a/drivers/pci/controller/dwc/pci-imx6.c
 +++ b/drivers/pci/controller/dwc/pci-imx6.c
 @@ -36,7 +36,7 @@
@@ -52,7 +69,7 @@ index 3ff2fbeda70d..9df3a6157f86 100644
  #define IMX95_PCIE2_BASE_ADDR			0x4c380000
  #define IMX95_PCIE_PHY_GEN_CTRL			0x0
  #define IMX95_PCIE_REF_USE_PAD			BIT(17)
-@@ -1766,6 +1766,11 @@ static int imx6_pcie_suspend_noirq(struct device *dev)
+@@ -1771,6 +1771,13 @@ static int imx6_pcie_suspend_noirq(struct device *dev)
  		imx6_pcie_host_exit(pp);
  	}
  
@@ -60,32 +77,40 @@ index 3ff2fbeda70d..9df3a6157f86 100644
 +		gpio_set_value_cansleep(imx6_pcie->reset_gpio,
 +					imx6_pcie->gpio_active_high);
 +
++#ifdef CONFIG_WLAN_EP_SHUTDOWN
 +	wlan_ep_power_off();
++#endif
  	return 0;
  }
  
-@@ -1777,7 +1782,7 @@ static int imx6_pcie_resume_noirq(struct device *dev)
- 
+@@ -1783,6 +1790,9 @@ static int imx6_pcie_resume_noirq(struct device *dev)
  	if (!(imx6_pcie->drvdata->flags & IMX6_PCIE_FLAG_SUPPORTS_SUSPEND))
  		return 0;
--
+ 
++#ifdef CONFIG_WLAN_EP_SHUTDOWN
 +	wlan_ep_power_on();
++#endif
  	if (unlikely(imx6_pcie->drvdata->variant == IMX6Q)) {
  		/*
  		 * L2 can exit by 'reset' or Inband beacon (from remote EP)
-@@ -1861,6 +1866,7 @@ static int imx6_pcie_probe(struct platform_device *pdev)
+@@ -1876,7 +1886,9 @@ static int imx6_pcie_probe(struct platform_device *pdev)
+ 	pci = devm_kzalloc(dev, sizeof(*pci), GFP_KERNEL);
  	if (!pci)
  		return -ENOMEM;
- 
+-
++#ifdef CONFIG_WLAN_EP_SHUTDOWN
 +	wlan_ep_power_init(dev);
++#endif
  	pci->dev = dev;
  	pci->ops = &dw_pcie_ops;
  	pci->pp.ops = &imx6_pcie_host_ops;
-@@ -2099,6 +2105,7 @@ static int imx6_pcie_probe(struct platform_device *pdev)
+@@ -2120,6 +2132,9 @@ static int imx6_pcie_probe(struct platform_device *pdev)
  	if (ret)
  		return ret;
  
++#ifdef CONFIG_WLAN_EP_SHUTDOWN
 +	wlan_ep_power_on();
++#endif
  	if (imx6_pcie->drvdata->mode == DW_PCIE_EP_TYPE) {
  		ret = imx6_add_pcie_ep(imx6_pcie, pdev);
  		if (ret < 0)
