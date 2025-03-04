@@ -18,7 +18,7 @@ FILES:${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/wlan_cnss_cor
 
 EXTRA_OEMAKE += "${@oe.utils.conditional('FEATURE_RCPM', '1', 'CONFIG_WLAN_EN=y', '', d)}"
 EXTRA_OEMAKE += "${@oe.utils.conditional('FEATURE_RCPM', '1', 'CONFIG_PCI_RC_SUPPORT_PM=y', '', d)}"
-EXTRA_OEMAKE += "CONFIG_WLAN_INTERNAL_SLEEP_CLOCK=y"
+#EXTRA_OEMAKE += "CONFIG_WLAN_INTERNAL_SLEEP_CLOCK=y"
 
 do_compile:prepend() {
 

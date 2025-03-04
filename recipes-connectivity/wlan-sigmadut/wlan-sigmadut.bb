@@ -16,6 +16,7 @@ EXTRA_OEMAKE += "NL80211_SUPPORT=y"
 
 do_compile() {
        sed -in 's\CFLAGS\FLAGS\g' ${S}/Makefile
+       sed -in 's/\-I\ \/usr\/include\/libnl3//g' ${S}/Makefile
        sed -in '$a\${OBJS}: %.o: %.c' ${S}/Makefile
        sed -in '$a\\t${LDO} -c ${FLAGS}  $< -o $@' ${S}/Makefile
        export CC="${CC} -I${STAGING_INCDIR}/libnl3"

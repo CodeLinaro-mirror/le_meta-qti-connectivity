@@ -22,7 +22,6 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0003-Add-wlan-en-gpio-resource.patch \
 	file://${PATCH_FOLDER}/0004-Add-MSM-bt-power-module.patch \
 	file://${PATCH_FOLDER}/0005-Enable-configure-for-rx-fcs-error-report.patch \
-	file://${PATCH_FOLDER}/0006-Add-32k-support-for-imx8qxp.patch \
 	file://${PATCH_FOLDER}/0007-cfg80211-Add-MLO-backport-flag.patch \
 	file://${PATCH_FOLDER}/0008-kernel-export-symbol-stack_trace_save_tsk.patch \
         file://${PATCH_FOLDER}/0009-kernel-export-symbol-irq_to_desc.patch \
