@@ -108,10 +108,11 @@ case ${KERNELVERSION} in
         META_FSL_DIS_REV="e6daa26ba1f748326546063d63a085ae671827d9"
         ;;
     "6.1")
-        #For manifest: imx-6.1.1-1.0.1.xml
-        META_FSL_REV="09c47379218167dda9fb0098129909a667fea2ec"
-        META_FSL_3RD_REV="96c1f6a6c2cad246687cd695e0873fcc6cdde935"
-        META_FSL_DIS_REV="1069c2f210b18cd707a4d8a82140a684a42a4ff6"
+        #For manifest: imx-6.1.55-2.2.2.xml
+        META_FSL_REV="7327e03c61823268a5a957fe090c4cc5e1735b34"
+        META_FSL_3RD_REV="bccd93f1ceece608e69799b6fc8f79e8a519f89e"
+        META_FSL_DIS_REV="7956a0ab407a33c40fdc6eb4fabdcb7dc54fd359"
+        META_NXP_IMX_REV="rel_imx_6.1.55_2.2.2"
         ;;
     "6.6")
         #For manifest: imx_6.6.52_2.2.0.xml
