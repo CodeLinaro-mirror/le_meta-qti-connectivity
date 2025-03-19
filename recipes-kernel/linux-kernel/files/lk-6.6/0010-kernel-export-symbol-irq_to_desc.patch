@@ -1,0 +1,29 @@
+From edcbb1c2e8b5be594ce7fd6efba56808a75ea9b6 Mon Sep 17 00:00:00 2001
+From: Xueqiang Gong <quic_gongx@quicinc.com>
+Date: Tue, 18 Mar 2025 16:36:47 +0800
+Subject: [PATCH] kernel: export symbol irq_to_desc
+
+fix build issue for CNSS driver
+
+Upstream-Status: Pending
+Signed-off-by: Xueqiang Gong <quic_gongx@quicinc.com>
+---
+ kernel/irq/irqdesc.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/kernel/irq/irqdesc.c b/kernel/irq/irqdesc.c
+index 46094f0c9fcd..2049ca0bdcdb 100644
+--- a/kernel/irq/irqdesc.c
++++ b/kernel/irq/irqdesc.c
+@@ -383,9 +383,7 @@ struct irq_desc *irq_to_desc(unsigned int irq)
+ {
+        return mtree_load(&sparse_irqs, irq);
+ }
+-#ifdef CONFIG_KVM_BOOK3S_64_HV_MODULE
+ EXPORT_SYMBOL_GPL(irq_to_desc);
+-#endif
+ 
+ #ifdef CONFIG_SMP
+ static void free_masks(struct irq_desc *desc)
+-- 
+2.34.1

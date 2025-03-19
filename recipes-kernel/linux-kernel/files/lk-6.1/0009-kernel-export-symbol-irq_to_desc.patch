@@ -3,7 +3,7 @@ From: Xueqiang Gong <quic_gongx@quicinc.com>
 Date: Mon, 20 May 2024 13:46:02 +0800
 Subject: [PATCH 9/9] kernel: export symbol irq_to_desc
 
-fix build issue for WLAN driver
+fix build issue for CNSS driver
 
 Signed-off-by: Xueqiang Gong <quic_gongx@quicinc.com>
 ---
