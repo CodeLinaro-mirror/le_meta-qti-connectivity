@@ -24,7 +24,8 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0005-Enable-configure-for-rx-fcs-error-report.patch \
 	file://${PATCH_FOLDER}/0007-cfg80211-Add-MLO-backport-flag.patch \
 	file://${PATCH_FOLDER}/0008-kernel-export-symbol-stack_trace_save_tsk.patch \
-        file://${PATCH_FOLDER}/0009-kernel-export-symbol-irq_to_desc.patch \
+	file://${PATCH_FOLDER}/0009-kernel-export-symbol-irq_to_desc.patch \
+	file://${PATCH_FOLDER}/0010-kernel-fix-the-issue-ttyLP1-is-missed-if-QC-BT-is-us.patch \
 "
 
 do_copy_defconfig:append() {
