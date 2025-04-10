@@ -49,7 +49,7 @@ usage()
     echo
     echo "EULA      :  FSL EULA, default 0 if undefined."
     echo "BUILDDIR  :  the build directory location, 'build' by default."
-    echo "MACHINE   :  Supported machines, 'imx8qxpmek' by default. reference command \$list_machines"
+    echo "MACHINE   :  Supported machines, 'imx8qxpc0mek' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
     echo "ADDON     :  Connectivity add-on feature names (separate in space)."
     echo "QCA67x7AULE11 : QCA67x7AU.LE.1.1 SP"
