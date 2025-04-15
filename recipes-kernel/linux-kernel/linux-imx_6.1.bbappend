@@ -23,6 +23,7 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0003-cfg80211-Add-MLO-backport-flag.patch \
 	file://${PATCH_FOLDER}/0004-cfg80211-Authentication-offload-to-user-space-for-ML.patch \
 	file://${PATCH_FOLDER}/0005-kernel-export-symbol-stack_trace_save_tsk.patch \
+        file://${PATCH_FOLDER}/0006-kernel-export-symbol-irq_to_desc.patch \
 "
 
 
