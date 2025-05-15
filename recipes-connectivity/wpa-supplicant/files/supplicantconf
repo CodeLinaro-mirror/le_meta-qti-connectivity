@@ -89,3 +89,9 @@ CONFIG_SUITEB192=y
 
 # Add support for writing debug log to a file (/tmp/wpa_supplicant-log-#.txt)
 CONFIG_DEBUG_FILE=y
+
+# For Debugging
+CONFIG_WPA_TRACE=y
+
+# Update EAP_TLS min version
+CONFIG_EAP_TLSV1_3=y
