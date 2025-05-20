@@ -33,11 +33,12 @@ IMAGE_INSTALL += "${@bb.utils.contains('SYNERGY_DIR_PRESENT', 'True', 'alsa-util
 IMAGE_INSTALL += "rfkill"
 
 #Wlan driver
-IMAGE_INSTALL += "wlan-cnss-core"
-#IMAGE_INSTALL += "qcacld32-ll-rome"
+#IMAGE_INSTALL += "wlan-cnss-core"
+IMAGE_INSTALL += "qcacld32-ll-rome"
+IMAGE_INSTALL += "qcacld32-hl-rome"
 #IMAGE_INSTALL += "qcacld32-ll-hasting"
 #IMAGE_INSTALL += "${@oe.utils.version_less_or_equal('KERNELVERSION', '5.4', '', 'qcacld32-ll-hsp', d)}"
-IMAGE_INSTALL += "qcacld32-ll-hsp"
+#IMAGE_INSTALL += "qcacld32-ll-hsp"
 #IMAGE_INSTALL += "qcacld32-ll-rome-cnss2"
 #IMAGE_INSTALL += "qcacld20-ll-rome"
 #IMAGE_INSTALL += "qcacld20-hl-rome"

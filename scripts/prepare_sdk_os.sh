@@ -25,6 +25,9 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Changes from Qualcomm Technologies, Inc. are provided under the following license:
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
 
 #!/bin/sh
 
@@ -63,34 +66,41 @@ fi
 echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> conf/bblayers.conf
 
 
-sed -i -e 's/IMAGE_ROOTFS_SIZE ??= "65536"/IMAGE_ROOTFS_SIZE ??= "139264"/g' ../sources/poky/meta/conf/bitbake.conf
+sed -i -e 's/IMAGE_ROOTFS_SIZE ??= "65536"/IMAGE_ROOTFS_SIZE ??= "278528"/g' ../sources/poky/meta/conf/bitbake.conf
 
 # Install common packages into image
 echo  'MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "pciutils"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iputils"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iw"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iperf2"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wpa-supplicant"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iperf2 iperf3"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rng-tools"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-sigmadut"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-config"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rng-tools"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "bridge-utils"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "openssh"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "packagegroup-core-ssh-openssh"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "openssh-sftp-server"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iptables"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "tcpdump"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rfkill"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wpa-supplicant"
 ' >> conf/local.conf
 
 # Use PROJECTID for specific package, will optimize this part.
 PROJECTID=$1
 if [ -z "${PROJECTID}" ]; then
-    echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
-    PROJECTID="QCA6574AULE221"
+    echo "No PROJECT provided, use default PROJECT=QCA6574AULE30"
+    PROJECTID="QCA6574AULE30"
 fi
 
 case ${PROJECTID} in
+    "QCA6574AULE30")
+        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-rome\"" >> conf/local.conf
+        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-hl-rome\"" >> conf/local.conf
+        ;;
     "QCA6574AULE221")
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-rome\"" >> conf/local.conf
+      	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-hl-rome\"" >> conf/local.conf
         ;;
     "QCA6584AULE201")
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld20-hl-rome\"" >> conf/local.conf
@@ -108,8 +118,8 @@ esac
 
 get_bsp_kernel_version
 if [ -z "${KERNELVERSION}" ]; then
-    echo "Can't find linux kernel bbfile, use 5.4 by default"
-    KERNELVERSION="5.4"
+    echo "Can't find linux kernel bbfile, use 6.6 by default"
+    KERNELVERSION="6.6"
 fi
 
 # wirless-tools only available with specific package

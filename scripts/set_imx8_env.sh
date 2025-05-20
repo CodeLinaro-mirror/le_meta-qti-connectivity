@@ -33,8 +33,8 @@
 # Update BSP configuration parameters.
 # Export QTI Software Product specific PROJECTID.
 
-#Changes from Qualcomm Innovation Center are provided under the following license:
-#Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+# Changes from Qualcomm Technologies, Inc. are provided under the following license:
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 #SPDX-License-Identifier: BSD-3-Clause-Clear
 
 umask 022
@@ -45,14 +45,14 @@ usage()
     echo
     echo "script usage for QTI Standalone Auto image"
     echo "${SCRIPT_PARAMS} source ${SCRIPT_FILE} [BUILDDIR]"
-    echo "For example: PROJECT=QCA6698AULE11 source ${SCRIPT_FILE}"
+    echo "For example: PROJECT=QCA6574AULE30 source ${SCRIPT_FILE}"
     echo
     echo "EULA      :  FSL EULA, default 0 if undefined."
     echo "BUILDDIR  :  the build directory location, 'build' by default."
     echo "MACHINE   :  Supported machines, 'imx8qxpc0mek' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
     echo "ADDON     :  Connectivity add-on feature names (separate in space)."
-    echo "QCA6698AULE11 : QCA6698AU.LE.1.1 SP"
+    echo "    QCA6574AULE30 : QCA6574AU.LE.3.0 SP"
 }
 
 execute_command()
@@ -172,10 +172,10 @@ esac
 
 
 case $PROJECT in
-    "QCA6698AULE11" | "")
+    "QCA6574AULE30" | "")
         {
             DISTRO=fsl-imx-xwayland
-            export PROJECTID=QCA6698AULE11
+            export PROJECTID=QCA6574AULE30
         } ;;
     *)
         {
