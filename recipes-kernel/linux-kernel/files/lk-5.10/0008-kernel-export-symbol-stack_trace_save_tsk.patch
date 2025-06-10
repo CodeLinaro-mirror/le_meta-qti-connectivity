@@ -1,0 +1,28 @@
+From 7c5124cb15a1ac2960ed157b758c2391fd6cf036 Mon Sep 17 00:00:00 2001
+From: Xueqiang Gong <gongx@qti.qualcomm.com>
+Date: Tue, 12 Dec 2023 10:38:54 +0800
+Subject: [PATCH] kernel: export symbol stack_trace_save_tsk
+
+fix build issue for WLAN driver
+
+Signed-off-by: Xueqiang Gong <gongx@qti.qualcomm.com>
+---
+ kernel/stacktrace.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kernel/stacktrace.c b/kernel/stacktrace.c
+index 9ed5ce989415..e9bc05c6722b 100644
+--- a/kernel/stacktrace.c
++++ b/kernel/stacktrace.c
+@@ -151,7 +151,7 @@ unsigned int stack_trace_save_tsk(struct task_struct *tsk, unsigned long *store,
+ 	put_task_stack(tsk);
+ 	return c.len;
+ }
+-
++EXPORT_SYMBOL_GPL(stack_trace_save_tsk);
+ /**
+  * stack_trace_save_regs - Save a stack trace based on pt_regs into a storage array
+  * @regs:	Pointer to pt_regs to examine
+-- 
+2.17.1
+

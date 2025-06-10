@@ -64,28 +64,26 @@ if [ -f "${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf
     cat ${WORK_SPACE}/sources/meta-qti-connectivity/conf/standalone-bbmask.conf >> conf/bblayers.conf
 fi
 echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> conf/bblayers.conf
-echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_5.10.bbappend"' >> conf/bblayers.conf
 echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_6.1.bbappend"' >> conf/bblayers.conf
+echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_6.6.bbappend"' >> conf/bblayers.conf
 echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"' >> conf/bblayers.conf
-echo 'BBMASK.="|meta-imx/meta-imx-bsp/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend"' >> conf/bblayers.conf
+
 sed -i -e 's/IMAGE_ROOTFS_SIZE ??= "65536"/IMAGE_ROOTFS_SIZE ??= "557056"/g' ../sources/poky/meta/conf/bitbake.conf
 
 # Install common packages into image
 echo  'MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "pciutils"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iputils"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iw"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iperf2 iperf3"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rng-tools"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iperf2"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wpa-supplicant"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-sigmadut"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wlan-config"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rng-tools"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "bridge-utils"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "openssh"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "packagegroup-core-ssh-openssh"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "openssh-sftp-server"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iptables"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "tcpdump"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rfkill"
-MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wpa-supplicant"
 ' >> conf/local.conf
 
 # Use PROJECTID for specific package, will optimize this part.
@@ -112,23 +110,15 @@ case ${PROJECTID} in
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-hasting\"" >> conf/local.conf
         ;;
     "QCA6595AULE01")
-	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf
-	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-genoa\"" >> conf/local.conf
-	;;
-    "QCA6698AULE11")
-	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf
-	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-hsp\"" >> conf/local.conf
-	;;
-    "QCA67x7AULE10")
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf
-        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-hamilton\"" >> conf/local.conf
-	;;
+        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-genoa\"" >> conf/local.conf
+        ;;	
 esac
 
 get_bsp_kernel_version
 if [ -z "${KERNELVERSION}" ]; then
-    echo "Can't find linux kernel bbfile, use 5.4 by default"
-    KERNELVERSION="5.4"
+    echo "Can't find linux kernel bbfile, use 5.10 by default"
+    KERNELVERSION="5.10"
 fi
 
 # wirless-tools only available with specific package

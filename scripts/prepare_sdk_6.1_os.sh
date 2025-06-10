@@ -1,6 +1,3 @@
-# Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause-Clear
-
 # Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -28,6 +25,9 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Changes from Qualcomm Technologies, Inc. are provided under the following license:
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
 
 #!/bin/sh
 
@@ -67,7 +67,7 @@ echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10
 echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_5.10.bbappend"' >> conf/bblayers.conf
 echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"' >> conf/bblayers.conf
 echo 'BBMASK.="|meta-imx/meta-bsp/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend"' >> conf/bblayers.conf
-sed -i -e 's/IMAGE_ROOTFS_SIZE ??= "65536"/IMAGE_ROOTFS_SIZE ??= "139264"/g' ../sources/poky/meta/conf/bitbake.conf
+sed -i -e 's/IMAGE_ROOTFS_SIZE ??= "65536"/IMAGE_ROOTFS_SIZE ??= "278528"/g' ../sources/poky/meta/conf/bitbake.conf
 
 # Install common packages into image
 echo  'MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "pciutils"
@@ -88,8 +88,8 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iptables"
 # Use PROJECTID for specific package, will optimize this part.
 PROJECTID=$1
 if [ -z "${PROJECTID}" ]; then
-    echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
-    PROJECTID="QCA6574AULE221"
+    echo "No PROJECT provided, use default PROJECT=QCA6595AULE01"
+    PROJECTID="QCA6595AULE01"
 fi
 
 case ${PROJECTID} in
@@ -108,6 +108,10 @@ case ${PROJECTID} in
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-hasting\"" >> conf/local.conf
         ;;
+    "QCA6595AULE01")
+	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf
+	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-genoa\"" >> conf/local.conf
+	;;
     "QCA6698AULE11")
 	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf
 	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-hsp\"" >> conf/local.conf
