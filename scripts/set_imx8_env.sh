@@ -33,8 +33,8 @@
 # Update BSP configuration parameters.
 # Export QTI Software Product specific PROJECTID.
 
-#Changes from Qualcomm Innovation Center are provided under the following license:
-#Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+#Changes from Qualcomm Technologies, Inc. are provided under the following license:
+#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 #SPDX-License-Identifier: BSD-3-Clause-Clear
 
 umask 022
@@ -224,11 +224,11 @@ fi
 # Get current BSP kernel version
 #get_bsp_kernel_version
 #if [ -z "${KERNELVERSION}" ]; then
-#    echo "Can't find linux kernel bbfile, use 6.6 by default"
-#    KERNELVERSION="6.6"
+#    echo "Can't find linux kernel bbfile, use 6.12 by default"
+#    KERNELVERSION="6.12"
 #fi
 
-KERNELVERSION="6.6"
+KERNELVERSION="6.12"
 
 # Get all required source codes.
 . ${SCRIPT_FOLDER}/extract_sourcecode.sh

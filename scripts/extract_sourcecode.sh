@@ -31,8 +31,8 @@
 # This script will extract all required open source code.
 # . sources/meta-qti-connectivity/scripts/extract_sourcecode.sh
 
-#Changes from Qualcomm Innovation Center are provided under the following license:
-#Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+#Changes from Qualcomm Technologies, Inc. are provided under the following license:
+#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 #SPDX-License-Identifier: BSD-3-Clause-Clear
 
 download_git_code()
@@ -119,6 +119,13 @@ case ${KERNELVERSION} in
         META_FSL_3RD_REV="6c063450d464eb2f380443c7d9af1b94ce9b9d75"
         META_FSL_DIS_REV="b9d6a5d9931922558046d230c1f5f4ef6ee72345"
         META_NXP_IMX_REV="rel_imx_6.6.52_2.2.0"
+        ;;
+    "6.12")
+        #For manifest: imx-6.12.20-2.0.0.xml
+        META_FSL_REV="7431918c86ac6d3be2a273e091227157446960a7"
+        META_FSL_3RD_REV="e7ce12ee3a3d0e6aa8dbbab598088b50b7625a33"
+        META_FSL_DIS_REV="b9c3536b68271c420fe5de36fc284781ceaa32ab"
+        META_NXP_IMX_REV="rel_imx_6.12.20_2.0.0"
         ;;
     *)
         echo "Not supported kernel version ${KERNELVERSION}"
