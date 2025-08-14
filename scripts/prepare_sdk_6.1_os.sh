@@ -66,6 +66,7 @@ fi
 echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_3.10.17.bbappend"' >> conf/bblayers.conf
 echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_5.10.bbappend"' >> conf/bblayers.conf
 echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"' >> conf/bblayers.conf
+echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_6.6.bbappend"' >> conf/bblayers.conf
 echo 'BBMASK.="|meta-imx/meta-bsp/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend"' >> conf/bblayers.conf
 sed -i -e 's/IMAGE_ROOTFS_SIZE ??= "65536"/IMAGE_ROOTFS_SIZE ??= "139264"/g' ../sources/poky/meta/conf/bitbake.conf
 
@@ -103,6 +104,10 @@ case ${PROJECTID} in
     "QCA6574AULE26")
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-rome\"" >> conf/local.conf
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-rome-cnss2\"" >> conf/local.conf
+        ;;
+    "QCA6574AULE30")
+        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-rome\"" >> conf/local.conf
+        echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-hl-rome\"" >> conf/local.conf
         ;;
     "QCA6696LE01")
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf

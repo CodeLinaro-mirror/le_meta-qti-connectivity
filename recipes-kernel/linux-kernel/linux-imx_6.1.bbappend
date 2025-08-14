@@ -17,15 +17,9 @@ python __anonymous () {
 SRC_URI += "file://config/defconfig_${KERNELVERSION}"
 
 SRC_URI += " \
-	file://${PATCH_FOLDER}/0001-dts-add-cnss2-converged-devices-support.patch \
-	file://${PATCH_FOLDER}/0002-update-im8mq-evk-device-tree-to-enable-m2BT.patch \
-	file://${PATCH_FOLDER}/0003-Add-wlan-en-gpio-resource.patch \
-	file://${PATCH_FOLDER}/0004-Add-MSM-bt-power-module.patch \
-	file://${PATCH_FOLDER}/0005-Enable-configure-for-rx-fcs-error-report.patch \
-	file://${PATCH_FOLDER}/0006-Add-32k-support-for-imx8qxp.patch \
 	file://${PATCH_FOLDER}/0007-cfg80211-Add-MLO-backport-flag.patch \
 	file://${PATCH_FOLDER}/0008-kernel-export-symbol-stack_trace_save_tsk.patch \
-        file://${PATCH_FOLDER}/0009-kernel-export-symbol-irq_to_desc.patch \
+        file://${PATCH_FOLDER}/0010-export-kernel-function-sched_setscheduler.patch \
 "
 
 do_copy_defconfig:append() {
