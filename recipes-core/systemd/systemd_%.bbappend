@@ -1,11 +1,11 @@
 
-FILESEXTRAPATHS:append := ":${THISDIR}/systemd-230"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-SRC_URI:append += "file://systemd-net-buffer-tune.sh"
+SRC_URI += "file://systemd-net-buffer-tune.sh"
 
 do_install:append() {
   # add a profile fragment to tune the network buffer size
-	install -Dm 0644 ${WORKDIR}/systemd-net-buffer-tune.sh  \
+	install -Dm 0644 ${UNPACKDIR}/systemd-net-buffer-tune.sh  \
 	 ${D}${sysconfdir}/profile.d/systemd-net-buffer-tune.sh
 
 }

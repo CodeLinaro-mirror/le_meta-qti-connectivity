@@ -149,6 +149,21 @@ EOF
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-security/meta-tpm \"" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-virtualization \""  >> ${BBLAYERS_CONF}
             ;;
+        "6.12")
+            echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-imx-bsp\"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-imx-sdk\"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-imx-ml\"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-imx-v2x\"" >> ${BBLAYERS_CONF}
+            echo "" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-arm/meta-arm \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-arm/meta-arm-toolchain \""  >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-clang \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-browser/meta-chromium \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-qt6 \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-security/meta-parsec \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-security/meta-tpm \"" >> ${BBLAYERS_CONF}
+            echo "BBLAYERS += \" \${BSPDIR}/sources/meta-virtualization \""  >> ${BBLAYERS_CONF}
+            ;;
         *)
             echo "Not supported kernel version ${KERNELVERSION}"
             ;;
@@ -193,6 +208,12 @@ EOF
         echo 'BBMASK.="|meta-imx/meta-imx-bsp/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend"' >> ${BBLAYERS_CONF}
     else
         echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_6.6.bbappend"' >> ${BBLAYERS_CONF}
+    fi
+    if [ "${KERNELVERSION}" == "6.12" ]; then
+        echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_%.bbappend"' >> ${BBLAYERS_CONF}
+        echo 'BBMASK.="|meta-imx/meta-imx-sdk/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend"' >> ${BBLAYERS_CONF}
+    else
+        echo 'BBMASK.="|meta-qti-connectivity/recipes-kernel/linux-kernel/linux-imx_6.12.bbappend"' >> ${BBLAYERS_CONF}
     fi
 }
 

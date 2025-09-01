@@ -9,3 +9,8 @@ SRC_URI += "file://ftpd.cfg"
 SRC_URI += "file://nfs.cfg"
 
 CFLAGS += "-I${STAGING_INCDIR}/tirpc"
+
+ERROR_QA:remove = "buildpaths"
+WARN_QA:append = " buildpaths"
+ERROR_QA:remove = "ldflags"
+WARN_QA:append = " ldflags"

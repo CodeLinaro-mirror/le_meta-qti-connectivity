@@ -1,0 +1,26 @@
+From e86d986bb6b4992d343d790af7c9a567b415b2fe Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Thu, 16 Jan 2025 18:38:02 -0800
+Subject: [PATCH] imx8mqevk.conf: Restore imx8mqevk configure for 3GDDR board
+
+Change-Id: I9ee53549cfdcf3d303f5304bd22460cc79dd5a8b
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ meta-imx-bsp/conf/machine/imx8mqevk.conf | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/meta-imx-bsp/conf/machine/imx8mqevk.conf b/meta-imx-bsp/conf/machine/imx8mqevk.conf
+index 9b8d3c9d61..cbf179e55a 100644
+--- a/meta-imx-bsp/conf/machine/imx8mqevk.conf
++++ b/meta-imx-bsp/conf/machine/imx8mqevk.conf
+@@ -10,5 +10,5 @@
+ # For users of both EVK variants, this can save build time and space. For most users, the dedicated machines
+ # imx8mq-lpddr4-wevk.conf and imx8mq-evk.conf should be used for simplicity.
+ 
+-MACHINEOVERRIDES =. "imx8mq-lpddr4-wevk:"
+-require conf/machine/imx8mq-lpddr4-wevk.conf
++MACHINEOVERRIDES =. "imx8mq-evk:"
++require conf/machine/imx8mq-evk.conf
+-- 
+2.34.1
+

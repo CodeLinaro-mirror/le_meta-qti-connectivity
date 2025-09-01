@@ -20,8 +20,8 @@ SRC_URI += "file://hostapdconf \
 S = "${WORKDIR}/wlan-opensource/wpa_supplicant_8"
 
 do_configure() {
-	install -m 0644 ${WORKDIR}/hostapdconf ${S}/hostapd/.config
-	install -m 0644 ${WORKDIR}/supplicantconf ${S}/wpa_supplicant/.config
+	install -m 0644 ${UNPACKDIR}/hostapdconf ${S}/hostapd/.config
+	install -m 0644 ${UNPACKDIR}/supplicantconf ${S}/wpa_supplicant/.config
 	sed  -i -e 's/\-I\/usr\/include\/libnl3//g' ${S}/src/drivers/drivers.mk
 	sed  -i -e 's/\-I\/usr\/include\/libnl3//g' ${S}/src/drivers/drivers.mak
 	echo "CFLAGS +=\"-I${STAGING_INCDIR}/libnl3\"" >> ${S}/hostapd/.config

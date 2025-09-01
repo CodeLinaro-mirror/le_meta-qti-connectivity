@@ -10,7 +10,7 @@ FILESPATH =+ "${BSPDIR}/sources:"
 SRC_URI = "file://wlan-opensource/dsrc-tool/ \
 	  "
 
-S = "${WORKDIR}/wlan-opensource/dsrc-tool/"
+S = "${WORKDIR}/wlan-opensource/dsrc-tool"
 
 TOOL_CHAIN_PRE = ""
 

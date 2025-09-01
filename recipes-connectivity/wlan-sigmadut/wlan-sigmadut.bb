@@ -5,17 +5,19 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/${LICENSE};md5
 DEPENDS = "libnl"
 PR = "r0"
 
-FILESPATH =+ "${BSPDIR}/sources:"
+FILESPATH =+ "${BSPDIR}/sources/:"
 SRC_URI = "file://wlan-opensource/sigma-dut/ \
 	  "
 
-S = "${WORKDIR}/wlan-opensource/sigma-dut/"
+S = "${WORKDIR}/wlan-opensource/sigma-dut"
 
 
 EXTRA_OEMAKE += "NL80211_SUPPORT=y"
 
 do_compile() {
        sed -in 's\CFLAGS\FLAGS\g' ${S}/Makefile
+       sed -in 's/\ -g//g' ${S}/Makefile
+       sed -in 's/\-I\ \/usr\/include\/libnl3//g' ${S}/Makefile
        sed -in '$a\${OBJS}: %.o: %.c' ${S}/Makefile
        sed -in '$a\\t${LDO} -c ${FLAGS}  $< -o $@' ${S}/Makefile
        export CC="${CC} -I${STAGING_INCDIR}/libnl3"
@@ -27,5 +29,5 @@ do_install() {
 	install -m 0755 ${S}/sigma_dut ${D}/${bindir}
 }
 
-FILES:${PN} += "${bindir}*"
+FILES:${PN} += "${bindir}/*"
 FILES:${PN}-dbg += "${bindir}/.debug/*"

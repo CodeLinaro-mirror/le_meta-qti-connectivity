@@ -1,0 +1,45 @@
+From 9c75b8ba60335e2174e5b62acb0a20d4d6f2cba3 Mon Sep 17 00:00:00 2001
+From: mingjian <quic_mingjian@quicinc.com>
+Date: Fri, 12 Jul 2024 13:36:56 +0800
+Subject: [PATCH] Add configuration support for BT I2S slave/master
+
+Signed-off-by: mingjian <quic_mingjian@quicinc.com>
+---
+ arch/arm64/boot/dts/freescale/imx8x-mek.dtsi | 4 ++
+ sound/soc/fsl/fsl_sai.c                      | 7 +++++++
+ 2 files changed, 9 insertions(+), 0 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi b/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
+index 42b5980edcd8..fa161c0df462 100644
+--- a/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
+@@ -763,6 +763,8 @@ &sai0 {
+ 	assigned-clock-rates = <786432000>, <49152000>, <12288000>, <49152000>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_sai0>;
++        fsl,txmasterflag=<1>;
++        fsl,rxmasterflag=<1>;
+ 	status = "okay";
+ };
+ 
+diff --git a/sound/soc/fsl/fsl_sai.c b/sound/soc/fsl/fsl_sai.c
+index 4455095d17d6..25469f0a6cd3 100644
+--- a/sound/soc/fsl/fsl_sai.c
++++ b/sound/soc/fsl/fsl_sai.c
+@@ -1433,6 +1433,13 @@ static int fsl_sai_probe(struct platform_device *pdev)
+ 	if (of_find_property(np, "fsl,txm-rxs", NULL) != NULL) {
+ 		sai->masterflag[FSL_FMT_TRANSMITTER] = SND_SOC_DAIFMT_BP_FP;
+ 		sai->masterflag[FSL_FMT_RECEIVER] = SND_SOC_DAIFMT_BC_FC;
++	}else {
++		if (!of_property_read_u32(np, "fsl,txmasterflag",
++			&sai->masterflag[FSL_FMT_TRANSMITTER]))
++			sai->masterflag[FSL_FMT_TRANSMITTER] <<= 12;
++		if (!of_property_read_u32(np, "fsl,rxmasterflag",
++			&sai->masterflag[FSL_FMT_RECEIVER]))
++			sai->masterflag[FSL_FMT_RECEIVER] <<= 12;
+ 	}
+ 
+ 	irq = platform_get_irq(pdev, 0);
+-- 
+2.34.1
+

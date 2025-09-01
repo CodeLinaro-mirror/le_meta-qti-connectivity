@@ -15,7 +15,7 @@ IMAGE_ROOTFS_EXTRA_SPACE:append = "${@bb.utils.contains("DISTRO_FEATURES", "syst
 #Common required tools
 IMAGE_INSTALL += "iw"
 IMAGE_INSTALL += "tcpdump"
-IMAGE_INSTALL += "wireless-tools"
+#IMAGE_INSTALL += "wireless-tools"
 IMAGE_INSTALL += "iperf2"
 IMAGE_INSTALL += "iperf3"
 IMAGE_INSTALL += "pciutils"

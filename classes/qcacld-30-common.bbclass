@@ -24,6 +24,8 @@ FILES:${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/${WLAN_MODULE
 EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y CONFIG_MULTI_IF_LOG=y"
 
 do_compile:prepend() {
+    cp -rf ${UNPACKDIR}/qca-wifi-host-cmn ${WORKDIR}
+    cp -rf ${UNPACKDIR}/fw-api ${WORKDIR}
     sed -in '/Werror/d' ${S}/Kbuild
     # Using default qcacld-3.0 absolute path, get compilation error:
     # make[3]: execvp: /bin/sh: Argument list too long.
@@ -43,3 +45,9 @@ do_install () {
     export M=../${PN}/qcacld-3.0
     module_do_install
 }
+
+ERROR_QA:remove = "buildpaths"
+WARN_QA:append = " buildpaths"
+ERROR_QA:remove = "ldflags"
+WARN_QA:append = " ldflags"
+

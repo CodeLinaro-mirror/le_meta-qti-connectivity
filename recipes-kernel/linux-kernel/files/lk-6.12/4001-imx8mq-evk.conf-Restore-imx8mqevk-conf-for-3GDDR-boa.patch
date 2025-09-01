@@ -1,0 +1,37 @@
+From 4da550b18a97071e993cc22de46588b78924e92b Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Thu, 16 Jan 2025 18:36:57 -0800
+Subject: [PATCH] imx8mq-evk.conf: Restore imx8mqevk conf for 3GDDR board
+
+Change-Id: Ia68588bc9ca1748240b44a9e3b99bdf169f673b9
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ conf/machine/imx8mq-evk.conf | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/conf/machine/imx8mq-evk.conf b/conf/machine/imx8mq-evk.conf
+index 92a436e5..779ac478 100644
+--- a/conf/machine/imx8mq-evk.conf
++++ b/conf/machine/imx8mq-evk.conf
+@@ -6,6 +6,10 @@
+ 
+ MACHINEOVERRIDES =. "mx8mq:"
+ 
++# FIXME: u-boot-imx should be converted to `binman` and then we can
++# avoid this specific overrides and handle it in a generic way.
++MACHINEOVERRIDES =. "${@bb.utils.contains('IMX_DEFAULT_BOOTLOADER', 'u-boot-imx', '', 'imx-boot-container:', d)}"
++
+ require conf/machine/include/imx-base.inc
+ require conf/machine/include/arm/armv8a/tune-cortexa53.inc
+ 
+@@ -50,6 +54,7 @@ UBOOT_SUFFIX = "bin"
+ 
+ UBOOT_CONFIG ??= "sd"
+ UBOOT_CONFIG[sd]       = "imx8mq_evk_config,sdcard"
++UBOOT_CONFIG[mfgtool]  = "imx8mq_evk_config"
+ 
+ SPL_BINARY = "spl/u-boot-spl.bin"
+ 
+-- 
+2.34.1
+
