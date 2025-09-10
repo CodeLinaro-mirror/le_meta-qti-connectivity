@@ -21,7 +21,7 @@ EXTRA_OEMAKE += "${@oe.utils.conditional('FEATURE_RCPM', '1', 'CONFIG_PCI_RC_SUP
 EXTRA_OEMAKE += "CONFIG_WLAN_INTERNAL_SLEEP_CLOCK=y"
 
 do_compile:prepend() {
-
+    mkdir -p ${DEPLOY_DIR_IMAGE}/wlan
 # wlan hasting driver need the two head files
     cp ${S}/cnss2/cnss2.h  ${STAGING_KERNEL_DIR}/include/net/
     cp ${S}/cnss_utils/cnss_utils.h ${STAGING_KERNEL_DIR}/include/net/
@@ -31,4 +31,5 @@ do_compile:prepend() {
 
 do_install () {
     module_do_install
+    cp ${D}${nonarch_base_libdir}/modules/${KERNEL_VERSION}/updates/*.ko ${DEPLOY_DIR_IMAGE}/wlan/
 }
