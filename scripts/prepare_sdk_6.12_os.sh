@@ -87,6 +87,7 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "iptables"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "tcpdump"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "rfkill"
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wpa-supplicant"
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wireless-tools"
 ' >> conf/local.conf
 
 # Use PROJECTID for specific package, will optimize this part.
