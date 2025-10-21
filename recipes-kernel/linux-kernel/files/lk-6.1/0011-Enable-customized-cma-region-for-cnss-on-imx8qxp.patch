@@ -1,0 +1,37 @@
+From 2e6bb17a2a365a32002044f91dae0f40a1a86d47 Mon Sep 17 00:00:00 2001
+From: Dongyuan Li <dongyuan@qti.qualcomm.com>
+Date: Fri, 17 Oct 2025 16:19:25 +0800
+Subject: [PATCH] Enable customized cma region for cnss on imx8qxp.
+
+Signed-off-by: Dongyuan Li <dongyuan@qti.qualcomm.com>
+---
+ arch/arm64/boot/dts/freescale/imx8qxp-mek.dts | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8qxp-mek.dts b/arch/arm64/boot/dts/freescale/imx8qxp-mek.dts
+index 4551dd685b4a..4928f29e936e 100644
+--- a/arch/arm64/boot/dts/freescale/imx8qxp-mek.dts
++++ b/arch/arm64/boot/dts/freescale/imx8qxp-mek.dts
+@@ -17,9 +17,19 @@ gpu_reserved: gpu_reserved@880000000 {
+ 			no-map;
+ 			reg = <0x8 0x80000000 0 0x10000000>;
+ 		};
++
++		wlan_region: wlan_reserved@d0000000 {
++			compatible = "shared-dma-pool";
++			no-map;
++			reg = <0x0 0xd0000000 0 0x06400000>;
++		};
+ 	};
+ };
+ 
+ &imx8_gpu_ss {
+ 	memory-region=<&gpu_reserved>;
+ };
++
++&cnss2 {
++	memory-region=<&wlan_region>;
++};
+-- 
+2.34.1
+
