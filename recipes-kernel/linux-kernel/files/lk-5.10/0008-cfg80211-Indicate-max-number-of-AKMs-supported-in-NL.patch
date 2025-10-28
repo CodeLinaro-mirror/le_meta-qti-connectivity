@@ -1,0 +1,203 @@
+From 798fcedf55b3a548f94a48709e28c066658458fb Mon Sep 17 00:00:00 2001
+From: Xueqiang Gong <gongx@qti.qualcomm.com>
+Date: Tue, 28 Oct 2025 16:58:59 +0800
+Subject: [PATCH] cfg80211: Indicate max number of AKMs supported in
+ NL80211_CMD_CONNECT
+
+Previously max number of AKMs supported via NL80211_CMD_CONNECT is fixed
+to NL80211_MAX_NR_AKM_SUITES. This change adds support for driver to
+indicate max number of AKMs supported via NL80211_CMD_CONNECT
+
+Signed-off-by: Xueqiang Gong <gongx@qti.qualcomm.com>
+---
+ include/net/cfg80211.h       | 13 +++++++++++++
+ include/uapi/linux/nl80211.h |  3 ++-
+ net/wireless/core.c          |  8 ++++++++
+ net/wireless/nl80211.c       | 36 +++++++++++++++++++++++++++---------
+ 4 files changed, 50 insertions(+), 10 deletions(-)
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index 0b084c95341c..f70968b49ce8 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -23,6 +23,8 @@
+ #include <net/regulatory.h>
+ 
+ #define CFG80211_RX_FCS_ERROR_REPORTING_SUPPORT 1
++/* Indicate support for connect request with more than two AKMs */
++#define CFG80211_MULTI_AKM_CONNECT_SUPPORT 1
+ 
+ /**
+  * DOC: Introduction
+@@ -1010,6 +1012,12 @@ struct survey_info {
+  * @sae_pwd: password for SAE authentication (for devices supporting SAE
+  *	offload)
+  * @sae_pwd_len: length of SAE password (for devices supporting SAE offload)
++ * @n_connect_akm_suites: number of AKM suites through NL80211_CMD_CONNECT.
++ *	Applicable only when driver indicates @wiphy.max_num_akms_connect as
++ *	non-zero value.
++ * @connect_akm_suites: AKM suites configured through NL80211_CMD_CONNECT
++ *	Applicable only when driver indicates @wiphy.max_num_akms_connect as
++ *	non-zero value.
+  */
+ struct cfg80211_crypto_settings {
+ 	u32 wpa_versions;
+@@ -1028,6 +1036,8 @@ struct cfg80211_crypto_settings {
+ 	const u8 *psk;
+ 	const u8 *sae_pwd;
+ 	u8 sae_pwd_len;
++	int n_connect_akm_suites;
++	u32 *connect_akm_suites;
+ };
+ 
+ /**
+@@ -4881,6 +4891,8 @@ struct wiphy_iftype_akm_suites {
+  * @max_data_retry_count: maximum supported per TID retry count for
+  *	configuration through the %NL80211_TID_CONFIG_ATTR_RETRY_SHORT and
+  *	%NL80211_TID_CONFIG_ATTR_RETRY_LONG attributes
++ * @max_num_akms_connect: maximum supported number of AKM suites for
++ *	configuration through NL80211_CMD_CONNECT
+  */
+ struct wiphy {
+ 	/* assign these fields before you register the wiphy */
+@@ -5019,6 +5031,7 @@ struct wiphy {
+ 
+ 	u8 max_data_retry_count;
+ 
++	u8 max_num_akms_connect;
+ 	char priv[] __aligned(NETDEV_ALIGN);
+ };
+ 
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index 47700a2b9af9..bcf1f7917025 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -3015,7 +3015,8 @@ enum nl80211_attrs {
+ 
+ 	NL80211_ATTR_S1G_CAPABILITY,
+ 	NL80211_ATTR_S1G_CAPABILITY_MASK,
+-
++	
++	NL80211_ATTR_MAX_NUM_AKMS_CONNECT,
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+diff --git a/net/wireless/core.c b/net/wireless/core.c
+index 240282c083aa..a2569269b18b 100644
+--- a/net/wireless/core.c
++++ b/net/wireless/core.c
+@@ -905,6 +905,14 @@ int wiphy_register(struct wiphy *wiphy)
+ 		return -EINVAL;
+ #endif
+ 
++	/*
++	 * Maximum AKMs allowed in NL80211_CMD_CONECT must be greater than
++	* NL80211_MAX_NR_AKM_SUITES to avoid issues with legacy userspace.
++	*/
++	if (WARN_ON(wiphy->max_num_akms_connect &&
++		     wiphy->max_num_akms_connect < NL80211_MAX_NR_AKM_SUITES))
++		return -EINVAL;
++
+ 	/* check and set up bitrates */
+ 	ieee80211_set_bitrate_flags(wiphy);
+ 
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index 8fb0478888fb..fe27f70e32bb 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -34,7 +34,7 @@
+ static int nl80211_crypto_settings(struct cfg80211_registered_device *rdev,
+ 				   struct genl_info *info,
+ 				   struct cfg80211_crypto_settings *settings,
+-				   int cipher_limit);
++				   int cipher_limit, enum nl80211_commands cmd);
+ 
+ /* the netlink family */
+ static struct genl_family nl80211_fam;
+@@ -2671,6 +2671,11 @@ static int nl80211_send_wiphy(struct cfg80211_registered_device *rdev,
+ 		if (nl80211_put_tid_config_support(rdev, msg))
+ 			goto nla_put_failure;
+ 
++		if (rdev->wiphy.max_num_akms_connect &&
++			nla_put_u8(msg, NL80211_ATTR_MAX_NUM_AKMS_CONNECT,
++				    rdev->wiphy.max_num_akms_connect))
++			goto nla_put_failure;
++
+ 		/* done */
+ 		state->split_start = 0;
+ 		break;
+@@ -5198,7 +5203,8 @@ static int nl80211_start_ap(struct sk_buff *skb, struct genl_info *info)
+ 		params.auth_type = NL80211_AUTHTYPE_AUTOMATIC;
+ 
+ 	err = nl80211_crypto_settings(rdev, info, &params.crypto,
+-				      NL80211_MAX_NR_CIPHER_SUITES);
++				      NL80211_MAX_NR_CIPHER_SUITES,
++				      NL80211_CMD_START_AP);
+ 	if (err)
+ 		return err;
+ 
+@@ -9626,7 +9632,7 @@ static int validate_pae_over_nl80211(struct cfg80211_registered_device *rdev,
+ static int nl80211_crypto_settings(struct cfg80211_registered_device *rdev,
+ 				   struct genl_info *info,
+ 				   struct cfg80211_crypto_settings *settings,
+-				   int cipher_limit)
++				   int cipher_limit, enum nl80211_commands cmd)
+ {
+ 	memset(settings, 0, sizeof(*settings));
+ 
+@@ -9699,18 +9705,28 @@ static int nl80211_crypto_settings(struct cfg80211_registered_device *rdev,
+ 	if (info->attrs[NL80211_ATTR_AKM_SUITES]) {
+ 		void *data;
+ 		int len;
++		u8 n_akm_suites;
+ 
+ 		data = nla_data(info->attrs[NL80211_ATTR_AKM_SUITES]);
+ 		len = nla_len(info->attrs[NL80211_ATTR_AKM_SUITES]);
+-		settings->n_akm_suites = len / sizeof(u32);
++		n_akm_suites = len / sizeof(u32);
+ 
+ 		if (len % sizeof(u32))
+ 			return -EINVAL;
+ 
+-		if (settings->n_akm_suites > NL80211_MAX_NR_AKM_SUITES)
+-			return -EINVAL;
++		if (cmd == NL80211_CMD_CONNECT && rdev->wiphy.max_num_akms_connect) {
++			if (n_akm_suites > rdev->wiphy.max_num_akms_connect)
++				return -EINVAL;
+ 
+-		memcpy(settings->akm_suites, data, len);
++			settings->n_connect_akm_suites = n_akm_suites;
++			settings->connect_akm_suites = data;
++		} else {
++			if (n_akm_suites > NL80211_MAX_NR_AKM_SUITES)
++				return -EINVAL;
++
++			settings->n_akm_suites = n_akm_suites;
++			memcpy(settings->akm_suites, data, len);
++		}
+ 	}
+ 
+ 	if (info->attrs[NL80211_ATTR_PMK]) {
+@@ -9862,7 +9878,8 @@ static int nl80211_associate(struct sk_buff *skb, struct genl_info *info)
+ 		       sizeof(req.s1g_capa));
+ 	}
+ 
+-	err = nl80211_crypto_settings(rdev, info, &req.crypto, 1);
++	err = nl80211_crypto_settings(rdev, info, &req.crypto, 1,
++					 NL80211_CMD_ASSOCIATE);
+ 	if (!err) {
+ 		wdev_lock(dev->ieee80211_ptr);
+ 
+@@ -10494,7 +10511,8 @@ static int nl80211_connect(struct sk_buff *skb, struct genl_info *info)
+ 	connect.want_1x = info->attrs[NL80211_ATTR_WANT_1X_4WAY_HS];
+ 
+ 	err = nl80211_crypto_settings(rdev, info, &connect.crypto,
+-				      NL80211_MAX_NR_CIPHER_SUITES);
++				      NL80211_MAX_NR_CIPHER_SUITES,
++				      NL80211_CMD_CONNECT);
+ 	if (err)
+ 		return err;
+ 
+-- 
+2.17.1
+
