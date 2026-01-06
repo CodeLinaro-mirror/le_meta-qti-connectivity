@@ -55,6 +55,7 @@ BBLAYERS = " \\
   \${BSPDIR}/sources/meta-openembedded/meta-networking \\
   \${BSPDIR}/sources/meta-openembedded/meta-python \\
   \${BSPDIR}/sources/meta-openembedded/meta-filesystems \\
+  \${BSPDIR}/sources/meta-openembedded/meta-perl \\
 "
 EOF
 }
@@ -152,7 +153,6 @@ EOF
         "6.12")
             echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-imx-bsp\"" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-imx-sdk\"" >> ${BBLAYERS_CONF}
-            echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-imx-ml\"" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/${FSL_BSP_DIR}/meta-imx-v2x\"" >> ${BBLAYERS_CONF}
             echo "" >> ${BBLAYERS_CONF}
             echo "BBLAYERS += \" \${BSPDIR}/sources/meta-arm/meta-arm \"" >> ${BBLAYERS_CONF}
