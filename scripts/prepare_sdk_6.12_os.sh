@@ -93,8 +93,8 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "wireless-tools"
 # Use PROJECTID for specific package, will optimize this part.
 PROJECTID=$1
 if [ -z "${PROJECTID}" ]; then
-    echo "No PROJECT provided, use default PROJECT=QCA6574AULE221"
-    PROJECTID="QCA6574AULE221"
+    echo "No PROJECT provided, use default PROJECT=QCA6595AULE01"
+    PROJECTID="QCA6595AULE01"
 fi
 
 case ${PROJECTID} in
@@ -113,6 +113,10 @@ case ${PROJECTID} in
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf
         echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-hasting\"" >> conf/local.conf
         ;;
+    "QCA6595AULE01")
+	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf
+	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-genoa\"" >> conf/local.conf
+	;;
     "QCA6698AULE11")
 	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"wlan-cnss-core\"" >> conf/local.conf
 	echo "MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += \"qcacld32-ll-hsp\"" >> conf/local.conf

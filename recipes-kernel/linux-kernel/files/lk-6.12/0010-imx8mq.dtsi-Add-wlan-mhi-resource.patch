@@ -3,7 +3,7 @@ From: Ming Jiang <quic_mjiang@quicinc.com>
 Date: Mon, 24 Feb 2025 02:02:14 -0800
 Subject: [PATCH] imx8mq.dtsi Add wlan mhi resource
 
-Add mhi resource for cnss hsp detection
+Add mhi resource for cnss genoa detection
 Add wlan_en_gpio resource for imx8mqevk 3G ddr board
 
 Change-Id: I19d3f582ba007b80f08f8c4ef332ed8b8ab8155f
@@ -29,8 +29,8 @@ index f67d31d6de65..2bfe1066d615 100644
 +	ipc_router: qcom,ipc_router_external_modem_xprt2 {
 +		compatible = "qcom,ipc_router_mhi_xprt";
 +		qcom,ch-name = "IPCRTR";
-+		qcom,out-chan-id = <20>;
-+		qcom,in-chan-id = <21>;
++		qcom,out-chan-id = <16>;
++		qcom,in-chan-id = <17>;
 +		qcom,xprt-remote = "external-wlan";
 +		qcom,xprt-linkid = <1>;
 +		qcom,xprt-version = <3>;
@@ -50,9 +50,9 @@ index f67d31d6de65..2bfe1066d615 100644
 +
 +		status = "okay";
 +
-+		/* Support Hasting Device */
++		/* Support Genoa Device */
 +		chip_cfg@1 {
-+			supported-ids = <0x1101>;
++			supported-ids = <0x1102>;
 +		};
 +
 +		/* Support Hasting Prime Device */

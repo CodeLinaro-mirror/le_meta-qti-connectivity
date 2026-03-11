@@ -88,9 +88,6 @@ CONFIG_SUITEB192=y
 # Enable 802.11AC
 CONFIG_IEEE80211AC=y
 
-# Enable 802.11AX
-CONFIG_IEEE80211AX=y
-
 # Add support for writing debug log to a file (/tmp/wpa_supplicant-log-#.txt)
 CONFIG_DEBUG_FILE=y
 
@@ -101,5 +98,3 @@ CONFIG_MBO=y
 
 # Update EAP_TLS min version
 CONFIG_EAP_TLSV1_3=y
-
-CONFIG_MBO=y

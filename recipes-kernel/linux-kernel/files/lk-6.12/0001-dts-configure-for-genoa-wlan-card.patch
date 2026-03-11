@@ -28,8 +28,8 @@ index 5b934de71348..d4766e393a54 100644
 +	ipc_router: qcom,ipc_router_external_modem_xprt2 {
 +		compatible = "qcom,ipc_router_mhi_xprt";
 +		qcom,ch-name = "IPCRTR";
-+		qcom,out-chan-id = <20>;
-+		qcom,in-chan-id = <21>;
++		qcom,out-chan-id = <16>;
++		qcom,in-chan-id = <17>;
 +		qcom,xprt-remote = "external-wlan";
 +		qcom,xprt-linkid = <1>;
 +		qcom,xprt-version = <3>;
@@ -48,9 +48,9 @@ index 5b934de71348..d4766e393a54 100644
 +
 +		status = "okay";
 +
-+		/* Support Hasting Device */
++		/* Support Genoa Device */
 +		chip_cfg@1 {
-+			supported-ids = <0x1101>;
++			supported-ids = <0x1102>;
 +		};
 +
 +		/* Support Hasting Prime Device */
