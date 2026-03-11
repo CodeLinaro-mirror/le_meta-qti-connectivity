@@ -121,11 +121,11 @@ case ${KERNELVERSION} in
         META_NXP_IMX_REV="rel_imx_6.6.52_2.2.0"
         ;;
     "6.12")
-        #For manifest: imx-6.12.20-2.0.0.xml
-        META_FSL_REV="7431918c86ac6d3be2a273e091227157446960a7"
-        META_FSL_3RD_REV="e7ce12ee3a3d0e6aa8dbbab598088b50b7625a33"
+        #For manifest: imx-6.12.49-2.2.0.xml
+        META_FSL_REV="3d2781ad200846183ee3f3391f49512d0ef1b529"
+        META_FSL_3RD_REV="5ba0c7cfdba9bc7c4495f0cdf1c195f45b7164a6"
         META_FSL_DIS_REV="b9c3536b68271c420fe5de36fc284781ceaa32ab"
-        META_NXP_IMX_REV="rel_imx_6.12.20_2.0.0"
+        META_NXP_IMX_REV="rel_imx_6.12.49_2.2.0"
         ;;
     *)
         echo "Not supported kernel version ${KERNELVERSION}"
