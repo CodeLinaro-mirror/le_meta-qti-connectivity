@@ -1,0 +1,75 @@
+From 9eab865420a188f31fba6d2b22e0f1837a4449a0 Mon Sep 17 00:00:00 2001
+From: Dongyuan Li <dongyuan@qti.qualcomm.com>
+Date: Wed, 21 Jan 2026 17:05:12 +0800
+Subject: [PATCH] qcacld-3.0: Fix compiling error for LK6.18
+
+Fix qcacld compiling error for LK6.18
+
+Change-Id: Id1ec9ee1c8e20b1d3e522c2f015a5ba84a8d1047
+Signed-off-by: Dongyuan Li <dongyuan@qti.qualcomm.com>
+---
+ core/hdd/inc/wlan_hdd_tsf.h |  4 ++++
+ core/hdd/src/wlan_hdd_tsf.c | 15 +++++++++------
+ 2 files changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/core/hdd/inc/wlan_hdd_tsf.h b/core/hdd/inc/wlan_hdd_tsf.h
+index 38ae0f90ff..cc18ad255c 100644
+--- a/core/hdd/inc/wlan_hdd_tsf.h
++++ b/core/hdd/inc/wlan_hdd_tsf.h
+@@ -481,8 +481,12 @@ QDF_STATUS hdd_get_tsf_time(void *adapter_ctx, uint64_t input_time,
+  *
+  * Return: Describe the execute result of this routine
+  */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
++int wlan_get_ts_info(struct net_device *dev, struct kernel_ethtool_ts_info *info);
++#else
+ int wlan_get_ts_info(struct net_device *dev, struct ethtool_ts_info *info);
+ #endif
++#endif
+ 
+ extern const struct nla_policy tsf_policy[QCA_WLAN_VENDOR_ATTR_TSF_MAX + 1];
+ 
+diff --git a/core/hdd/src/wlan_hdd_tsf.c b/core/hdd/src/wlan_hdd_tsf.c
+index d4586487da..3664ed04a2 100644
+--- a/core/hdd/src/wlan_hdd_tsf.c
++++ b/core/hdd/src/wlan_hdd_tsf.c
+@@ -1161,8 +1161,11 @@ void hdd_tsf_regular_gpio_pulse_deinit(struct hdd_adapter *adapter)
+ #endif
+ 
+ #ifdef WLAN_FEATURE_TSF_PTP
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
++int wlan_get_ts_info(struct net_device *dev, struct kernel_ethtool_ts_info *info)
++#else
+ int wlan_get_ts_info(struct net_device *dev, struct ethtool_ts_info *info)
+-
++#endif
+ {
+ 	struct hdd_adapter *adapter = netdev_priv(dev);
+ 	struct osif_vdev_sync *vdev_sync;
+@@ -1215,10 +1218,10 @@ static int wlan_ptp_gettime(struct ptp_clock_info *ptp, uint64_t *target_time)
+ 			if (!adapter)
+ 				adapter = hdd_get_adapter(hdd_ctx,
+ 							  QDF_STA_MODE);
+-				if (!adapter) {
+-					status = -EOPNOTSUPP;
+-					goto end;
+-				}
++			if (!adapter) {
++				status = -EOPNOTSUPP;
++				goto end;
++			}
+ 		}
+ 	}
+ 
+@@ -1284,7 +1287,7 @@ static void wlan_hdd_phc_deinit(struct hdd_context *hdd_ctx)
+ }
+ 
+ #else
+-static int wlan_hdd_ptp_gettime(struct ptp_clock_info *ptp, struct timespec *ts)
++static int wlan_hdd_ptp_gettime(struct ptp_clock_info *ptp, struct timespec64 *ts)
+ {
+ 	uint64_t target_time = 0;
+ 	int ret;
+-- 
+2.34.1
+

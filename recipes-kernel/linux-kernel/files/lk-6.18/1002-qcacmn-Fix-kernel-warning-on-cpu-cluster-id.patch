@@ -1,0 +1,67 @@
+From efc7a8b4aadac35c0c3a51b2c223df41d41309c2 Mon Sep 17 00:00:00 2001
+From: Dongyuan Li <dongyuan@qti.qualcomm.com>
+Date: Mon, 26 Jan 2026 16:35:49 +0800
+Subject: [PATCH] qcacmn: Fix kernel warning on cpu cluster id
+
+Platform: x86
+
+[  320.251536] UBSAN: shift-out-of-bounds in
+cmn/hif/src/pcie/if_pci.c:3301:26
+[  320.251538] shift exponent 64 is too large for 64-bit type 'long
+unsigned int'
+[  320.251540] CPU: 16 UID: 0 PID: 413 Comm: kworker/u112:6 Tainted: G
+OE       6.18.5-custom #1 PREEMPT(voluntary)
+[  320.251543] Tainted: [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+[  320.251543] Hardware name: HP HP Z2 Tower G9 Workstation Desktop
+PC/895C, BIOS U50 Ver. 03.03.15 01/10/2025
+[  320.251545] Workqueue: cnss_driver_event cnss_driver_event_work
+[wlan_cnss_core_pcie]
+[  320.251579] Call Trace:
+[  320.251580]  <TASK>
+[  320.251582]  dump_stack_lvl+0x76/0xa0
+[  320.251586]  dump_stack+0x10/0x20
+[  320.251587]  __ubsan_handle_shift_out_of_bounds+0x1e3/0x390
+[  320.251594]  hif_pci_ce_irq_set_affinity_hint.cold+0x13/0x18
+[wlan_genoa_pcie]
+
+Change-Id: I152124e7e2c38d10cd057abd1c02869980d27d24
+Signed-off-by: Dongyuan Li <dongyuan@qti.qualcomm.com>
+---
+ hif/src/pcie/if_pci.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/hif/src/pcie/if_pci.c b/hif/src/pcie/if_pci.c
+index 09dbb52b7e..a2ccf7e940 100644
+--- a/hif/src/pcie/if_pci.c
++++ b/hif/src/pcie/if_pci.c
+@@ -3290,20 +3290,22 @@ void hif_pci_ce_irq_set_affinity_hint(struct hif_softc *scn)
+ 	struct CE_attr *host_ce_conf;
+ 	int ce_id;
+ 	qdf_cpu_mask ce_cpu_mask;
+-	int perf_cpu_cluster = hif_get_perf_cluster_bitmap();
++	u16 perf_cpu_cluster = hif_get_perf_cluster_bitmap();
+ 	int package_id;
+ 
+ 	host_ce_conf = ce_sc->host_ce_config;
+ 	qdf_cpumask_clear(&ce_cpu_mask);
+-
++	hif_debug("perf_cpu_cluster: %d", perf_cpu_cluster);
+ 	qdf_for_each_online_cpu(cpus) {
+ 		package_id = qdf_topology_physical_package_id(cpus);
+-		if (package_id >= 0 && BIT(package_id) & perf_cpu_cluster) {
++		/* perf_cpu_cluster is 16-bit: only bits [0..15] are relevant */
++		if (package_id >= 0 && package_id < 16 && BIT(package_id) & (unsigned long)perf_cpu_cluster) {
++			hif_debug_rl("Setting cpu mask for CPU %d with package id %d", cpus, package_id);
+ 			qdf_cpumask_set_cpu(cpus,
+ 					    &ce_cpu_mask);
+ 		} else {
+-			hif_err_rl("Unable to set cpu mask for offline CPU %d"
+-				   , cpus);
++			hif_err_rl("Unable to set cpu mask for offline CPU %d with package id %d"
++				   , cpus, package_id);
+ 		}
+ 	}
+ 	if (qdf_cpumask_empty(&ce_cpu_mask)) {
+-- 
+2.34.1
+
