@@ -45,14 +45,14 @@ usage()
     echo
     echo "script usage for QTI Standalone Auto image"
     echo "${SCRIPT_PARAMS} source ${SCRIPT_FILE} [BUILDDIR]"
-    echo "For example: PROJECT=QCA6595AULE01 source ${SCRIPT_FILE}"
+    echo "For example: PROJECT=QCA6595AULE10 source ${SCRIPT_FILE}"
     echo
     echo "EULA      :  FSL EULA, default 0 if undefined."
     echo "BUILDDIR  :  the build directory location, 'build' by default."
     echo "MACHINE   :  Supported machines, 'imx8qxpc0mek' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
     echo "ADDON     :  Connectivity add-on feature names (separate in space)."
-    echo "QCA6595AULE01 : QCA6595AU.LE.0.1 SP"
+    echo "QCA6595AULE10 : QCA6595AU.LE.1.0 SP"
 }
 
 execute_command()
@@ -172,10 +172,10 @@ esac
 
 
 case $PROJECT in
-    "QCA6595AULE01" | "")
+    "QCA6595AULE10" | "")
         {
             DISTRO=fsl-imx-xwayland
-            export PROJECTID=QCA6595AULE01
+            export PROJECTID=QCA6595AULE10
         } ;;
     *)
         {
