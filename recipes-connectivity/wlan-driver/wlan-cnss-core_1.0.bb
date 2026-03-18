@@ -12,7 +12,7 @@ DEPENDS = "virtual/kernel"
 FILESPATH =+ "${BSPDIR}/sources/wlan-opensource:"
 SRC_URI = "file://wlan-cnss-core/"
 
-S = "${WORKDIR}/wlan-cnss-core"
+S = "${UNPACKDIR}/wlan-cnss-core"
 
 FILES:${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/wlan_cnss_core_pci.ko"
 

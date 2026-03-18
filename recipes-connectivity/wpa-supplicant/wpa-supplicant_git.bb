@@ -17,7 +17,7 @@ SRC_URI += "file://hostapdconf \
             file://supplicantconf \
            "
 
-S = "${WORKDIR}/wlan-opensource/wpa_supplicant_8"
+S = "${UNPACKDIR}/wlan-opensource/wpa_supplicant_8"
 
 do_configure() {
 	install -m 0644 ${UNPACKDIR}/hostapdconf ${S}/hostapd/.config

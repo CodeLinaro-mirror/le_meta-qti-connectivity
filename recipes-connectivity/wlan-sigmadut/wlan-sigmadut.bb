@@ -9,7 +9,7 @@ FILESPATH =+ "${BSPDIR}/sources/:"
 SRC_URI = "file://wlan-opensource/sigma-dut/ \
 	  "
 
-S = "${WORKDIR}/wlan-opensource/sigma-dut"
+S = "${UNPACKDIR}/wlan-opensource/sigma-dut"
 
 
 EXTRA_OEMAKE += "NL80211_SUPPORT=y"

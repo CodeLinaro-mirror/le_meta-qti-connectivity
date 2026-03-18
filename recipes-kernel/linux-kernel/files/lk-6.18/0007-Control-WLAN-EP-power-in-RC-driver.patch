@@ -1,0 +1,244 @@
+From 56ab162da36bc2f79dde4b8570da65e3e00fde1c Mon Sep 17 00:00:00 2001
+From: Ming Jiang <quic_mjiang@quicinc.com>
+Date: Wed, 28 Aug 2024 18:31:25 +0800
+Subject: [PATCH] Control WLAN EP power in RC driver
+
+Add wlan ep power control api
+Unify code for shutdown and wow with micro
+Remove irq interrupt resource which used by rc
+export platform_rc_pm_control
+
+Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mq-evk.dts |  1 -
+ arch/arm64/boot/dts/freescale/imx8x-mek.dtsi |  1 +
+ drivers/pci/controller/dwc/Makefile          |  2 +-
+ drivers/pci/controller/dwc/pci-imx6.c        | 43 +++++++++++-
+ drivers/pci/controller/dwc/pcie-ep-power.c   | 74 ++++++++++++++++++++
+ drivers/pci/controller/dwc/pcie-ep-power.h   |  7 ++
+ 6 files changed, 124 insertions(+), 4 deletions(-)
+ create mode 100644 drivers/pci/controller/dwc/pcie-ep-power.c
+ create mode 100644 drivers/pci/controller/dwc/pcie-ep-power.h
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mq-evk.dts b/arch/arm64/boot/dts/freescale/imx8mq-evk.dts
+index 89b8594c7a11..40a4b1c0671b 100644
+--- a/arch/arm64/boot/dts/freescale/imx8mq-evk.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mq-evk.dts
+@@ -627,7 +627,6 @@ &pcie1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_pcie1>;
+ 	reset-gpio = <&gpio5 12 GPIO_ACTIVE_LOW>;
+-	host-wake-gpio = <&gpio5 11 GPIO_ACTIVE_LOW>;
+ 	clocks = <&clk IMX8MQ_CLK_PCIE2_ROOT>,
+ 		 <&pcie0_refclk>,
+ 		 <&clk IMX8MQ_CLK_PCIE2_PHY>,
+diff --git a/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi b/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
+index e1c32521351f..f6f271783d68 100644
+--- a/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
+@@ -1093,6 +1093,7 @@ &pcieb {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_pcieb>;
+ 	reset-gpio = <&lsio_gpio4 0 GPIO_ACTIVE_LOW>;
++	wlan-en-gpio = <&lsio_gpio3 23 GPIO_ACTIVE_HIGH>;
+ 	vpcie-supply = <&reg_pcieb>;
+ 	status = "okay";
+ };
+diff --git a/drivers/pci/controller/dwc/Makefile b/drivers/pci/controller/dwc/Makefile
+index bf5c311875a1..586f6fbbdd26 100644
+--- a/drivers/pci/controller/dwc/Makefile
++++ b/drivers/pci/controller/dwc/Makefile
+@@ -7,7 +7,7 @@ obj-$(CONFIG_PCIE_BT1) += pcie-bt1.o
+ obj-$(CONFIG_PCI_DRA7XX) += pci-dra7xx.o
+ obj-$(CONFIG_PCI_EXYNOS) += pci-exynos.o
+ obj-$(CONFIG_PCIE_FU740) += pcie-fu740.o
+-obj-$(CONFIG_PCI_IMX6) += pci-imx6.o
++obj-$(CONFIG_PCI_IMX6) += pci-imx6.o pcie-ep-power.o
+ obj-$(CONFIG_PCIE_SPEAR13XX) += pcie-spear13xx.o
+ obj-$(CONFIG_PCI_KEYSTONE) += pci-keystone.o
+ obj-$(CONFIG_PCI_LAYERSCAPE) += pci-layerscape.o
+diff --git a/drivers/pci/controller/dwc/pci-imx6.c b/drivers/pci/controller/dwc/pci-imx6.c
+index c87b0392b8d9..361c762b05af 100644
+--- a/drivers/pci/controller/dwc/pci-imx6.c
++++ b/drivers/pci/controller/dwc/pci-imx6.c
+@@ -36,7 +36,7 @@
+ #include <linux/pm_runtime.h>
+ 
+ #include "pcie-designware.h"
+-
++#include "pcie-ep-power.h"
+ #define IMX95_PCIE2_BASE_ADDR			0x4c380000
+ #define IMX95_PCIE_PHY_GEN_CTRL			0x0
+ #define IMX95_PCIE_REF_USE_PAD			BIT(17)
+@@ -1771,6 +1771,13 @@ static int imx6_pcie_suspend_noirq(struct device *dev)
+ 		imx6_pcie_host_exit(pp);
+ 	}
+ 
++	if (gpio_is_valid(imx6_pcie->reset_gpio))
++		gpio_set_value_cansleep(imx6_pcie->reset_gpio,
++					imx6_pcie->gpio_active_high);
++
++#ifdef CONFIG_WLAN_EP_SHUTDOWN
++	wlan_ep_power_off();
++#endif
+ 	return 0;
+ }
+ 
+@@ -1783,6 +1790,9 @@ static int imx6_pcie_resume_noirq(struct device *dev)
+ 	if (!(imx6_pcie->drvdata->flags & IMX6_PCIE_FLAG_SUPPORTS_SUSPEND))
+ 		return 0;
+ 
++#ifdef CONFIG_WLAN_EP_SHUTDOWN
++	wlan_ep_power_on();
++#endif
+ 	if (unlikely(imx6_pcie->drvdata->variant == IMX6Q)) {
+ 		/*
+ 		 * L2 can exit by 'reset' or Inband beacon (from remote EP)
+@@ -1805,6 +1815,30 @@ static int imx6_pcie_resume_noirq(struct device *dev)
+ 
+ 	return 0;
+ }
++/*
++ * @endpoint: pci ep device
++ * @op: positive for suspend link and zero for resume link
++ */
++int platform_rc_pm_control(void *endpoint, int op)
++{
++	struct pci_dev *pci_dev = (struct pci_dev *)endpoint;
++	struct dw_pcie_rp *pp = pci_dev->bus->sysdata;
++	struct dw_pcie *pci = to_dw_pcie_from_pp(pp);
++	struct device *dev = pci->dev;
++
++	if (!dev)
++		return -1;
++
++	pr_info("%s dev %p OP %s dev 0x%lx\n",
++		 __func__, dev, op ? "resume":"suspend", (u64)dev);
++	if (op) {
++		imx6_pcie_resume_noirq(dev);
++	} else {
++		imx6_pcie_suspend_noirq(dev);
++	}
++	return 0;
++}
++EXPORT_SYMBOL(platform_rc_pm_control);
+ 
+ static int imx6_pcie_suspend(struct device *dev)
+ {
+@@ -1876,7 +1910,9 @@ static int imx6_pcie_probe(struct platform_device *pdev)
+ 	pci = devm_kzalloc(dev, sizeof(*pci), GFP_KERNEL);
+ 	if (!pci)
+ 		return -ENOMEM;
+-
++#ifdef CONFIG_WLAN_EP_SHUTDOWN
++	wlan_ep_power_init(dev);
++#endif
+ 	pci->dev = dev;
+ 	pci->ops = &dw_pcie_ops;
+ 	pci->pp.ops = &imx6_pcie_host_ops;
+@@ -2120,6 +2156,9 @@ static int imx6_pcie_probe(struct platform_device *pdev)
+ 	if (ret)
+ 		return ret;
+ 
++#ifdef CONFIG_WLAN_EP_SHUTDOWN
++	wlan_ep_power_on();
++#endif
+ 	if (imx6_pcie->drvdata->mode == DW_PCIE_EP_TYPE) {
+ 		ret = imx6_add_pcie_ep(imx6_pcie, pdev);
+ 		if (ret < 0)
+diff --git a/drivers/pci/controller/dwc/pcie-ep-power.c b/drivers/pci/controller/dwc/pcie-ep-power.c
+new file mode 100644
+index 000000000000..d7d58152de7e
+--- /dev/null
++++ b/drivers/pci/controller/dwc/pcie-ep-power.c
+@@ -0,0 +1,74 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++#include <linux/delay.h>
++#include <linux/gpio.h>
++#include <linux/kernel.h>
++#include <linux/of_gpio.h>
++#include <linux/of_device.h>
++#include <linux/of_address.h>
++#include <linux/types.h>
++#define GPIONAME	"wlan-en-gpio"
++
++struct ep_power {
++	struct device *dev;
++	int wlan_en_gpio;
++	bool power_on;
++};
++
++struct ep_power *epp;
++
++int wlan_ep_power_init(struct device *dev)
++{
++	int ret = 0;
++	struct device_node *node = dev->of_node;
++
++	epp = (struct ep_power *) devm_kzalloc(dev, sizeof(struct ep_power), GFP_KERNEL);
++	if (!epp)
++		return -ENOMEM;
++
++	epp->dev = dev;
++	epp->wlan_en_gpio = of_get_named_gpio(node, GPIONAME, 0);
++	if (gpio_is_valid(epp->wlan_en_gpio)) {
++		ret = devm_gpio_request_one(dev, epp->wlan_en_gpio,
++					    GPIOF_OUT_INIT_LOW, "WLAN EN");
++		if (ret) {
++			dev_err(dev, "unable to get wlan en gpio\n");
++			return ret;
++		}
++	} else {
++		return epp->wlan_en_gpio;
++	}
++
++	return ret;
++}
++
++int wlan_ep_power_on(void)
++{
++	int ret = 0;
++	if (!epp)
++		return -ENOMEM;
++
++	if (!epp->power_on) {
++		gpio_set_value_cansleep(epp->wlan_en_gpio, 1);
++		epp->power_on = true;
++		pr_info("%s wlan power on\n", __func__);
++	}
++	return ret;
++}
++
++int wlan_ep_power_off(void)
++{
++	int ret = 0;
++	if (!epp)
++		return -ENOMEM;
++
++	if (epp->power_on) {
++		gpio_set_value_cansleep(epp->wlan_en_gpio, 0);
++		epp->power_on = false;
++		pr_info("%s wlan power off\n", __func__);
++	}
++	return ret;
++}
+diff --git a/drivers/pci/controller/dwc/pcie-ep-power.h b/drivers/pci/controller/dwc/pcie-ep-power.h
+new file mode 100644
+index 000000000000..f47256da2143
+--- /dev/null
++++ b/drivers/pci/controller/dwc/pcie-ep-power.h
+@@ -0,0 +1,7 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++int wlan_ep_power_init(struct device *dev);
++int wlan_ep_power_on(void);
++int wlan_ep_power_off(void);
+-- 
+2.34.1
+

@@ -1,0 +1,30 @@
+From 5222ecdd756f93eb07d7e6f41135f71ddf049d86 Mon Sep 17 00:00:00 2001
+From: Xueqiang Gong <quic_gongx@quicinc.com>
+Date: Mon, 20 May 2024 13:46:02 +0800
+Subject: [PATCH 9/9] kernel: export symbol irq_to_desc
+
+fix build issue for WLAN driver
+
+Upstream-Status: Pending
+Signed-off-by: Xueqiang Gong <quic_gongx@quicinc.com>
+---
+ kernel/irq/irqdesc.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/kernel/irq/irqdesc.c b/kernel/irq/irqdesc.c
+index a91f9001103c..6ff73acf568c 100644
+--- a/kernel/irq/irqdesc.c
++++ b/kernel/irq/irqdesc.c
+@@ -352,9 +352,7 @@ struct irq_desc *irq_to_desc(unsigned int irq)
+ {
+ 	return radix_tree_lookup(&irq_desc_tree, irq);
+ }
+-#ifdef CONFIG_KVM_BOOK3S_64_HV_MODULE
+ EXPORT_SYMBOL_GPL(irq_to_desc);
+-#endif
+ 
+ static void delete_irq_desc(unsigned int irq)
+ {
+-- 
+2.17.1
+

@@ -6,14 +6,27 @@ Subject: [PATCH] RX FCS mpdus support
 Upstream-Status: Pending
 Signed-off-by: Ming Jiang <quic_mjiang@quicinc.com>
 ---
- station.c | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ station.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
 diff --git a/station.c b/station.c
 index b2c5b9c..7293bff 100644
 --- a/station.c
 +++ b/station.c
-@@ -298,6 +298,8 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
+@@ -332,6 +332,12 @@ static void print_nested_sta_handler(struct nlattr *link_sinfo[NL80211_STA_INFO_MAX + 1],
+ 	else if (link_sinfo[NL80211_STA_INFO_RX_BYTES])
+ 		printf("%srx bytes:\t%u", indent,
+ 		       nla_get_u32(link_sinfo[NL80211_STA_INFO_RX_BYTES]));
++	if (link_sinfo[NL80211_STA_INFO_RX_MPDUS])
++		printf("%srx mpdus:\t%u", indent,
++			nla_get_u32(link_sinfo[NL80211_STA_INFO_RX_MPDUS]));
++	if (link_sinfo[NL80211_STA_INFO_FCS_ERROR_COUNT])
++		printf("%srx fcs error count:\t%u", indent,
++			nla_get_u32(link_sinfo[NL80211_STA_INFO_FCS_ERROR_COUNT]));
+ 	if (link_sinfo[NL80211_STA_INFO_RX_PACKETS])
+ 		printf("%srx packets:\t%u", indent,
+ 			nla_get_u32(link_sinfo[NL80211_STA_INFO_RX_PACKETS]));
+@@ -463,6 +469,8 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
  	static struct nla_policy stats_policy[NL80211_STA_INFO_MAX + 1] = {
  		[NL80211_STA_INFO_INACTIVE_TIME] = { .type = NLA_U32 },
  		[NL80211_STA_INFO_RX_BYTES] = { .type = NLA_U32 },
@@ -22,22 +35,7 @@ index b2c5b9c..7293bff 100644
  		[NL80211_STA_INFO_TX_BYTES] = { .type = NLA_U32 },
  		[NL80211_STA_INFO_RX_BYTES64] = { .type = NLA_U64 },
  		[NL80211_STA_INFO_TX_BYTES64] = { .type = NLA_U64 },
-@@ -373,6 +375,15 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
- 	else if (sinfo[NL80211_STA_INFO_RX_BYTES])
- 		printf("\n\trx bytes:\t%u",
- 		       nla_get_u32(sinfo[NL80211_STA_INFO_RX_BYTES]));
-+
-+	if (sinfo[NL80211_STA_INFO_RX_MPDUS])
-+		printf("\n\trx mpdus:\t%u",
-+			nla_get_u32(sinfo[NL80211_STA_INFO_RX_MPDUS]));
-+
-+	if (sinfo[NL80211_STA_INFO_FCS_ERROR_COUNT])
-+		printf("\n\trx fcs error count:\t%u",
-+			nla_get_u32(sinfo[NL80211_STA_INFO_FCS_ERROR_COUNT]));
-+
- 	if (sinfo[NL80211_STA_INFO_RX_PACKETS])
- 		printf("\n\trx packets:\t%u",
- 			nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]));
+
 -- 
 2.17.1
 

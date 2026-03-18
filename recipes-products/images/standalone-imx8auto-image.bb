@@ -25,6 +25,7 @@ IMAGE_INSTALL += "openssh"
 IMAGE_INSTALL += "packagegroup-core-ssh-openssh"
 IMAGE_INSTALL += "openssh-sftp-server"
 IMAGE_INSTALL += "iptables"
+IMAGE_INSTALL += "firmware-imx-vpu-amphion"
 
 #Bluetooth software
 SYNERGY_DIR_PRESENT = "${@os.path.exists('${BSPDIR}/sources/bt-proprietary/synergy')}"

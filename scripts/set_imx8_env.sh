@@ -224,11 +224,11 @@ fi
 # Get current BSP kernel version
 #get_bsp_kernel_version
 #if [ -z "${KERNELVERSION}" ]; then
-#    echo "Can't find linux kernel bbfile, use 6.12 by default"
-#    KERNELVERSION="6.12"
+#    echo "Can't find linux kernel bbfile, use 6.18 by default"
+#    KERNELVERSION="6.18"
 #fi
 
-KERNELVERSION="6.12"
+KERNELVERSION="6.18"
 
 # Get all required source codes.
 . ${SCRIPT_FOLDER}/extract_sourcecode.sh
@@ -259,12 +259,15 @@ if [ -z "$DISTRO" ]; then
     DISTRO=fsl-imx-xwayland
 fi
 
-. ${WORK_SPACE}/sources/poky/oe-init-build-env ${BUILD_DIR} > /dev/null
+. ${WORK_SPACE}/sources/openembedded-core/oe-init-build-env ${BUILD_DIR} > /dev/null
 
 # Generate the local.conf based on the Yocto defaults
 # Update local.conf based on Yocto
 mv conf/local.conf conf/local.conf.sample
 grep -v '^#\|^$' conf/local.conf.sample > conf/local.conf
+
+echo "DISTRO ?= \'fsl-imx-xwayland\'" >> conf/local.conf
+
 sed -e "s,MACHINE ??=.*,MACHINE ??= '$MACHINE',g" \
     -e "s,DISTRO ?=.*,DISTRO ?= '$DISTRO',g" \
     -i conf/local.conf
@@ -307,14 +310,15 @@ fi
 # Update bblayers.conf
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/update_bblayers.sh
 
-#Workaround to fix KW build Error by remove "ERROR" in poky/meta/lib/oe/rootfs.py
+#Workaround to fix KW build Error by remove "ERROR" in openembedded-core/meta/lib/oe/rootfs.py
 #The "ERROR" will be tracked by log check, which will make build failed.
-ROOTFSFILE=${WORK_SPACE}/sources/poky/meta/lib/oe/rootfs.py
+ROOTFSFILE=${WORK_SPACE}/sources/openembedded-core/meta/lib/oe/rootfs.py
 sed -e "s/ERROR: |Error: |Error |ERROR/Error: |Error/g" -i ${ROOTFSFILE}
 
 # Apply patches to 3rd codes
 . ${WORK_SPACE}/${SCRIPT_FOLDER}/apply_patch.sh
 
+bitbake-config-build enable-fragment core/yocto/root-login-with-empty-password
 cleanenv
 
 cat <<EOF

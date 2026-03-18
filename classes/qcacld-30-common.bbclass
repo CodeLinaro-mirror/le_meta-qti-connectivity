@@ -17,7 +17,7 @@ SRC_URI = "file://qcacld-3.0/ \
            file://qca-wifi-host-cmn/ \
            file://fw-api/ \
           "
-S = "${WORKDIR}/qcacld-3.0"
+S = "${UNPACKDIR}/qcacld-3.0"
 
 FILES:${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/${WLAN_MODULE_NAME}.ko"
 
@@ -26,6 +26,7 @@ EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y CONFIG_MULTI_IF_
 do_compile:prepend() {
     cp -rf ${UNPACKDIR}/qca-wifi-host-cmn ${WORKDIR}
     cp -rf ${UNPACKDIR}/fw-api ${WORKDIR}
+    cp -rf ${UNPACKDIR}/qcacld-3.0 ${WORKDIR}
     sed -in '/Werror/d' ${S}/Kbuild
     # Using default qcacld-3.0 absolute path, get compilation error:
     # make[3]: execvp: /bin/sh: Argument list too long.

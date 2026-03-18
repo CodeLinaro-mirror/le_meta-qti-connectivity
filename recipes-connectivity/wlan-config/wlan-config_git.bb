@@ -9,7 +9,7 @@ FILESPATH =+ "${BSPDIR}/sources/wlan-opensource:"
 
 SRC_URI = "file://mdm-init/"
 
-S = "${WORKDIR}/mdm-init"
+S = "${UNPACKDIR}/mdm-init"
 
 EXTRA_OECONF = "--enable-thirdparty-wlan=yes"
 

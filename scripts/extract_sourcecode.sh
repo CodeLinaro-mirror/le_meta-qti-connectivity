@@ -75,6 +75,10 @@ META_FSL_GIT="https://github.com/Freescale/meta-freescale"
 META_FSL_3RD_GIT="https://github.com/Freescale/meta-freescale-3rdparty"
 META_FSL_DIS_GIT="https://github.com/Freescale/meta-freescale-distro"
 META_NXP_IMX_GIT="https://github.com/nxp-imx/meta-imx"
+META_NXP_BITBAKE_GIT="https://github.com/openembedded/bitbake"
+META_NXP_OE_GIT="https://github.com/openembedded/openembedded-core"
+META_NXP_BITBAKE_GIT="https://github.com/openembedded/bitbake"
+META_NXP_YOCTO_GIT="https://git.yoctoproject.org/meta-yocto"
 
 case ${KERNELVERSION} in
     "4.9")
@@ -127,6 +131,16 @@ case ${KERNELVERSION} in
         META_FSL_DIS_REV="b9c3536b68271c420fe5de36fc284781ceaa32ab"
         META_NXP_IMX_REV="rel_imx_6.12.49_2.2.0"
         ;;
+    "6.18")
+        #For manifest: imx-6.18.02-1.0.0.xml
+        META_FSL_REV="2781242e499e601ef9454009aceed16186a48d9e"
+        META_FSL_3RD_REV="b2b1987841018013006f909f817a3e9b034c6227"
+        META_FSL_DIS_REV="8001652aa3e2c6436c2bfce744e99f398c680858"
+        META_NXP_IMX_REV="rel_imx_6.18.2_1.0.0"
+        META_NXP_OE_REV="9964fa3da2fa1e7243fba1a826e59f7bb1813706"
+        META_NXP_BITBAKE_REV="6e511d035a3d1e4129dab7b0dfbf216bd8e99b47"
+        META_NXP_YOCTO_REV="d02d3faaf4d6075ea03e9eb47654ec7639f929a0"
+        ;;
     *)
         echo "Not supported kernel version ${KERNELVERSION}"
         return 1
@@ -137,3 +151,6 @@ download_git_code ${META_FSL_GIT} ${META_FSL_REV}
 download_git_code ${META_FSL_3RD_GIT} ${META_FSL_3RD_REV}
 download_git_code ${META_FSL_DIS_GIT} ${META_FSL_DIS_REV}
 download_git_code ${META_NXP_IMX_GIT} ${META_NXP_IMX_REV}
+download_git_code ${META_NXP_OE_GIT} ${META_NXP_OE_REV}
+download_git_code ${META_NXP_BITBAKE_GIT} ${META_NXP_BITBAKE_REV}
+download_git_code ${META_NXP_YOCTO_GIT} ${META_NXP_YOCTO_REV}

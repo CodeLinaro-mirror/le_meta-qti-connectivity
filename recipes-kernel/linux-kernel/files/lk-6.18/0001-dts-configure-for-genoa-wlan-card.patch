@@ -12,12 +12,11 @@ Signed-off-by: Ming Jiang <mjiang@qti.qualcomm.com>
  1 file changed, 38 insertions(+)
 
 diff --git a/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi b/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
-index 5b934de71348..d4766e393a54 100644
+index 469de8b536b5..acc42f8b6c3e 100644
 --- a/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
 +++ b/arch/arm64/boot/dts/freescale/imx8-ss-hsio.dtsi
-@@ -138,4 +138,42 @@ misc_crr5_lpcg: clock-controller@5f0f0000 {
- 		clock-output-names = "hsio_misc_per_clk";
- 		power-domains = <&pd IMX_SC_R_HSIO_GPIO>;
+@@ -131,6 +131,44 @@ pcieb_crr3_lpcg: clock-controller@5f0d0000 {
+ 		power-domains = <&pd IMX_SC_R_PCIE_B>;
  	};
  
 +	mhi: qcom,mhi {
@@ -58,7 +57,10 @@ index 5b934de71348..d4766e393a54 100644
 +			supported-ids = <0x1103>;
 +		};
 +	};
- };
+ 	misc_crr5_lpcg: clock-controller@5f0f0000 {
+ 		compatible = "fsl,imx8qxp-lpcg";
+ 		reg = <0x5f0f0000 0x10000>;
+
 -- 
 2.34.1
 
