@@ -51,5 +51,3 @@ CONFIG_IEEE80211AX=y
 
 # Add support for writing debug log to a file (/tmp/hostapd.log)
 CONFIG_DEBUG_FILE=y
-
-CONFIG_MBO=y
