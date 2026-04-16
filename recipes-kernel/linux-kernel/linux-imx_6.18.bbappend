@@ -14,7 +14,7 @@ python __anonymous () {
         d.setVar("S", "${WORKDIR}/kernel")
 }
 
-SRC_URI += "file://config/defconfig_${KERNELVERSION}"
+SRC_URI += "file://config/connectivity_6.18.cfg"
 
 SRC_URI += " \
 	file://${PATCH_FOLDER}/0001-dts-configure-for-genoa-wlan-card.patch \
@@ -25,6 +25,4 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0012-kernel-export-symbol-irq_to_desc.patch \
 "
 
-do_copy_defconfig:append() {
-    cat ${UNPACKDIR}/config/defconfig_${KERNELVERSION} >> ${B}/.config
-}
+
