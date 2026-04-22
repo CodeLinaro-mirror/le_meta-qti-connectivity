@@ -1,0 +1,252 @@
+From 1fc27dda06a60da6a1755d5c365d49546949e94c Mon Sep 17 00:00:00 2001
+From: Jesson Li <feili@qti.qualcomm.com>
+Date: Thu, 16 Apr 2026 17:36:30 +0800
+Subject: [PATCH] Bluetooth: hci_qca: Support QCA Auto chips
+
+Add QCA Auto type: QCA_AUTO_BT
+
+Upstream-Status: Pending
+Signed-off-by: Jesson Li <feili@qti.qualcomm.com>
+---
+ drivers/bluetooth/btqca.c   | 56 +++++++++++++++++++++++++++++++++++--
+ drivers/bluetooth/btqca.h   |  7 ++++-
+ drivers/bluetooth/hci_qca.c | 33 ++++++++++++++++++++--
+ 3 files changed, 90 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/bluetooth/btqca.c b/drivers/bluetooth/btqca.c
+index dd2c0485b984..85b55d6ae264 100644
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -659,8 +659,9 @@ static int qca_download_firmware(struct hci_dev *hdev,
+ 	 * decrease the BT in initialization time. Here we will inject a command
+ 	 * complete event to avoid a command timeout error message.
+ 	 */
+-	if (config->dnld_type == QCA_SKIP_EVT_VSE_CC ||
+-	    config->dnld_type == QCA_SKIP_EVT_VSE)
++	if (soc_type != QCA_AUTO_BT &&
++	    (config->dnld_type == QCA_SKIP_EVT_VSE_CC ||
++	     config->dnld_type == QCA_SKIP_EVT_VSE))
+ 		ret = qca_inject_cmd_complete_event(hdev);
+ 
+ out:
+@@ -847,6 +848,29 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 		snprintf(config.fwname, sizeof(config.fwname),
+ 			 "qca/hmtbtfw%02x.tlv", rom_ver);
+ 		break;
++	case QCA_AUTO_BT:
++		switch (ver.soc_id) {
++		case QCA_QCA6595_SOC_ID:
++			snprintf(config.fwname, sizeof(config.fwname),
++				 "qca_auto/gnbtfw%02x.tlv", rom_ver);
++			break;
++		case QCA_QCA6696_SOC_ID:
++			snprintf(config.fwname, sizeof(config.fwname),
++				 "qca_auto/htbtfw%02x.tlv", rom_ver);
++			break;
++		case QCA_QCA6698_SOC_ID:
++			snprintf(config.fwname, sizeof(config.fwname),
++				 "qca_auto/hpbtfw%02x.tlv", rom_ver);
++			break;
++		case QCA_QCA6797_SOC_ID:
++			snprintf(config.fwname, sizeof(config.fwname),
++				 "qca_auto/hmtbtfw%02x.tlv", rom_ver);
++			break;
++		default:
++			bt_dev_err(hdev, "Unsupported QCA soc_id");
++			break;
++		}
++		break;
+ 	default:
+ 		snprintf(config.fwname, sizeof(config.fwname),
+ 			 "qca/rampatch_%08x.bin", soc_ver);
+@@ -861,7 +885,7 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 	/* Give the controller some time to get ready to receive the NVM */
+ 	msleep(10);
+ 
+-	if (soc_type == QCA_QCA2066 || soc_type == QCA_WCN7850)
++	if (soc_type == QCA_QCA2066 || soc_type == QCA_WCN7850 || soc_type == QCA_AUTO_BT)
+ 		qca_read_fw_board_id(hdev, &boardid);
+ 
+ 	/* Download NVM configuration */
+@@ -912,6 +936,30 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 			qca_get_nvm_name_by_board(config.fwname, sizeof(config.fwname),
+ 				 "hmtnv", soc_type, ver, rom_ver, boardid);
+ 			break;
++		case QCA_AUTO_BT:
++			bt_dev_dbg(hdev, "QCA Board ID      :0x%04x", boardid);
++			switch (ver.soc_id) {
++			case QCA_QCA6595_SOC_ID:
++				snprintf(config.fwname, sizeof(config.fwname),
++					 "qca_auto/gnnv%02x.b%04x", rom_ver, boardid);
++				break;
++			case QCA_QCA6696_SOC_ID:
++				snprintf(config.fwname, sizeof(config.fwname),
++					 "qca_auto/htnv%02x.b%04x", rom_ver, boardid);
++				break;
++			case QCA_QCA6698_SOC_ID:
++				snprintf(config.fwname, sizeof(config.fwname),
++					 "qca_auto/hpnv%02x.b%04x", rom_ver, boardid);
++				break;
++			case QCA_QCA6797_SOC_ID:
++				snprintf(config.fwname, sizeof(config.fwname),
++					 "qca_auto/hmtnv%02x.b%04x", rom_ver, boardid);
++				break;
++			default:
++				bt_dev_err(hdev, "Unsupported QCA soc_id");
++				break;
++			}
++			break;
+ 		default:
+ 			snprintf(config.fwname, sizeof(config.fwname),
+ 				 "qca/nvm_%08x.bin", soc_ver);
+@@ -931,6 +979,7 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 	case QCA_WCN6750:
+ 	case QCA_WCN6855:
+ 	case QCA_WCN7850:
++	case QCA_AUTO_BT:
+ 		err = qca_disable_soc_logging(hdev);
+ 		if (err < 0)
+ 			return err;
+@@ -966,6 +1015,7 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 	case QCA_WCN6750:
+ 	case QCA_WCN6855:
+ 	case QCA_WCN7850:
++	case QCA_AUTO_BT:
+ 		/* get fw build info */
+ 		err = qca_read_fw_build_info(hdev);
+ 		if (err < 0)
+diff --git a/drivers/bluetooth/btqca.h b/drivers/bluetooth/btqca.h
+index bb5207d7a8c7..79d0af68d111 100644
+--- a/drivers/bluetooth/btqca.h
++++ b/drivers/bluetooth/btqca.h
+@@ -39,7 +39,11 @@
+ #define QCA_HCI_CC_OPCODE		0xFC00
+ #define QCA_HCI_CC_SUCCESS		0x00
+ 
+-#define QCA_WCN3991_SOC_ID		0x40014320
++#define QCA_WCN3991_SOC_ID		(0x40014320)
++#define QCA_QCA6696_SOC_ID		(0x400A0200)
++#define QCA_QCA6595_SOC_ID		(0x400B0200)
++#define QCA_QCA6698_SOC_ID		(0x400C0210)
++#define QCA_QCA6797_SOC_ID		(0x40170200)
+ 
+ /* QCA chipset version can be decided by patch and SoC
+  * version, combination with upper 2 bytes from SoC
+@@ -154,6 +158,7 @@ enum qca_btsoc_type {
+ 	QCA_WCN6750,
+ 	QCA_WCN6855,
+ 	QCA_WCN7850,
++	QCA_AUTO_BT,
+ };
+ 
+ #if IS_ENABLED(CONFIG_BT_QCA)
+diff --git a/drivers/bluetooth/hci_qca.c b/drivers/bluetooth/hci_qca.c
+index e6ad01d5e1d5..f9defe9ee3fc 100644
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -37,6 +37,10 @@
+ #include <net/bluetooth/bluetooth.h>
+ #include <net/bluetooth/hci_core.h>
+ 
++#ifdef CONFIG_ARCH_QCOM
++#include <uapi/linux/msm_geni_serial.h>
++#endif
++
+ #include "hci_uart.h"
+ #include "btqca.h"
+ 
+@@ -62,7 +66,7 @@
+ #define QCA_DEBUG_HANDLE	0x2EDC
+ 
+ /* max retry count when init fails */
+-#define MAX_INIT_RETRIES 3
++#define MAX_INIT_RETRIES 0
+ 
+ /* Controller dump header */
+ #define QCA_SSR_DUMP_HANDLE		0x0108
+@@ -247,7 +251,7 @@ static enum qca_btsoc_type qca_soc_type(struct hci_uart *hu)
+ 
+ 		soc_type = qsd->btsoc_type;
+ 	} else {
+-		soc_type = QCA_ROME;
++		soc_type = QCA_AUTO_BT;
+ 	}
+ 
+ 	return soc_type;
+@@ -270,6 +274,10 @@ static void __serial_clock_on(struct tty_struct *tty)
+ 	 * side to save power consumption or manual work is required.
+ 	 * Please put your code to control UART clock here if needed
+ 	 */
++#ifdef CONFIG_ARCH_QCOM
++	if (tty && tty->ops)
++		tty->ops->ioctl(tty, MSM_GENI_SERIAL_TIOCPMGET, 0);
++#endif
+ }
+ 
+ static void __serial_clock_off(struct tty_struct *tty)
+@@ -278,6 +286,10 @@ static void __serial_clock_off(struct tty_struct *tty)
+ 	 * side to save power consumption or manual work is required.
+ 	 * Please put your code to control UART clock off here if needed
+ 	 */
++#ifdef CONFIG_ARCH_QCOM
++	if (tty && tty->ops)
++		tty->ops->ioctl(tty, MSM_GENI_SERIAL_TIOCPMPUT, 0);
++#endif
+ }
+ 
+ /* serial_clock_vote needs to be called with the ibs lock held */
+@@ -636,6 +648,11 @@ static int qca_open(struct hci_uart *hu)
+ 	BT_DBG("HCI_UART_QCA open, tx_idle_delay=%u, wake_retrans=%u",
+ 	       qca->tx_idle_delay, qca->wake_retrans);
+ 
++#ifdef CONFIG_ARCH_QCOM
++    if (hu->tty && hu->tty->ops)
++        hu->tty->ops->ioctl(hu->tty, MSM_GENI_SERIAL_TIOCPMGET, 0);
++#endif
++
+ 	return 0;
+ }
+ 
+@@ -1897,6 +1914,10 @@ static int qca_setup(struct hci_uart *hu)
+ 		soc_name = "wcn7850";
+ 		break;
+ 
++	case QCA_AUTO_BT:
++		soc_name = "QCA_AUTO_BT";
++		break;
++
+ 	default:
+ 		soc_name = "ROME/QCA6390";
+ 	}
+@@ -2120,6 +2141,11 @@ static const struct qca_device_data qca_soc_data_wcn6855 __maybe_unused = {
+ 	.capabilities = QCA_CAP_WIDEBAND_SPEECH | QCA_CAP_VALID_LE_STATES,
+ };
+ 
++static const struct qca_device_data qca_soc_data_qca_auto = {
++	.soc_type = QCA_AUTO_BT,
++	.num_vregs = 0,
++};
++
+ static const struct qca_device_data qca_soc_data_wcn7850 __maybe_unused = {
+ 	.soc_type = QCA_WCN7850,
+ 	.vregs = (struct qca_vreg []) {
+@@ -2351,6 +2377,8 @@ static int qca_serdev_probe(struct serdev_device *serdev)
+ 	}
+ 
+ 	switch (qcadev->btsoc_type) {
++    case QCA_AUTO_BT:
++        break;
+ 	case QCA_WCN6855:
+ 	case QCA_WCN7850:
+ 	case QCA_WCN6750:
+@@ -2704,6 +2732,7 @@ static const struct of_device_id qca_bluetooth_of_match[] = {
+ 	{ .compatible = "qcom,wcn6750-bt", .data = &qca_soc_data_wcn6750},
+ 	{ .compatible = "qcom,wcn6855-bt", .data = &qca_soc_data_wcn6855},
+ 	{ .compatible = "qcom,wcn7850-bt", .data = &qca_soc_data_wcn7850},
++	{ .compatible = "qcom,qca-auto-bt", .data = &qca_soc_data_qca_auto},
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, qca_bluetooth_of_match);
+-- 
+2.34.1
+
