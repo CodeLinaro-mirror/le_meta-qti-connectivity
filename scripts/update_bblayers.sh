@@ -188,7 +188,7 @@ bblayers_for_qti_meta()
 
 ##QTI Yocto Connecetivity layer
 BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity "
-BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity-prop "
+#BBLAYERS += " \${BSPDIR}/sources/meta-qti-connectivity-prop "
 
 EOF
 
