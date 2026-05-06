@@ -47,60 +47,73 @@ lookup_change_id()
 		return ${ERROR_INVALID_PARAMS}
 	fi
 
-	PATCH_FOLDER=$(_LAST $1)
-	echo -e "git path: "${PATCH_FOLDER}"|"
-	echo -e "changeid: "$2"|"
+	PATCH_FOLDER=$(_LAST "$1")
+	echo -e "git path: ${PATCH_FOLDER}|"
+	echo -e "changeid: $2|"
 
 	cid=$2
-	top_cid="$(git -C $1 log -n 1 | grep "Change-Id"|awk '{print $2}')"
-	echo -e "top cid: "${top_cid}"|"
+	top_cid="$(git -C "$1" log -n 1 2>/dev/null | grep -m1 "Change-Id" | awk '{print $2}')"
+	echo -e "top cid: ${top_cid}|"
 	if [ "${top_cid}" == "${cid}" ]; then
 		echo -e "Found qc patch on ${PATCH_FOLDER}"
 		return 1
 	else
-		echo -e "Patch was not applied on ${PATCH_FOLDER}"
+		echo -e "Patch (Change-Id) is not on top of ${PATCH_FOLDER}"
 		return 0
-		fi
+	fi
 }
+
 
 # params: git_patch change_id
 get_change_id_from_patch()
 {
-	echo "$(cat $1 | grep "Change-Id"|awk '{print $2}')"
+	grep -m1 "Change-Id" "$1" | awk '{print $2}'
 }
 
-# params: folder_path patch_name, base_commit_id
+
+# params: folder_path patch_file [git_am_opt]
 git_apply_patch()
 {
 	if [ $# -lt 2 ]; then
 		return ${ERROR_INVALID_PARAMS}
 	fi
 
-	cd $1
-	echo -e "check git repo"
-	COMMIT_ID=$(git rev-parse --verify HEAD)
-	echo -e "finish check git repo"
-	if [ ! $? -eq 0 ]; then
-		echo -e "git repo is not found"
-		cd -
+	cd "$1" || return ${ERROR_NO_GIT}
+
+	COMMIT_ID=$(git rev-parse --verify HEAD 2>/dev/null)
+	if [ $? -ne 0 ]; then
+		echo -e "Git repo not found: $1"
+		cd - > /dev/null 2>&1
 		return ${ERROR_NO_GIT}
 	fi
 
-	FILE=$2
-	echo -e "Apply "$(_LAST ${FILE})
-	git am ${FILE}  > /dev/null 2>&1
-	if [ ! $? -eq 0 ]; then
-		git am --abort
-		echo -e "Patch not applied"
-		echo -e "Poky TOP commit "${COMMIT_ID}
-		if [ $# -eq 3 ]; then
-			echo -e "Expected Top commit "$3
-		fi
+	FILE="$2"
+	AM_OPT="$3"
+
+	echo -e "Apply $(_LAST "${FILE}")"
+	if [ -n "${AM_OPT}" ]; then
+		git am ${AM_OPT} "${FILE}" > /dev/null 2>&1
 	else
-		echo -e "Apply patch successfully"
+		git am "${FILE}" > /dev/null 2>&1
 	fi
-	cd -
+	status=$?
+
+	if [ ${status} -ne 0 ]; then
+		git am --abort > /dev/null 2>&1
+		echo -e "Patch not applied"
+		echo -e "TOP commit ${COMMIT_ID}"
+		if [ $# -eq 3 ]; then
+			echo -e "git am option ${AM_OPT}"
+		fi
+		cd - > /dev/null 2>&1
+		return ${status}
+	fi
+
+	echo -e "Apply patch successfully"
+	cd - > /dev/null 2>&1
+	return 0
 }
+
 
 declare -A P1
 P1=(
@@ -125,7 +138,14 @@ P3=(
 "4002-imx8mqevk.conf-Restore-imx8mqevk-configure-for-3GDDR.patch"
 )
 
-# align length check with the valie defined in patch file
+declare -A P4
+P4=(
+["path"]="${WORK_SPACE}/sources/bitbake"
+["name"]="${WORK_SPACE}/${SCRIPT_FOLDER}/files/"\
+"0001-temporary-fix-for-crate-fetch-issue.patch"
+)
+
+# align length check with the value defined in patch file
 # apply P1 patch to address KW build error when length of root folder is too
 # long
 LIMIT_LENGTH=150
@@ -175,4 +195,17 @@ else
 		git reset --hard HEAD~1
 		cd -
 	fi
+fi
+
+# Apply BitBake crate fetcher patch
+if [ -f "${P4[name]}" ]; then
+	CHANGE_ID=$(get_change_id_from_patch "${P4[name]}")
+	lookup_change_id "${P4[path]}" "${CHANGE_ID}"
+	if [ $? -eq 0 ]; then
+		if git_apply_patch "${P4[path]}" "${P4[name]}"; then
+			echo -e "[crate] P4 applied successfully: $(_LAST "${P4[name]}")"
+		fi
+	fi
+else
+	echo -e "[crate] Patch file not found: ${P4[name]}"
 fi
