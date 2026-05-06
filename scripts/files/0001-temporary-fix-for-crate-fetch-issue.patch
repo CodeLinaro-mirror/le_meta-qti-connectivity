@@ -1,0 +1,26 @@
+From 4bd4816665f8cc8a585a4f0c8ec1b682b95d2479 Mon Sep 17 00:00:00 2001
+From: Dongyuan Li <dongyuan@qti.qualcomm.com>
+Date: Wed, 6 May 2026 16:08:34 +0800
+Subject: [PATCH] temporary fix for crate fetch issue
+
+Change-Id: I7821eb3bef4251c0ebb85e60115b41159920760c
+---
+ bitbake/lib/bb/fetch2/crate.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/bitbake/lib/bb/fetch2/crate.py b/bitbake/lib/bb/fetch2/crate.py
+index a7021e5b36..560dbaa2f8 100644
+--- a/bitbake/lib/bb/fetch2/crate.py
++++ b/bitbake/lib/bb/fetch2/crate.py
+@@ -67,7 +67,7 @@ class Crate(Wget):
+ 
+         # if using upstream just fix it up nicely
+         if host == 'crates.io':
+-            host = 'crates.io/api/v1/crates'
++            host = 'static.crates.io/crates'
+ 
+         ud.url = "https://%s/%s/%s/download" % (host, name, version)
+         ud.parm['downloadfilename'] = "%s-%s.crate" % (name, version)
+-- 
+2.34.1
+
