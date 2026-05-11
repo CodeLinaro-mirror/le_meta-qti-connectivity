@@ -35,12 +35,17 @@ ERROR_NO_GIT=400
 ERROR_INVALID_BASE=401
 ERROR_CHANGE_APPLIED=402
 
+# Global flag set by lookup_change_id()
+LOOKUP_ON_TOP=0
+
 _LAST()
 {
 	echo $1 | awk -F'/' '{print $NF}'
 }
 
 # params: git_repo_path change_id
+# Sets LOOKUP_ON_TOP (1 if applied/on-top; 0 otherwise)
+# Always returns 0 (avoid any early abort under set -e)
 lookup_change_id()
 {
 	if [ $# -lt 2 ]; then
@@ -51,25 +56,26 @@ lookup_change_id()
 	echo -e "git path: ${PATCH_FOLDER}|"
 	echo -e "changeid: $2|"
 
-	cid=$2
-	top_cid="$(git -C "$1" log -n 1 2>/dev/null | grep -m1 "Change-Id" | awk '{print $2}')"
+	cid="$2"
+	top_cid="$(git -C "$1" log -n 1 2>/dev/null | grep -m1 "Change-Id" | awk '{print $2}' || true)"
 	echo -e "top cid: ${top_cid}|"
+
 	if [ "${top_cid}" == "${cid}" ]; then
 		echo -e "Found qc patch on ${PATCH_FOLDER}"
-		return 1
+		LOOKUP_ON_TOP=1
 	else
 		echo -e "Patch (Change-Id) is not on top of ${PATCH_FOLDER}"
-		return 0
+		LOOKUP_ON_TOP=0
 	fi
+
+	return 0
 }
 
-
-# params: git_patch change_id
+# params: git_patch
 get_change_id_from_patch()
 {
-	grep -m1 "Change-Id" "$1" | awk '{print $2}'
+	grep -m1 "Change-Id" "$1" 2>/dev/null | awk '{print $2}' || true
 }
-
 
 # params: folder_path patch_file [git_am_opt]
 git_apply_patch()
@@ -114,7 +120,6 @@ git_apply_patch()
 	return 0
 }
 
-
 declare -A P1
 P1=(
 ["path"]="${WORK_SPACE}/sources/poky"
@@ -156,7 +161,7 @@ if [ ${KERNELVERSION} == "5.10" ]; then
 if [ ! ${PATH_LENGTH} -lt ${LIMIT_LENGTH} ]; then
 	CHANGE_ID=$(get_change_id_from_patch ${P1["name"]})
 	lookup_change_id ${P1["path"]} ${CHANGE_ID}
-	if [ $? -eq 0 ]; then
+	if [ ${LOOKUP_ON_TOP} -eq 0 ]; then
 		git_apply_patch ${P1["path"]} ${P1["name"]}
 	fi
 	echo -e "[KW] prepare done"
@@ -168,19 +173,19 @@ fi
 if [ ${MACHINE} == "imx8mqevk" -a ${KERNELVERSION} == "6.6" ]; then
 	CHANGE_ID=$(get_change_id_from_patch ${P2["name"]})
 	lookup_change_id ${P2["path"]} ${CHANGE_ID}
-	if [ $? -eq 0 ]; then
+	if [ ${LOOKUP_ON_TOP} -eq 0 ]; then
 		git_apply_patch ${P2["path"]} ${P2["name"]}
 	fi
 
 	CHANGE_ID=$(get_change_id_from_patch ${P3["name"]})
 	lookup_change_id ${P3["path"]} ${CHANGE_ID}
-	if [ $? -eq 0 ]; then
+	if [ ${LOOKUP_ON_TOP} -eq 0 ]; then
 		git_apply_patch ${P3["path"]} ${P3["name"]}
 	fi
 else
 	CHANGE_ID=$(get_change_id_from_patch ${P2["name"]})
 	lookup_change_id ${P2["path"]} ${CHANGE_ID}
-	if [ $? -eq 1 ]; then
+	if [ ${LOOKUP_ON_TOP} -eq 1 ]; then
 		echo -e "Revoke "$(_LAST ${P2["name"]})
 		cd ${P2["path"]}
 		git reset --hard HEAD~1
@@ -189,7 +194,7 @@ else
 
 	CHANGE_ID=$(get_change_id_from_patch ${P3["name"]})
 	lookup_change_id ${P3["path"]} ${CHANGE_ID}
-	if [ $? -eq 1 ]; then
+	if [ ${LOOKUP_ON_TOP} -eq 1 ]; then
 		echo -e "Revoke "$(_LAST ${P3["name"]})
 		cd ${P3["path"]}
 		git reset --hard HEAD~1
@@ -201,7 +206,7 @@ fi
 if [ -f "${P4[name]}" ]; then
 	CHANGE_ID=$(get_change_id_from_patch "${P4[name]}")
 	lookup_change_id "${P4[path]}" "${CHANGE_ID}"
-	if [ $? -eq 0 ]; then
+	if [ ${LOOKUP_ON_TOP} -eq 0 ]; then
 		if git_apply_patch "${P4[path]}" "${P4[name]}"; then
 			echo -e "[crate] P4 applied successfully: $(_LAST "${P4[name]}")"
 		fi
