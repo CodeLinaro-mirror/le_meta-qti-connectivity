@@ -45,14 +45,14 @@ usage()
     echo
     echo "script usage for QTI Standalone Auto image"
     echo "${SCRIPT_PARAMS} source ${SCRIPT_FILE} [BUILDDIR]"
-    echo "For example: PROJECT=QCA6698AULE11 source ${SCRIPT_FILE}"
+    echo "For example: PROJECT=WCN8851LE10 source ${SCRIPT_FILE}"
     echo
     echo "EULA      :  FSL EULA, default 0 if undefined."
     echo "BUILDDIR  :  the build directory location, 'build' by default."
-    echo "MACHINE   :  Supported machines, 'imx8mqevk' by default. reference command \$list_machines"
+    echo "MACHINE   :  Supported machines, 'imx8qxpc0mek' by default. reference command \$list_machines"
     echo "PROJECT   :  Supported QTI Standalone SP"
     echo "ADDON     :  Connectivity add-on feature names (separate in space)."
-    echo "QCA6698AULE11 : QCA6698AU.LE.1.1 SP"
+    echo "WCN8851LE10 : WCN8851.LE.1.0 SP"
 }
 
 execute_command()
@@ -172,10 +172,10 @@ esac
 
 
 case $PROJECT in
-    "QCA6698AULE11" | "")
+    "WCN8851LE10" | "")
         {
             DISTRO=fsl-imx-xwayland
-            export PROJECTID=QCA6698AULE11
+            export PROJECTID=WCN8851LE10
         } ;;
     *)
         {
@@ -207,12 +207,12 @@ do
 done
 
 # Default MACHINE
-if [[ -z "$MACHINE" || $MACHINE == "imx8mqevk" || $MACHINE == "imxauto" ]]; then
+if [[ -z "$MACHINE" || $MACHINE == "imx8qxpc0mek" || $MACHINE == "imxauto" ]]; then
+    MACHINE='imx8qxpc0mek'
+elif [ "$MACHINE" == "imx8mqevk" ]; then
     MACHINE='imx8mqevk'
 elif [ "$MACHINE" == "imx8qxpmek" ]; then
     MACHINE='imx8qxpmek'
-elif [ "$MACHINE" == "imx8qxpc0mek" ]; then
-    MACHINE='imx8qxpc0mek'
 else
     check_machine_valid
     if [ "$?" != "0" ]; then
