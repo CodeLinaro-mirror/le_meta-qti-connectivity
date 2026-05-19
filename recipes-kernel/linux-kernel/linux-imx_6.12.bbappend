@@ -17,8 +17,7 @@ python __anonymous () {
 SRC_URI += "file://config/defconfig_${KERNELVERSION}"
 
 SRC_URI += " \
-	file://${PATCH_FOLDER}/0001-dts-configure-for-hsp-wlan-card.patch \
-	file://${PATCH_FOLDER}/0002-update-dts-to-add-32k-sleep-clock-at-imx8qxpmek.patch \
+	file://${PATCH_FOLDER}/0001-update-dts-to-support-Congo-Chip.patch \
 	file://${PATCH_FOLDER}/0003-cfg80211-Add-MLO-backport-flag.patch \
 	file://${PATCH_FOLDER}/0005-kernel-fix-the-issue-ttyLP1-is-missed-if-QC-BT-is-us.patch \
 	file://${PATCH_FOLDER}/0010-imx8mq.dtsi-Add-wlan-mhi-resource.patch \
