@@ -23,6 +23,7 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0010-imx8mq.dtsi-Add-wlan-mhi-resource.patch \
 	file://${PATCH_FOLDER}/0011-msi-revert-code-genirq-msi-cache-the-latest-msi-msg.patch \
 	file://${PATCH_FOLDER}/0012-kernel-export-symbol-irq_to_desc.patch \
+	file://${PATCH_FOLDER}/0013-Bluetooth-hci_qca-Support-QCA-Auto-chips.patch \
 "
 
 
