@@ -14,8 +14,8 @@ EXTRA_OEMAKE += "CONFIG_QCA_CLD_WLAN_PROFILE=imx_fig-v2 CHIP_NAME=fig MODNAME=${
 EXTRA_OEMAKE += "CONFIG_CNSS_SDIO=n CONFIG_CLD_HL_SDIO_CORE=n"
 EXTRA_OEMAKE += "KBUILD_EXTRA=KBUILD_EXTRA_SYMBOLS=${STAGING_INCDIR}/wlan-cnss-core/Module.symvers"
 
-do_compile:prepend() {
-	install -m 0644 ${UNPACKDIR}/imx_fig-v2_defconfig ${S}/configs/imx_fig-v2_defconfig
+do_configure:prepend() {
+	cp ${UNPACKDIR}/imx_fig-v2_defconfig ${S}/configs/imx_fig-v2_defconfig
 }
 
 do_install:append () {
