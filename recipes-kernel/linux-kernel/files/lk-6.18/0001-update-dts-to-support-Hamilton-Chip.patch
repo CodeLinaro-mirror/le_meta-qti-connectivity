@@ -1,0 +1,47 @@
+From e37b7fb1517ee74c2ec39d6f71a6dc1c7db88b79 Mon Sep 17 00:00:00 2001
+From: gongx <gongx@qti.qualcomm.com>
+Date: Wed, 27 May 2026 15:01:14 +0800
+Subject: [PATCH] update dts to support Hamilton Chip
+
+Upstream-Status: Pending
+Signed-off-by: Xueqiang Gong <gongx@qti.qualcomm.com>
+---
+ arch/arm64/boot/dts/freescale/imx8qxp-mek.dts | 22 ++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8qxp-mek.dts b/arch/arm64/boot/dts/freescale/imx8qxp-mek.dts
+index 965a92258248..eb35fe070009 100644
+--- a/arch/arm64/boot/dts/freescale/imx8qxp-mek.dts
++++ b/arch/arm64/boot/dts/freescale/imx8qxp-mek.dts
+@@ -16,7 +16,27 @@ bt_sco_codec: audio-codec-bt {
+ 		compatible = "linux,bt-sco";
+ 		#sound-dai-cells = <1>;
+ 	};
+-
++	
++	cnss_pcie: qcom,cnss-qca-converged {
++		compatible = "qcom,cnss-qca-converged";
++		qcom,wlan;
++		qcom,converged-dt;
++		qcom,wlan-rc-num = <0>;
++		qcom,bus-type=<0>;
++		qcom,notify-modem-status;
++		
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_wifi>;
++		
++		chip_cfg@1 {
++			reg = <0xb0000000 0x10000>;
++			reg-names = "smmu_iova_ipa";
++			supported-ids = <0x1107>;
++			wlan_vregs;
++			qcom,wlan-ramdump-dynamic = <0x780000>;
++		};
++	};
++	
+ 	brcmfmac: brcmfmac {
+ 		compatible = "cypress,brcmfmac";
+ 		pinctrl-names = "init", "idle", "default";
+-- 
+2.34.1
+

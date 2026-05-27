@@ -17,12 +17,11 @@ python __anonymous () {
 SRC_URI += "file://config/connectivity_6.18.cfg"
 
 SRC_URI += " \
-	file://${PATCH_FOLDER}/0001-dts-configure-for-genoa-wlan-card.patch \
+	file://${PATCH_FOLDER}/0001-update-dts-to-support-Hamilton-Chip.patch \
 	file://${PATCH_FOLDER}/0003-cfg80211-Add-MLO-backport-flag.patch \
 	file://${PATCH_FOLDER}/0005-kernel-fix-the-issue-ttyLP1-is-missed-if-QC-BT-is-us.patch \
 	file://${PATCH_FOLDER}/0010-imx8mq.dtsi-Add-wlan-mhi-resource.patch \
 	file://${PATCH_FOLDER}/0011-msi-revert-code-genirq-msi-cache-the-latest-msi-msg.patch \
-	file://${PATCH_FOLDER}/0012-kernel-export-symbol-irq_to_desc.patch \
 	file://${PATCH_FOLDER}/0013-Bluetooth-hci_qca-Support-QCA-Auto-chips.patch \
 "
 

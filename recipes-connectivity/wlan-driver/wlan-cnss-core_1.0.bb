@@ -1,4 +1,4 @@
-# Hasting dependency modules compilation bb file
+# Hamilton dependency modules compilation bb file
 
 inherit module kernel-arch
 
@@ -16,15 +16,14 @@ S = "${UNPACKDIR}/wlan-cnss-core"
 
 FILES:${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/wlan_cnss_core_pci.ko"
 
-EXTRA_OEMAKE += "${@oe.utils.conditional('FEATURE_RCPM', '1', 'CONFIG_WLAN_EN=y', '', d)}"
-EXTRA_OEMAKE += "${@oe.utils.conditional('FEATURE_RCPM', '1', 'CONFIG_PCI_RC_SUPPORT_PM=y', '', d)}"
-#EXTRA_OEMAKE += "CONFIG_WLAN_INTERNAL_SLEEP_CLOCK=y"
 
 do_compile:prepend() {
     mkdir -p ${DEPLOY_DIR_IMAGE}/wlan
-# wlan hasting driver need the two head files
-    cp ${S}/cnss2/cnss2.h  ${STAGING_KERNEL_DIR}/include/net/
-    cp ${S}/cnss_utils/cnss_utils.h ${STAGING_KERNEL_DIR}/include/net/
+# wlan hamilton driver need the two head files
+    cp ${S}/inc/cnss2.h  ${STAGING_KERNEL_DIR}/include/net/
+    cp ${S}/inc/cnss_utils.h ${STAGING_KERNEL_DIR}/include/net/
+# head files at kernel is not updated, copy the latest files to kernel
+    cp ${S}/include/linux/ipc_logging.h ${STAGING_KERNEL_DIR}/include/linux/ipc_logging.h
 
     sed -in '/Werror/d' ${S}/Kbuild
 }
