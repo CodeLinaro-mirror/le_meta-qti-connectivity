@@ -1,0 +1,45 @@
+From 2e6c4d0e964d46ac95f00f261378b651eb019670 Mon Sep 17 00:00:00 2001
+From: gongx <gongx@qti.qualcomm.com>
+Date: Tue, 16 Jun 2026 17:12:46 +0800
+Subject: [PATCH] update dts to support Hamilton Chip
+
+Upstream-Status: Pending
+Signed-off-by: Xueqiang Gong <gongx@qti.qualcomm.com>
+---
+ arch/arm64/boot/dts/freescale/imx8x-mek.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi b/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
+index 487748d425f5..7f4fe67b39be 100644
+--- a/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8x-mek.dtsi
+@@ -17,6 +17,26 @@ brcmfmac: brcmfmac {
+ 		pinctrl-2 = <&pinctrl_wifi>;
+ 	};
+ 
++	cnss_pcie: qcom,cnss-qca-converged {
++		compatible = "qcom,cnss-qca-converged";
++		qcom,wlan;
++		qcom,converged-dt;
++		qcom,wlan-rc-num = <0>;
++		qcom,bus-type=<0>;
++		qcom,notify-modem-status;
++		
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_wifi>;
++		
++		chip_cfg@1 {
++			reg = <0xb0000000 0x10000>;
++			reg-names = "smmu_iova_ipa";
++			supported-ids = <0x1107>;
++			wlan_vregs;
++			qcom,wlan-ramdump-dynamic = <0x780000>;
++		};
++	};
++
+ 	lvds_backlight0: lvds-backlight-0 {
+ 		compatible = "pwm-backlight";
+ 		pwms = <&pwm_mipi_lvds0 0 100000 0>;
+-- 
+2.34.1
+
