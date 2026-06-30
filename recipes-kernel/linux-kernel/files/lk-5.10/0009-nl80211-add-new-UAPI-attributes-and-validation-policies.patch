@@ -1,0 +1,309 @@
+From e8b7287db6da4deb36978f2e70f8d5fd94e292f2 Mon Sep 17 00:00:00 2001
+From: changui <changui@qti.qualcomm.com>
+Date: Mon, 29 Jun 2026 17:17:30 +0800
+Subject: [PATCH] nl80211: add new UAPI attributes and validation policies
+Signed-off-by: Changhui Gui <changui@qti.qualcomm.com>
+---
+ include/uapi/linux/nl80211.h | 212 ++++++++++++++++++++++++++++++++++-
+ net/wireless/nl80211.c       |  43 +++++++
+ 2 files changed, 254 insertions(+), 1 deletion(-)
+
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index bcf1f7917025..2969cc71085b 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -3015,7 +3015,30 @@ enum nl80211_attrs {
+ 
+ 	NL80211_ATTR_S1G_CAPABILITY,
+ 	NL80211_ATTR_S1G_CAPABILITY_MASK,
+-	
++
++	NL80211_ATTR_SAE_PWE,
++
++	NL80211_ATTR_RECONNECT_REQUESTED,
++
++	NL80211_ATTR_SAR_SPEC,
++
++	NL80211_ATTR_DISABLE_HE,
++
++	NL80211_ATTR_OBSS_COLOR_BITMAP,
++
++	NL80211_ATTR_COLOR_CHANGE_COUNT,
++	NL80211_ATTR_COLOR_CHANGE_COLOR,
++	NL80211_ATTR_COLOR_CHANGE_ELEMS,
++
++	NL80211_ATTR_MBSSID_CONFIG,
++	NL80211_ATTR_MBSSID_ELEMS,
++
++	NL80211_ATTR_RADAR_BACKGROUND,
++
++	NL80211_ATTR_AP_SETTINGS_FLAGS,
++
++	NL80211_ATTR_EHT_CAPABILITY,
++
+ 	NL80211_ATTR_MAX_NUM_AKMS_CONNECT,
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+@@ -3073,6 +3096,9 @@ enum nl80211_attrs {
+ #define NL80211_MAX_NR_CIPHER_SUITES		5
+ #define NL80211_MAX_NR_AKM_SUITES		2
+ 
++#define NL80211_EHT_MIN_CAPABILITY_LEN          13
++#define NL80211_EHT_MAX_CAPABILITY_LEN          51
++
+ #define NL80211_MIN_REMAIN_ON_CHANNEL_TIME	10
+ 
+ /* default RSSI threshold for scan results if none specified. */
+@@ -7125,4 +7151,188 @@ enum nl80211_unsol_bcast_probe_resp_attributes {
+ 	NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_MAX =
+ 		__NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_LAST - 1
+ };
++	
++/**
++ * enum nl80211_sae_pwe_mechanism - The mechanism(s) allowed for SAE PWE
++ *      derivation. Applicable only when WPA3-Personal SAE authentication is
++ *      used.
++ *
++ * @NL80211_SAE_PWE_UNSPECIFIED: not specified, used internally to indicate that
++ *      attribute is not present from userspace.
++ * @NL80211_SAE_PWE_HUNT_AND_PECK: hunting-and-pecking loop only
++ * @NL80211_SAE_PWE_HASH_TO_ELEMENT: hash-to-element only
++ * @NL80211_SAE_PWE_BOTH: both hunting-and-pecking loop and hash-to-element
++ *      can be used.
++ */
++enum nl80211_sae_pwe_mechanism {
++        NL80211_SAE_PWE_UNSPECIFIED,
++        NL80211_SAE_PWE_HUNT_AND_PECK,
++        NL80211_SAE_PWE_HASH_TO_ELEMENT,
++        NL80211_SAE_PWE_BOTH,
++};
++
++/**
++ * enum nl80211_sar_type - type of SAR specs
++ *
++ * @NL80211_SAR_TYPE_POWER: power limitation specified in 0.25dBm unit
++ *
++ */
++enum nl80211_sar_type {
++        NL80211_SAR_TYPE_POWER,
++
++        /* add new type here */
++
++        /* Keep last */
++        NUM_NL80211_SAR_TYPE,
++};
++
++/**
++ * enum nl80211_sar_attrs - Attributes for SAR spec
++ *
++ * @NL80211_SAR_ATTR_TYPE: the SAR type as defined in &enum nl80211_sar_type.
++ *
++ * @NL80211_SAR_ATTR_SPECS: Nested array of SAR power
++ *      limit specifications. Each specification contains a set
++ *      of %nl80211_sar_specs_attrs.
++ *
++ *      For SET operation, it contains array of %NL80211_SAR_ATTR_SPECS_POWER
++ *      and %NL80211_SAR_ATTR_SPECS_RANGE_INDEX.
++ *
++ *      For sar_capa dump, it contains array of
++ *      %NL80211_SAR_ATTR_SPECS_START_FREQ
++ *      and %NL80211_SAR_ATTR_SPECS_END_FREQ.
++ *
++ * @__NL80211_SAR_ATTR_LAST: Internal
++ * @NL80211_SAR_ATTR_MAX: highest sar attribute
++ *
++ * These attributes are used with %NL80211_CMD_SET_SAR_SPEC
++ */
++enum nl80211_sar_attrs {
++        __NL80211_SAR_ATTR_INVALID,
++
++        NL80211_SAR_ATTR_TYPE,
++        NL80211_SAR_ATTR_SPECS,
++
++        __NL80211_SAR_ATTR_LAST,
++        NL80211_SAR_ATTR_MAX = __NL80211_SAR_ATTR_LAST - 1,
++};
++
++/**
++ * enum nl80211_sar_specs_attrs - Attributes for SAR power limit specs
++ *
++ * @NL80211_SAR_ATTR_SPECS_POWER: Required (s32)value to specify the actual
++ *      power limit value in units of 0.25 dBm if type is
++ *      NL80211_SAR_TYPE_POWER. (i.e., a value of 44 represents 11 dBm).
++ *      0 means userspace doesn't have SAR limitation on this associated range.
++ *
++ * @NL80211_SAR_ATTR_SPECS_RANGE_INDEX: Required (u32) value to specify the
++ *      index of exported freq range table and the associated power limitation
++ *      is applied to this range.
++ *
++ *      Userspace isn't required to set all the ranges advertised by WLAN driver,
++ *      and userspace can skip some certain ranges. These skipped ranges don't
++ *      have SAR limitations, and they are same as setting the
++ *      %NL80211_SAR_ATTR_SPECS_POWER to any unreasonable high value because any
++ *      value higher than regulatory allowed value just means SAR power
++ *      limitation is removed, but it's required to set at least one range.
++ *      It's not allowed to set duplicated range in one SET operation.
++ *
++ *      Every SET operation overwrites previous SET operation.
++ *
++ * @NL80211_SAR_ATTR_SPECS_START_FREQ: Required (u32) value to specify the start
++ *      frequency of this range edge when registering SAR capability to wiphy.
++ *      It's not a channel center frequency. The unit is kHz.
++ *
++ * @NL80211_SAR_ATTR_SPECS_END_FREQ: Required (u32) value to specify the end
++ *      frequency of this range edge when registering SAR capability to wiphy.
++ *      It's not a channel center frequency. The unit is kHz.
++ *
++ * @__NL80211_SAR_ATTR_SPECS_LAST: Internal
++ * @NL80211_SAR_ATTR_SPECS_MAX: highest sar specs attribute
++ */
++enum nl80211_sar_specs_attrs {
++        __NL80211_SAR_ATTR_SPECS_INVALID,
++
++        NL80211_SAR_ATTR_SPECS_POWER,
++        NL80211_SAR_ATTR_SPECS_RANGE_INDEX,
++        NL80211_SAR_ATTR_SPECS_START_FREQ,
++        NL80211_SAR_ATTR_SPECS_END_FREQ,
++
++        __NL80211_SAR_ATTR_SPECS_LAST,
++        NL80211_SAR_ATTR_SPECS_MAX = __NL80211_SAR_ATTR_SPECS_LAST - 1,
++};
++
++/**
++ * enum nl80211_mbssid_config_attributes - multiple BSSID (MBSSID) and enhanced
++ * multi-BSSID advertisements (EMA) in AP mode.
++ * Kernel uses some of these attributes to advertise driver's support for
++ * MBSSID and EMA.
++ * Remaining attributes should be used by the userspace to configure the
++ * features.
++ *
++ * @__NL80211_MBSSID_CONFIG_ATTR_INVALID: Invalid
++ *
++ * @NL80211_MBSSID_CONFIG_ATTR_MAX_INTERFACES: Used by the kernel to advertise
++ *      the maximum number of MBSSID interfaces supported by the driver.
++ *      Driver should indicate MBSSID support by setting
++ *      wiphy->mbssid_max_interfaces to a value more than or equal to 2.
++ *
++ * @NL80211_MBSSID_CONFIG_ATTR_MAX_EMA_PROFILE_PERIODICITY: Used by the kernel
++ *      to advertise the maximum profile periodicity supported by the driver
++ *      if EMA is enabled. Driver should indicate EMA support to the userspace
++ *      by setting wiphy->ema_max_profile_periodicity to
++ *      a non-zero value.
++ *
++ * @NL80211_MBSSID_CONFIG_ATTR_INDEX: Mandatory parameter to pass the index of
++ *      this BSS (u8) in the multiple BSSID set.
++ *      Value must be set to 0 for the transmitting interface and non-zero for
++ *      all non-transmitting interfaces. The userspace will be responsible
++ *      for using unique indices for the interfaces.
++ *      Range: 0 to wiphy->mbssid_max_interfaces-1.
++ *
++ * @NL80211_MBSSID_CONFIG_ATTR_TX_IFINDEX: Mandatory parameter for
++ *      a non-transmitted profile which provides the interface index (u32) of
++ *      the transmitted profile. The value must match one of the interface
++ *      indices advertised by the kernel. Optional if the interface being set up
++ *      is the transmitting one, however, if provided then the value must match
++ *      the interface index of the same.
++ *
++ * @NL80211_MBSSID_CONFIG_ATTR_EMA: Flag used to enable EMA AP feature.
++ *      Setting this flag is permitted only if the driver advertises EMA support
++ *      by setting wiphy->ema_max_profile_periodicity to non-zero.
++ *
++ * @__NL80211_MBSSID_CONFIG_ATTR_LAST: Internal
++ * @NL80211_MBSSID_CONFIG_ATTR_MAX: highest attribute
++ */
++enum nl80211_mbssid_config_attributes {
++        __NL80211_MBSSID_CONFIG_ATTR_INVALID,
++
++        NL80211_MBSSID_CONFIG_ATTR_MAX_INTERFACES,
++        NL80211_MBSSID_CONFIG_ATTR_MAX_EMA_PROFILE_PERIODICITY,
++        NL80211_MBSSID_CONFIG_ATTR_INDEX,
++        NL80211_MBSSID_CONFIG_ATTR_TX_IFINDEX,
++        NL80211_MBSSID_CONFIG_ATTR_EMA,
++
++        /* keep last */
++        __NL80211_MBSSID_CONFIG_ATTR_LAST,
++        NL80211_MBSSID_CONFIG_ATTR_MAX = __NL80211_MBSSID_CONFIG_ATTR_LAST - 1,
++};
++
++/**
++ * enum nl80211_ap_settings_flags - AP settings flags
++ *
++ * @NL80211_AP_SETTINGS_EXTERNAL_AUTH_SUPPORT: AP supports external
++ *      authentication.
++ * @NL80211_AP_SETTINGS_SA_QUERY_OFFLOAD_SUPPORT: Userspace supports SA Query
++ *      procedures offload to driver. If driver advertises
++ *      %NL80211_AP_SME_SA_QUERY_OFFLOAD in AP SME features, userspace shall
++ *      ignore SA Query procedures and validations when this flag is set by
++ *      userspace.
++ */
++enum nl80211_ap_settings_flags {
++        NL80211_AP_SETTINGS_EXTERNAL_AUTH_SUPPORT       = 1 << 0,
++        NL80211_AP_SETTINGS_SA_QUERY_OFFLOAD_SUPPORT    = 1 << 1,
++};
++
++
+ #endif /* __LINUX_NL80211_H */
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index fe27f70e32bb..23377db74d99 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -403,6 +403,29 @@ nl80211_unsol_bcast_probe_resp_policy[NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_MAX +
+ 						       .len = IEEE80211_MAX_DATA_LEN }
+ };
+ 
++static const struct nla_policy
++sar_specs_policy[NL80211_SAR_ATTR_SPECS_MAX + 1] = {
++	[NL80211_SAR_ATTR_SPECS_POWER] = { .type = NLA_S32 },
++	[NL80211_SAR_ATTR_SPECS_RANGE_INDEX] = {.type = NLA_U32 },
++};
++
++static const struct nla_policy
++sar_policy[NL80211_SAR_ATTR_MAX + 1] = {
++	[NL80211_SAR_ATTR_TYPE] = NLA_POLICY_MAX(NLA_U32, NUM_NL80211_SAR_TYPE),
++	[NL80211_SAR_ATTR_SPECS] = NLA_POLICY_NESTED_ARRAY(sar_specs_policy),
++};
++
++static const struct nla_policy
++nl80211_mbssid_config_policy[NL80211_MBSSID_CONFIG_ATTR_MAX + 1] = {
++	[NL80211_MBSSID_CONFIG_ATTR_MAX_INTERFACES] = NLA_POLICY_MIN(NLA_U8, 2),
++	[NL80211_MBSSID_CONFIG_ATTR_MAX_EMA_PROFILE_PERIODICITY] =
++						NLA_POLICY_MIN(NLA_U8, 1),
++	[NL80211_MBSSID_CONFIG_ATTR_INDEX] = { .type = NLA_U8 },
++	[NL80211_MBSSID_CONFIG_ATTR_TX_IFINDEX] = { .type = NLA_U32 },
++	[NL80211_MBSSID_CONFIG_ATTR_EMA] = { .type = NLA_FLAG },
++};
++
++
+ static const struct nla_policy nl80211_policy[NUM_NL80211_ATTR] = {
+ 	[0] = { .strict_start_type = NL80211_ATTR_HE_OBSS_PD },
+ 	[NL80211_ATTR_WIPHY] = { .type = NLA_U32 },
+@@ -719,6 +742,26 @@ static const struct nla_policy nl80211_policy[NUM_NL80211_ATTR] = {
+ 		NLA_POLICY_EXACT_LEN(IEEE80211_S1G_CAPABILITY_LEN),
+ 	[NL80211_ATTR_S1G_CAPABILITY_MASK] =
+ 		NLA_POLICY_EXACT_LEN(IEEE80211_S1G_CAPABILITY_LEN),
++	[NL80211_ATTR_SAE_PWE] =
++	    NLA_POLICY_RANGE(NLA_U8, NL80211_SAE_PWE_HUNT_AND_PECK,
++	                     NL80211_SAE_PWE_BOTH),
++	[NL80211_ATTR_RECONNECT_REQUESTED] = { .type = NLA_REJECT },
++	[NL80211_ATTR_SAR_SPEC] = NLA_POLICY_NESTED(sar_policy),
++	[NL80211_ATTR_DISABLE_HE] = { .type = NLA_FLAG },
++	[NL80211_ATTR_OBSS_COLOR_BITMAP] = { .type = NLA_U64 },
++	[NL80211_ATTR_COLOR_CHANGE_COUNT] = { .type = NLA_U8 },
++	[NL80211_ATTR_COLOR_CHANGE_COLOR] = { .type = NLA_U8 },
++	[NL80211_ATTR_COLOR_CHANGE_ELEMS] = NLA_POLICY_NESTED(nl80211_policy),
++	[NL80211_ATTR_MBSSID_CONFIG] =
++	            NLA_POLICY_NESTED(nl80211_mbssid_config_policy),
++	[NL80211_ATTR_MBSSID_ELEMS] = { .type = NLA_NESTED },
++	[NL80211_ATTR_RADAR_BACKGROUND] = { .type = NLA_FLAG },
++	[NL80211_ATTR_AP_SETTINGS_FLAGS] = { .type = NLA_U32 },
++	[NL80211_ATTR_EHT_CAPABILITY] =
++	    NLA_POLICY_RANGE(NLA_BINARY,
++	                     NL80211_EHT_MIN_CAPABILITY_LEN,
++	                     NL80211_EHT_MAX_CAPABILITY_LEN),
++//	[NL80211_ATTR_DISABLE_EHT] = { .type = NLA_FLAG },
+ };
+ 
+ /* policy for the key attributes */
+-- 
+2.17.1
+

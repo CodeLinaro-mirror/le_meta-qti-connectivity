@@ -25,6 +25,7 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0006-Add-32k-support-for-imx8qxp.patch \
         file://${PATCH_FOLDER}/0007-export-kernel-function-sched_setscheduler.patch \
         file://${PATCH_FOLDER}/0008-cfg80211-Indicate-max-number-of-AKMs-supported-in-NL.patch \
+        file://${PATCH_FOLDER}/0009-nl80211-add-new-UAPI-attributes-and-validation-policies.patch \
 	file://${ADDON_FOLDER}/rcpm_msi.patch \
 	file://${ADDON_FOLDER}/Set-PERST-low-when-RC-suspend.patch \
 	file://${ADDON_FOLDER}/Add-CONFIG_PCI_QC_ENHANCE.patch \
