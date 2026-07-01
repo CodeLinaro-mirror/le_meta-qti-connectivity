@@ -150,6 +150,13 @@ P4=(
 "0001-temporary-fix-for-crate-fetch-issue.patch"
 )
 
+declare -A P5
+P5=(
+["path"]="${WORK_SPACE}/sources/meta-freescale"
+["name"]="${WORK_SPACE}/${SCRIPT_FOLDER}/files/"\
+"0001-imx95-fix-UBOOT_CONFIG-defconfig-names.patch"
+)
+
 # align length check with the value defined in patch file
 # apply P1 patch to address KW build error when length of root folder is too
 # long
@@ -213,4 +220,17 @@ if [ -f "${P4[name]}" ]; then
 	fi
 else
 	echo -e "[crate] Patch file not found: ${P4[name]}"
+fi
+
+# Apply imx95-evk UBOOT_CONFIG defconfig name fix
+if [ "${MACHINE}" == "imx95-19x19-lpddr5-evk" ]; then
+	if [ -f "${P5[name]}" ]; then
+		CHANGE_ID=$(get_change_id_from_patch "${P5[name]}")
+		lookup_change_id "${P5[path]}" "${CHANGE_ID}"
+		if [ ${LOOKUP_ON_TOP} -eq 0 ]; then
+			git_apply_patch "${P5[path]}" "${P5[name]}"
+		fi
+	else
+		echo -e "[imx95-evk] Patch file not found: ${P5[name]}"
+	fi
 fi

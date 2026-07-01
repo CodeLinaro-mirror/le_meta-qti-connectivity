@@ -211,6 +211,8 @@ if [[ -z "$MACHINE" || $MACHINE == "imx8qxpc0mek" || $MACHINE == "imxauto" ]]; t
     MACHINE='imx8qxpc0mek'
 elif [ "$MACHINE" == "imx8mqevk" ]; then
     MACHINE='imx8mqevk'
+elif [ "$MACHINE" == "imx95-19x19-lpddr5-evk" ]; then
+    MACHINE='imx95-19x19-lpddr5-evk'
 elif [ "$MACHINE" == "imx8qxpmek" ]; then
     MACHINE='imx8qxpmek'
 else

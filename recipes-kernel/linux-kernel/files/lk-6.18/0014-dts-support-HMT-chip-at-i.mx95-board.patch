@@ -1,0 +1,42 @@
+From b6369ec0338a0b6ed340175c7b06f611f9293a28 Mon Sep 17 00:00:00 2001
+From: gongx <gongx@qti.qualcomm.com>
+Date: Mon, 27 Jul 2026 13:45:59 +0800
+Subject: [PATCH] dts: support HMT chip at i.mx95 board
+
+Upstream-Status: Pending
+Signed-off-by: Xueqiang Gong <gongx@qti.qualcomm.com>
+---
+ .../boot/dts/freescale/imx95-19x19-evk.dts      | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx95-19x19-evk.dts b/arch/arm64/boot/dts/freescale/imx95-19x19-evk.dts
+index d21335d8af84..c4d600461431 100644
+--- a/arch/arm64/boot/dts/freescale/imx95-19x19-evk.dts
++++ b/arch/arm64/boot/dts/freescale/imx95-19x19-evk.dts
+@@ -50,6 +50,23 @@ bt_sco_codec: audio-codec-bt-sco {
+ 		compatible = "linux,bt-sco";
+ 	};
+ 
++	cnss_pcie: qcom,cnss-qca-converged {
++		compatible = "qcom,cnss-qca-converged";
++		qcom,wlan;
++		qcom,converged-dt;
++		qcom,wlan-rc-num = <0>;
++		qcom,bus-type=<0>;
++		qcom,notify-modem-status;
++		
++		chip_cfg@1 {
++			reg = <0xb0000000 0x10000>;
++			reg-names = "smmu_iova_ipa";
++			supported-ids = <0x1107>;
++			wlan_vregs;
++			qcom,wlan-ramdump-dynamic = <0x780000>;
++		};
++	};
++
+ 	chosen {
+ 		stdout-path = &lpuart1;
+ 		#address-cells = <2>;
+-- 
+2.34.1
+

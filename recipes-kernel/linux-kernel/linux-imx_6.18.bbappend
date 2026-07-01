@@ -14,7 +14,9 @@ python __anonymous () {
         d.setVar("S", "${WORKDIR}/kernel")
 }
 
-SRC_URI += "file://config/connectivity_6.18.cfg"
+DEFCONFIG = "connectivity_${KERNELVERSION}.cfg"
+DEFCONFIG:imx95-19x19-lpddr5-evk = "connectivity_${KERNELVERSION}_imx95.cfg"
+SRC_URI += "file://config/${DEFCONFIG}"
 
 SRC_URI += " \
 	file://${PATCH_FOLDER}/0001-update-dts-to-support-Hamilton-Chip.patch \
@@ -25,4 +27,7 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0013-Bluetooth-hci_qca-Support-QCA-Auto-chips.patch \
 "
 
+SRC_URI:append:imx95-19x19-lpddr5-evk = " \
+	file://${PATCH_FOLDER}/0014-dts-support-HMT-chip-at-i.mx95-board.patch \
+"
 

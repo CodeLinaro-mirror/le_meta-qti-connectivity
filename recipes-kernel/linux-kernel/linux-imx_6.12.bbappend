@@ -14,7 +14,10 @@ python __anonymous () {
         d.setVar("S", "${WORKDIR}/kernel")
 }
 
-SRC_URI += "file://config/defconfig_${KERNELVERSION}"
+DEFCONFIG = "defconfig_${KERNELVERSION}"
+DEFCONFIG:imx95-19x19-lpddr5-evk = "defconfig_${KERNELVERSION}_imx95"
+
+SRC_URI += "file://config/${DEFCONFIG}"
 
 SRC_URI += " \
 	file://${PATCH_FOLDER}/0001-update-dts-to-support-Hamilton-Chip.patch \
@@ -22,8 +25,9 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0005-kernel-fix-the-issue-ttyLP1-is-missed-if-QC-BT-is-us.patch \
 	file://${PATCH_FOLDER}/0011-msi-revert-code-genirq-msi-cache-the-latest-msi-msg.patch \
 	file://${PATCH_FOLDER}/0013-Bluetooth-hci_qca-Support-QCA-Auto-chips.patch \
+	file://${PATCH_FOLDER}/0014-dts-support-HMT-chip-at-i.mx95-board.patch \
 "
 
 do_copy_defconfig:append() {
-    cat ${UNPACKDIR}/config/defconfig_${KERNELVERSION} >> ${B}/.config
+    cat ${UNPACKDIR}/config/${DEFCONFIG} >> ${B}/.config
 }
