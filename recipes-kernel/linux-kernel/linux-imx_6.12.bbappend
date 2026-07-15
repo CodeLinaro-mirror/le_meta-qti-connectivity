@@ -14,7 +14,10 @@ python __anonymous () {
         d.setVar("S", "${WORKDIR}/kernel")
 }
 
-SRC_URI += "file://config/defconfig_${KERNELVERSION}"
+DEFCONFIG = "defconfig_${KERNELVERSION}"
+DEFCONFIG:imx95-19x19-lpddr5-evk = "defconfig_${KERNELVERSION}_imx95"
+
+SRC_URI += "file://config/${DEFCONFIG}"
 
 SRC_URI += " \
 	file://${PATCH_FOLDER}/0001-update-dts-to-support-Congo-Chip.patch \
@@ -26,6 +29,10 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0013-Bluetooth-hci_qca-Support-QCA-Auto-chips.patch \
 "
 
+SRC_URI:append:imx95-19x19-lpddr5-evk = " \
+	file://${PATCH_FOLDER}/0014-Update-dts-to-support-Congo-on-imx95-19x19-evk.patch \
+"
+
 do_copy_defconfig:append() {
-    cat ${UNPACKDIR}/config/defconfig_${KERNELVERSION} >> ${B}/.config
+    cat ${UNPACKDIR}/config/${DEFCONFIG} >> ${B}/.config
 }

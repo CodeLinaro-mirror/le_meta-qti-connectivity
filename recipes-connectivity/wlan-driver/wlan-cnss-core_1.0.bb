@@ -16,6 +16,8 @@ S = "${WORKDIR}/wlan-cnss-core"
 
 FILES:${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/wlan_cnss_core_pci.ko"
 
+EXTRA_OEMAKE:append:imx95-19x19-lpddr5-evk = " CONFIG_USE_IMX95_EXT_32K_CLK=y"
+
 
 do_compile:prepend() {
     mkdir -p ${DEPLOY_DIR_IMAGE}/wlan
