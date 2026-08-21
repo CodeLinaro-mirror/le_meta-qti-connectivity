@@ -10,7 +10,7 @@ Signed-off-by: Ming Jiang <mjiang@qti.qualcomm.com>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/meta-imx-bsp/conf/machine/imx8mqevk.conf b/meta-imx-bsp/conf/machine/imx8mqevk.conf
-index de468977a8..cbf179e55a 100644
+index 9b8d3c9d61..cbf179e55a 100644
 --- a/meta-imx-bsp/conf/machine/imx8mqevk.conf
 +++ b/meta-imx-bsp/conf/machine/imx8mqevk.conf
 @@ -10,5 +10,5 @@
@@ -19,7 +19,6 @@ index de468977a8..cbf179e55a 100644
  
 -MACHINEOVERRIDES =. "imx8mq-lpddr4-wevk:"
 -require conf/machine/imx8mq-lpddr4-wevk.conf
-\ No newline at end of file
 +MACHINEOVERRIDES =. "imx8mq-evk:"
 +require conf/machine/imx8mq-evk.conf
 -- 

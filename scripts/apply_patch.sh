@@ -131,7 +131,7 @@ declare -A P2
 P2=(
 ["path"]="${WORK_SPACE}/sources/meta-freescale"
 ["name"]="${WORK_SPACE}/sources/meta-qti-connectivity/recipes-kernel/"\
-"linux-kernel/files/lk-6.12/"\
+"linux-kernel/files/lk-6.18/"\
 "4001-imx8mq-evk.conf-Restore-imx8mqevk-conf-for-3GDDR-boa.patch"
 )
 
@@ -139,7 +139,7 @@ declare -A P3
 P3=(
 ["path"]="${WORK_SPACE}/sources/meta-imx"
 ["name"]="${WORK_SPACE}/sources/meta-qti-connectivity/recipes-kernel/"\
-"linux-kernel/files/lk-6.12/"\
+"linux-kernel/files/lk-6.18/"\
 "4002-imx8mqevk.conf-Restore-imx8mqevk-configure-for-3GDDR.patch"
 )
 
@@ -177,7 +177,7 @@ else
 fi
 fi
 
-if [ ${MACHINE} == "imx8mqevk" -a ${KERNELVERSION} == "6.12" ]; then
+if [ ${MACHINE} == "imx8mqevk" -a ${KERNELVERSION} == "6.18" ]; then
 	CHANGE_ID=$(get_change_id_from_patch ${P2["name"]})
 	lookup_change_id ${P2["path"]} ${CHANGE_ID}
 	if [ ${LOOKUP_ON_TOP} -eq 0 ]; then

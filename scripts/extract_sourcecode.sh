@@ -50,6 +50,13 @@ download_git_code()
 
     if [ -d ${SRC_DIR}/${GIT_NAME} ]; then
         #Source Code already downloaded.
+        #echo "Source Code ${GIT_NAME} already downloaded "
+        if [ ! -z ${GIT_REV} ]; then
+            #echo "checkout to revision ${GIT_REV}"
+            execute_command "pushd ${SRC_DIR}/${GIT_NAME}"
+            execute_command "git checkout ${GIT_REV}"
+            execute_command "popd"
+        fi
         return 0
     fi
 
@@ -77,8 +84,16 @@ META_FSL_DIS_GIT="https://github.com/Freescale/meta-freescale-distro"
 META_NXP_IMX_GIT="https://github.com/nxp-imx/meta-imx"
 META_NXP_BITBAKE_GIT="https://github.com/openembedded/bitbake"
 META_NXP_OE_GIT="https://github.com/openembedded/openembedded-core"
-META_NXP_BITBAKE_GIT="https://github.com/openembedded/bitbake"
 META_NXP_YOCTO_GIT="https://git.yoctoproject.org/meta-yocto"
+META_NXP_ARM_GIT="https://git.yoctoproject.org/meta-arm"
+META_NXP_BROWSER_GIT="https://github.com/OSSystems/meta-browser"
+META_NXP_CLANG_GIT="https://github.com/kraj/meta-clang"
+META_NXP_EMBEDDED_GIT="https://github.com/openembedded/meta-openembedded"
+META_NXP_QT6_GIT="https://github.com/YoeDistro/meta-qt6"
+META_NXP_SECURITY_GIT="https://git.yoctoproject.org/meta-security"
+META_NXP_VIRT_GIT="https://git.yoctoproject.org/meta-virtualization"
+
+
 
 case ${KERNELVERSION} in
     "4.9")
@@ -132,14 +147,21 @@ case ${KERNELVERSION} in
         META_NXP_IMX_REV="rel_imx_6.12.49_2.2.0"
         ;;
     "6.18")
-        #For manifest: imx-6.18.02-1.0.0.xml
-        META_FSL_REV="2781242e499e601ef9454009aceed16186a48d9e"
-        META_FSL_3RD_REV="b2b1987841018013006f909f817a3e9b034c6227"
-        META_FSL_DIS_REV="8001652aa3e2c6436c2bfce744e99f398c680858"
-        META_NXP_IMX_REV="rel_imx_6.18.2_1.0.0"
-        META_NXP_OE_REV="9964fa3da2fa1e7243fba1a826e59f7bb1813706"
-        META_NXP_BITBAKE_REV="6e511d035a3d1e4129dab7b0dfbf216bd8e99b47"
-        META_NXP_YOCTO_REV="d02d3faaf4d6075ea03e9eb47654ec7639f929a0"
+        #For manifest: imx-6.18.20-2.0.0.xml
+        META_FSL_REV="3949624f36cbc5b7fd4033ce5ef001d83fc1a3e9"
+        META_FSL_3RD_REV="3358b11ef81d52b9c9972d454dd43c120cbbdaf5"
+        META_FSL_DIS_REV="70b7591ecaa99cb6366f93ee05df7c38d94d724b"
+        META_NXP_IMX_REV="rel_imx_6.18.20_2.0.0"
+        META_NXP_OE_REV="42fa856a00ac16b2a7a83d7ecfa60a5be192b16c"
+        META_NXP_BITBAKE_REV="a2dd9be788274d9c7280be5b1be5eb5c3990cf54"
+        META_NXP_YOCTO_REV="904846ae078ee20de073040ebb77c86e19250f56"
+	META_NXP_ARM_REV="4112fda50b814ad6e3cfaefe5cad78a83114599a"
+	META_NXP_BROWSER_REV="407e3ac990f5ed466cb76e5002f918860503799c"
+	META_NXP_CLANG_REV="78c5e12f08198f4f257a9348516d2103cd617c1d"
+	META_NXP_EMBEDDED_REV="420222862f5a6d95023b8f5f3b7e1808b2264ef9"
+	META_NXP_QT6_REV="3cd8b59a1303b3c079f5345c6b2555d1037925f6"
+	META_NXP_SECURITY_REV="9265f142f3890df2d00d71d13b19e95a082707ed"
+	META_NXP_VIRT_REV="022f4356d4a9b389f51472d40a9330aa59f6bb9a"
         ;;
     *)
         echo "Not supported kernel version ${KERNELVERSION}"
@@ -154,3 +176,10 @@ download_git_code ${META_NXP_IMX_GIT} ${META_NXP_IMX_REV}
 download_git_code ${META_NXP_OE_GIT} ${META_NXP_OE_REV}
 download_git_code ${META_NXP_BITBAKE_GIT} ${META_NXP_BITBAKE_REV}
 download_git_code ${META_NXP_YOCTO_GIT} ${META_NXP_YOCTO_REV}
+download_git_code ${META_NXP_ARM_GIT} ${META_NXP_ARM_REV}
+download_git_code ${META_NXP_BROWSER_GIT} ${META_NXP_BROWSER_REV}
+download_git_code ${META_NXP_CLANG_GIT} ${META_NXP_CLANG_REV}
+download_git_code ${META_NXP_EMBEDDED_GIT} ${META_NXP_EMBEDDED_REV}
+download_git_code ${META_NXP_QT6_GIT} ${META_NXP_QT6_REV}
+download_git_code ${META_NXP_SECURITY_GIT} ${META_NXP_SECURITY_REV}
+download_git_code ${META_NXP_VIRT_GIT} ${META_NXP_VIRT_REV}
