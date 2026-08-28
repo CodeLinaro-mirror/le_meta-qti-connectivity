@@ -24,9 +24,6 @@ FILES:${PN}     += "${base_libdir}/modules/${KERNEL_VERSION}/extra/${WLAN_MODULE
 EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y CONFIG_MULTI_IF_LOG=y"
 
 do_compile:prepend() {
-    cp -rf ${UNPACKDIR}/qca-wifi-host-cmn ${WORKDIR}
-    cp -rf ${UNPACKDIR}/fw-api ${WORKDIR}
-    cp -rf ${UNPACKDIR}/qcacld-3.0 ${WORKDIR}
     sed -in '/Werror/d' ${S}/Kbuild
     # Using default qcacld-3.0 absolute path, get compilation error:
     # make[3]: execvp: /bin/sh: Argument list too long.
@@ -36,9 +33,9 @@ do_compile:prepend() {
     # Need override the parameter M to use qcacld-3.0 relative path.
     # Need use wlan-cnss-core extra symbols when generating module.
     install -d ${STAGING_KERNEL_DIR}/../${PN}
-    ln -sf ${WORKDIR}/qcacld-3.0 ${STAGING_KERNEL_DIR}/../${PN}/qcacld-3.0
-    ln -sf ${WORKDIR}/qca-wifi-host-cmn ${STAGING_KERNEL_DIR}/../${PN}/qca-wifi-host-cmn
-    ln -sf ${WORKDIR}/fw-api ${STAGING_KERNEL_DIR}/../${PN}/fw-api
+    ln -sf ${WORKDIR}/sources/qcacld-3.0 ${STAGING_KERNEL_DIR}/../${PN}/qcacld-3.0
+    ln -sf ${WORKDIR}/sources/qca-wifi-host-cmn ${STAGING_KERNEL_DIR}/../${PN}/qca-wifi-host-cmn
+    ln -sf ${WORKDIR}/sources/fw-api ${STAGING_KERNEL_DIR}/../${PN}/fw-api
     export M=../${PN}/qcacld-3.0
 }
 
