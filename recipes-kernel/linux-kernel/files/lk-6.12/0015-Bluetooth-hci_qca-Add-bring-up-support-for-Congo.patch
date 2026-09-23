@@ -1,0 +1,1352 @@
+From b644c40ff3cb1fed61a0501dc5c86f82d1af5064 Mon Sep 17 00:00:00 2001
+From: Hanfei Wen <hanfwen@qti.qualcomm.com>
+Date: Thu, 29 Oct 2026 14:59:48 +0800
+Subject: [PATCH] Bluetooth: hci_qca: Add bring-up support for Congo
+
+Congo requires a peripheral subsystem (peri) bring-up sequence before
+the standard BT firmware download can proceed.
+
+Upstream-Status: Pending
+
+Signed-off-by: Hanfei Wen <hanfwen@qti.qualcomm.com>
+---
+ drivers/bluetooth/btqca.c   | 161 +++++++-
+ drivers/bluetooth/btqca.h   |  76 ++++
+ drivers/bluetooth/hci_h4.c  |  12 +-
+ drivers/bluetooth/hci_qca.c | 779 +++++++++++++++++++++++++++++++++++-
+ 4 files changed, 995 insertions(+), 33 deletions(-)
+
+diff --git a/drivers/bluetooth/btqca.c b/drivers/bluetooth/btqca.c
+index 85b55d6ae264..9dd2abde04ee 100644
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -7,6 +7,7 @@
+ #include <linux/module.h>
+ #include <linux/firmware.h>
+ #include <linux/vmalloc.h>
++#include <linux/property.h>
+ 
+ #include <net/bluetooth/bluetooth.h>
+ #include <net/bluetooth/hci_core.h>
+@@ -436,12 +437,6 @@ static int qca_tlv_check_data(struct hci_dev *hdev,
+ 				if (tag_len < 3)
+ 					return -EINVAL;
+ 
+-				/* HCI transport layer parameters
+-				 * enabling software inband sleep
+-				 * onto controller side.
+-				 */
+-				tlv_nvm->data[0] |= 0x80;
+-
+ 				/* UART Baud Rate */
+ 				if (soc_type >= QCA_WCN3991)
+ 					tlv_nvm->data[1] = nvm_baud_rate;
+@@ -451,13 +446,35 @@ static int qca_tlv_check_data(struct hci_dev *hdev,
+ 				break;
+ 
+ 			case EDL_TAG_ID_DEEP_SLEEP:
++				if (soc_type == QCA_CONGO) {
++					if (tag_len < 13)
++						return -EINVAL;
++
++#if QCA_SIBS_ENABLE
++					tlv_nvm->data[8] |= 0x01;
++					tlv_nvm->data[12] |= 0x01;
++#else
++					tlv_nvm->data[8] &= ~0x01;
++					tlv_nvm->data[12] &= ~0x01;
++#endif
++					break;
++				}
++
+ 				if (tag_len < 1)
+ 					return -EINVAL;
+ 
+ 				/* Sleep enable mask
+ 				 * enabling deep sleep feature on controller.
+ 				 */
++#if QCA_SIBS_ENABLE
+ 				tlv_nvm->data[0] |= 0x01;
++				if (tag_len >= 2)
++					tlv_nvm->data[1] |= 0x01;
++#else
++				tlv_nvm->data[0] &= ~0x01;
++				if (tag_len >= 2)
++					tlv_nvm->data[1] &= ~0x01;
++#endif
+ 
+ 				break;
+ 			}
+@@ -579,7 +596,7 @@ static int qca_download_firmware(struct hci_dev *hdev,
+ 
+ 	bt_dev_info(hdev, "QCA Downloading %s", config->fwname);
+ 
+-	ret = request_firmware(&fw, config->fwname, &hdev->dev);
++	ret = request_firmware_direct(&fw, config->fwname, &hdev->dev);
+ 	if (ret) {
+ 		/* For WCN6750, if mbn file is not present then check for
+ 		 * tlv file.
+@@ -591,7 +608,7 @@ static int qca_download_firmware(struct hci_dev *hdev,
+ 			snprintf(config->fwname, sizeof(config->fwname),
+ 				 "qca/msbtfw%02x.tlv", rom_ver);
+ 			bt_dev_info(hdev, "QCA Downloading %s", config->fwname);
+-			ret = request_firmware(&fw, config->fwname, &hdev->dev);
++			ret = request_firmware_direct(&fw, config->fwname, &hdev->dev);
+ 			if (ret) {
+ 				bt_dev_err(hdev, "QCA Failed to request file: %s (%d)",
+ 					   config->fwname, ret);
+@@ -604,7 +621,7 @@ static int qca_download_firmware(struct hci_dev *hdev,
+ 		else if (config->type == TLV_TYPE_NVM &&
+ 			 qca_get_alt_nvm_file(config->fwname, sizeof(config->fwname))) {
+ 			bt_dev_info(hdev, "QCA Downloading %s", config->fwname);
+-			ret = request_firmware(&fw, config->fwname, &hdev->dev);
++			ret = request_firmware_direct(&fw, config->fwname, &hdev->dev);
+ 			if (ret) {
+ 				bt_dev_err(hdev, "QCA Failed to request file: %s (%d)",
+ 					   config->fwname, ret);
+@@ -659,7 +676,7 @@ static int qca_download_firmware(struct hci_dev *hdev,
+ 	 * decrease the BT in initialization time. Here we will inject a command
+ 	 * complete event to avoid a command timeout error message.
+ 	 */
+-	if (soc_type != QCA_AUTO_BT &&
++	if (soc_type != QCA_AUTO_BT && soc_type != QCA_CONGO &&
+ 	    (config->dnld_type == QCA_SKIP_EVT_VSE_CC ||
+ 	     config->dnld_type == QCA_SKIP_EVT_VSE))
+ 		ret = qca_inject_cmd_complete_event(hdev);
+@@ -670,6 +687,111 @@ static int qca_download_firmware(struct hci_dev *hdev,
+ 	return ret;
+ }
+ 
++int qca_peri_check_data(struct hci_dev *hdev, struct qca_fw_config *config,
++			u8 *fw_data, size_t fw_size)
++{
++	struct tlv_type_hdr *tlv;
++	struct tlv_type_nvm *tlv_nvm;
++	u32 type_len;
++	u16 tag_id, tag_len;
++	int idx, length;
++	const u8 *data;
++	u8 type;
++
++	switch (config->type) {
++	case ELF_TYPE_PATCH:
++		if (fw_size < 7)
++			return -EINVAL;
++
++		bt_dev_dbg(hdev, "QCA peri patch File Class    : 0x%x", fw_data[4]);
++		bt_dev_dbg(hdev, "QCA peri patch Data Encoding : 0x%x", fw_data[5]);
++		bt_dev_dbg(hdev, "QCA peri patch File version  : 0x%x", fw_data[6]);
++		break;
++
++	case TLV_TYPE_NVM:
++		if (fw_size < sizeof(struct tlv_type_hdr))
++			return -EINVAL;
++
++		tlv = (struct tlv_type_hdr *)fw_data;
++
++		type_len = le32_to_cpu(tlv->type_len);
++		length = type_len >> 8;
++		type = type_len & 0xff;
++
++		/* Some NVM files have more than one set of tags, only parse
++		 * the first set when it has type 2 for now. When there is
++		 * more than one set there is an enclosing header of type 4.
++		 */
++		if (type == 4) {
++			if (fw_size < 2 * sizeof(struct tlv_type_hdr))
++				return -EINVAL;
++
++			tlv++;
++
++			type_len = le32_to_cpu(tlv->type_len);
++			length = type_len >> 8;
++			type = type_len & 0xff;
++		}
++
++		if (type != 2)
++			break;
++
++		if (fw_size < length + (tlv->data - fw_data))
++			return -EINVAL;
++
++		idx = 0;
++		data = tlv->data;
++		while (idx < length - sizeof(struct tlv_type_nvm)) {
++			tlv_nvm = (struct tlv_type_nvm *)(data + idx);
++
++			tag_id = le16_to_cpu(tlv_nvm->tag_id);
++			tag_len = le16_to_cpu(tlv_nvm->tag_len);
++
++			if (length < idx + sizeof(struct tlv_type_nvm) + tag_len)
++				return -EINVAL;
++
++			/* Update NVM tags as needed */
++			switch (tag_id) {
++			case EDL_TAG_ID_HCI:
++				if (tag_len < 2)
++					return -EINVAL;
++
++				tlv_nvm->data[1] = config->user_baud_rate;
++
++				break;
++
++			case EDL_TAG_ID_DEEP_SLEEP:
++				if (tag_len < 2)
++					return -EINVAL;
++
++#if QCA_SIBS_ENABLE
++				tlv_nvm->data[0] |= 0x01;
++#else
++				tlv_nvm->data[0] &= ~0x01;
++#endif
++
++#if QCA_SIBS_ENABLE
++				tlv_nvm->data[1] |= 0x01;
++#else
++				tlv_nvm->data[1] &= ~0x01;
++#endif
++
++				break;
++			}
++
++			idx += sizeof(struct tlv_type_nvm) + tag_len;
++		}
++		break;
++
++	default:
++		bt_dev_err(hdev, "QCA peri: unknown TLV type %d", config->type);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(qca_peri_check_data);
++
+ static int qca_disable_soc_logging(struct hci_dev *hdev)
+ {
+ 	struct sk_buff *skb;
+@@ -739,7 +861,9 @@ static int qca_check_bdaddr(struct hci_dev *hdev, const struct qca_fw_config *co
+ 	}
+ 
+ 	bda = (struct hci_rp_read_bd_addr *)skb->data;
+-	if (!bacmp(&bda->bdaddr, &config->bdaddr))
++	if (!bacmp(&bda->bdaddr, &config->bdaddr) &&
++	    hdev->dev.parent &&
++	    device_property_present(hdev->dev.parent, "local-bd-address"))
+ 		set_bit(HCI_QUIRK_USE_BDADDR_PROPERTY, &hdev->quirks);
+ 
+ 	kfree_skb(skb);
+@@ -871,6 +995,11 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 			break;
+ 		}
+ 		break;
++	case QCA_CONGO:
++		config.type = ELF_TYPE_PATCH;
++		snprintf(config.fwname, sizeof(config.fwname),
++			 "qca/cgobtfw%02x.mbn", rom_ver);
++		break;
+ 	default:
+ 		snprintf(config.fwname, sizeof(config.fwname),
+ 			 "qca/rampatch_%08x.bin", soc_ver);
+@@ -885,7 +1014,8 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 	/* Give the controller some time to get ready to receive the NVM */
+ 	msleep(10);
+ 
+-	if (soc_type == QCA_QCA2066 || soc_type == QCA_WCN7850 || soc_type == QCA_AUTO_BT)
++	if (soc_type == QCA_QCA2066 || soc_type == QCA_WCN7850 ||
++	    soc_type == QCA_AUTO_BT || soc_type == QCA_CONGO)
+ 		qca_read_fw_board_id(hdev, &boardid);
+ 
+ 	/* Download NVM configuration */
+@@ -960,6 +1090,11 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 				break;
+ 			}
+ 			break;
++		case QCA_CONGO:
++            bt_dev_dbg(hdev, "QCA Board ID      :0x%04x", boardid);
++            snprintf(config.fwname, sizeof(config.fwname),
++				 "qca/cgobtnv%02x.b%04x", rom_ver, boardid);
++			break;
+ 		default:
+ 			snprintf(config.fwname, sizeof(config.fwname),
+ 				 "qca/nvm_%08x.bin", soc_ver);
+@@ -980,6 +1115,7 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 	case QCA_WCN6855:
+ 	case QCA_WCN7850:
+ 	case QCA_AUTO_BT:
++	case QCA_CONGO:
+ 		err = qca_disable_soc_logging(hdev);
+ 		if (err < 0)
+ 			return err;
+@@ -1016,6 +1152,7 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 	case QCA_WCN6855:
+ 	case QCA_WCN7850:
+ 	case QCA_AUTO_BT:
++	case QCA_CONGO:
+ 		/* get fw build info */
+ 		err = qca_read_fw_build_info(hdev);
+ 		if (err < 0)
+diff --git a/drivers/bluetooth/btqca.h b/drivers/bluetooth/btqca.h
+index 79d0af68d111..64f99f68947f 100644
+--- a/drivers/bluetooth/btqca.h
++++ b/drivers/bluetooth/btqca.h
+@@ -5,6 +5,9 @@
+  *  Copyright (c) 2015 The Linux Foundation. All rights reserved.
+  */
+ 
++#ifndef QCA_SIBS_ENABLE
++#define QCA_SIBS_ENABLE 0
++#endif
+ #define EDL_PATCH_CMD_OPCODE		0xFC00
+ #define EDL_NVM_ACCESS_OPCODE		0xFC0B
+ #define EDL_WRITE_BD_ADDR_OPCODE	0xFC14
+@@ -44,6 +47,63 @@
+ #define QCA_QCA6595_SOC_ID		(0x400B0200)
+ #define QCA_QCA6698_SOC_ID		(0x400C0210)
+ #define QCA_QCA6797_SOC_ID		(0x40170200)
++#define QCA_CONGO_SOC_ID		(0x402B0200)
++
++/* Peripheral subsystem HCI opcodes (OGF=0x3F, OCF=0x3F0/0x3F1) */
++#define HCI_VS_PERI_DNLD_OPCODE		((u16)0xFFF0)
++#define HCI_VS_PERI_GENERAL_OPCODE	((u16)0xFFF1)
++
++/* Peripheral subsystem EDL sub-commands */
++#define PERI_EDL_CMD_SET_BAUDRATE	((u8)0x02)
++#define PERI_EDL_CMD_RESET		((u8)0x03)
++#define PERI_EDL_CMD_GET_VERSION	((u8)0x05)
++#define PERI_EDL_CMD_DOWNLOAD_FW	((u8)0x06)
++#define PERI_EDL_CMD_ARBITRATE		((u8)0x08)
++#define PERI_EDL_CMD_GET_BOARD_ID	((u8)0x0A)
++
++/* Peripheral command/event packet types */
++#define HCI_PERI_CMD_PKT		0x31
++#define HCI_PERI_EVT_PKT		0x34
++
++/* Thread event packet type */
++#define HCI_THREAD_EVT_PKT		0x41
++
++/* Peripheral event message types (evt_type field) */
++#define HCI_PERI_EVT_CMD_COMPLETE	0xFF
++#define HCI_PERI_EVT_MT_SS_ACT_CMPLT	0x02
++#define HCI_PERI_EVT_MT_SS_PATCH_NTF	0x03
++
++/* Peripheral event sub-types (within CMD_COMPLETE wrapper) */
++#define HCI_PERI_EVT_MT_CMD_STATUS	0x00
++#define HCI_PERI_EVT_MT_CMD_CMPLT	0x01
++
++/* Peripheral subsystem ID */
++#define PERI_SS_ID			((u8)0x00)
++
++/* Peripheral baudrate change success code */
++#define PERI_BAUDRATE_CHANGE_SUCCESS	((u8)0x01)
++
++/* Max TLV segment size for peripheral firmware download */
++#define MAX_PERI_TLV_SEGMENT_SIZE	243
++
++/* Peripheral event response offsets (within skb->data after h4 strips type byte):
++ * data[0]=host_id(0x00), data[1]=evt_type, data[2]=plen, data[3+]=payload
++ * For CMD_COMPLETE (evt_type=0xFF):
++ *   data[3]=evt_class(0xF0), data[4]=evt_sub_type, data[5-7]=reserved,
++ *   data[8]=status, data[9]=sub_opcode, data[10]=ssid
++ */
++#define PERI_EVT_SUB_TYPE_OFFSET	4
++#define PERI_EVT_STATUS_OFFSET		8
++#define PERI_EVT_SUBOPCODE_OFFSET	9
++/* data[11..22] holds a struct qca_btsoc_version (12 bytes) for the
++ * PERI_GET_VERSION response, immediately after the ssid byte at data[10].
++ */
++#define PERI_EVT_VERSION_OFFSET	11
++/* data[11..12] holds the 2-byte board id (big-endian, high byte first)
++ * for the PERI_GET_BOARD_ID response, at the same offset as the version
++ * payload above.
++ */
++#define PERI_EVT_BOARD_ID_OFFSET	11
+ 
+ /* QCA chipset version can be decided by patch and SoC
+  * version, combination with upper 2 bytes from SoC
+@@ -159,6 +219,7 @@ enum qca_btsoc_type {
+ 	QCA_WCN6855,
+ 	QCA_WCN7850,
+ 	QCA_AUTO_BT,
++	QCA_CONGO,
+ };
+ 
+ #if IS_ENABLED(CONFIG_BT_QCA)
+@@ -171,6 +232,9 @@ int qca_read_soc_version(struct hci_dev *hdev, struct qca_btsoc_version *ver,
+ 			 enum qca_btsoc_type);
+ int qca_set_bdaddr(struct hci_dev *hdev, const bdaddr_t *bdaddr);
+ int qca_send_pre_shutdown_cmd(struct hci_dev *hdev);
++int qca_peri_setup(struct hci_dev *hdev);
++int qca_peri_check_data(struct hci_dev *hdev, struct qca_fw_config *config,
++			u8 *fw_data, size_t fw_size);
+ #else
+ 
+ static inline int qca_set_bdaddr_rome(struct hci_dev *hdev, const bdaddr_t *bdaddr)
+@@ -202,4 +266,16 @@ static inline int qca_send_pre_shutdown_cmd(struct hci_dev *hdev)
+ {
+ 	return -EOPNOTSUPP;
+ }
++
++static inline int qca_peri_setup(struct hci_dev *hdev)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int qca_peri_check_data(struct hci_dev *hdev,
++				      struct qca_fw_config *config,
++				      u8 *fw_data, size_t fw_size)
++{
++	return -EOPNOTSUPP;
++}
+ #endif
+diff --git a/drivers/bluetooth/hci_h4.c b/drivers/bluetooth/hci_h4.c
+index 9070e31a68bf..f335f374a116 100644
+--- a/drivers/bluetooth/hci_h4.c
++++ b/drivers/bluetooth/hci_h4.c
+@@ -189,8 +189,18 @@ struct sk_buff *h4_recv_buf(struct hci_dev *hdev, struct sk_buff *skb,
+ 			}
+ 
+ 			/* Check for invalid packet type */
+-			if (!skb)
++			if (!skb) {
++				int dump_len = min_t(int, count, 16);
++
++				bt_dev_dbg(hdev,
++					   "h4_recv_buf: unknown pkt type 0x%02x count=%d, dumping first %d bytes",
++					   buffer[0], count, dump_len);
++				print_hex_dump_debug("h4_recv buf: ",
++						     DUMP_PREFIX_OFFSET,
++						     16, 1, buffer,
++						     dump_len, false);
+ 				return ERR_PTR(-EILSEQ);
++			}
+ 
+ 			count -= 1;
+ 			buffer += 1;
+diff --git a/drivers/bluetooth/hci_qca.c b/drivers/bluetooth/hci_qca.c
+index f9defe9ee3fc..a3455c4e7084 100644
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -32,6 +32,7 @@
+ #include <linux/regulator/consumer.h>
+ #include <linux/serdev.h>
+ #include <linux/mutex.h>
++#include <linux/firmware.h>
+ #include <linux/unaligned.h>
+ 
+ #include <net/bluetooth/bluetooth.h>
+@@ -172,6 +173,12 @@ struct qca_data {
+ 
+ 	u16 fw_version;
+ 	u16 controller_id;
++
++	/* Peripheral subsystem command synchronization */
++	struct completion peri_cmd_comp;
++	struct sk_buff *peri_evt_skb;
++	struct sk_buff_head peri_evt_q;
++
+ 	/* For debugging purpose */
+ 	u64 ibs_sent_wacks;
+ 	u64 ibs_sent_slps;
+@@ -251,7 +258,7 @@ static enum qca_btsoc_type qca_soc_type(struct hci_uart *hu)
+ 
+ 		soc_type = qsd->btsoc_type;
+ 	} else {
+-		soc_type = QCA_AUTO_BT;
++		soc_type = QCA_CONGO;
+ 	}
+ 
+ 	return soc_type;
+@@ -590,6 +597,7 @@ static int qca_open(struct hci_uart *hu)
+ 	skb_queue_head_init(&qca->txq);
+ 	skb_queue_head_init(&qca->tx_wait_q);
+ 	skb_queue_head_init(&qca->rx_memdump_q);
++	skb_queue_head_init(&qca->peri_evt_q);
+ 	spin_lock_init(&qca->hci_ibs_lock);
+ 	mutex_init(&qca->hci_memdump_lock);
+ 	qca->workqueue = alloc_ordered_workqueue("qca_wq", 0);
+@@ -610,6 +618,7 @@ static int qca_open(struct hci_uart *hu)
+ 
+ 	qca->hu = hu;
+ 	init_completion(&qca->drop_ev_comp);
++	init_completion(&qca->peri_cmd_comp);
+ 
+ 	/* Assume we start with both sides asleep -- extra wakes OK */
+ 	qca->tx_ibs_state = HCI_IBS_TX_ASLEEP;
+@@ -730,6 +739,7 @@ static int qca_close(struct hci_uart *hu)
+ 	skb_queue_purge(&qca->tx_wait_q);
+ 	skb_queue_purge(&qca->txq);
+ 	skb_queue_purge(&qca->rx_memdump_q);
++	skb_queue_purge(&qca->peri_evt_q);
+ 	/*
+ 	 * Shut the timers down so they can't be rearmed when
+ 	 * destroy_workqueue() drains pending work which in turn might try
+@@ -742,6 +752,8 @@ static int qca_close(struct hci_uart *hu)
+ 	qca->hu = NULL;
+ 
+ 	kfree_skb(qca->rx_skb);
++	kfree_skb(qca->peri_evt_skb);
++	qca->peri_evt_skb = NULL;
+ 
+ 	hu->priv = NULL;
+ 
+@@ -1027,8 +1039,12 @@ static void qca_dmp_hdr(struct hci_dev *hdev, struct sk_buff *skb)
+ 	snprintf(buf, sizeof(buf), "Vendor:Qualcomm\n");
+ 	skb_put_data(skb, buf, strlen(buf));
+ 
+-	snprintf(buf, sizeof(buf), "Driver: %s\n",
+-		hu->serdev->dev.driver->name);
++	if (hu->serdev) {
++		snprintf(buf, sizeof(buf), "Driver: %s\n",
++			hu->serdev->dev.driver->name);
++	} else {
++		snprintf(buf, sizeof(buf), "Driver: hci_uart (ldisc)\n");
++	}
+ 	skb_put_data(skb, buf, strlen(buf));
+ }
+ 
+@@ -1109,6 +1125,7 @@ static void qca_controller_memdump(struct work_struct *work)
+ 				cancel_delayed_work(&qca->ctrl_memdump_timeout);
+ 				clear_bit(QCA_MEMDUMP_COLLECTION, &qca->flags);
+ 				clear_bit(QCA_IBS_DISABLED, &qca->flags);
++				wake_up_bit(&qca->flags, QCA_MEMDUMP_COLLECTION);
+ 				mutex_unlock(&qca->hci_memdump_lock);
+ 				return;
+ 			}
+@@ -1186,6 +1203,7 @@ static void qca_controller_memdump(struct work_struct *work)
+ 			qca->qca_memdump = NULL;
+ 			qca->memdump_state = QCA_MEMDUMP_COLLECTED;
+ 			clear_bit(QCA_MEMDUMP_COLLECTION, &qca->flags);
++			wake_up_bit(&qca->flags, QCA_MEMDUMP_COLLECTION);
+ 		}
+ 
+ 		mutex_unlock(&qca->hci_memdump_lock);
+@@ -1264,13 +1282,628 @@ static int qca_recv_event(struct hci_dev *hdev, struct sk_buff *skb)
+ 	.lsize = 0, \
+ 	.maxlen = HCI_MAX_IBS_SIZE
+ 
++/* Peripheral event packet (type 0x34):
++ * header = [host_id(1)][evt_type(1)][plen(1)], length field at offset 2
++ */
++#define QCA_PERI_EVT_EVENT \
++	.type = HCI_PERI_EVT_PKT, \
++	.hlen = 3, \
++	.loff = 2, \
++	.lsize = 1, \
++	.maxlen = 255
++
++/* Thread event packet (type 0x41):
++ * header (after type byte) = [flags_group(1)][packet_type(1)][length(2, LE)]
++ * length field at offset 2, payload follows the 4-byte header.
++ */
++#define QCA_THREAD_EVT_EVENT \
++	.type = HCI_THREAD_EVT_PKT, \
++	.hlen = 4, \
++	.loff = 2, \
++	.lsize = 2, \
++	.maxlen = 1024
++
++static int qca_recv_thread_event(struct hci_dev *hdev, struct sk_buff *skb)
++{
++	if (skb->len >= 4)
++		bt_dev_dbg(hdev,
++			   "QCA thread evt: flags_group=0x%02x pkt_type=0x%02x len=%d",
++			   skb->data[0], skb->data[1],
++			   get_unaligned_le16(skb->data + 2));
++
++	kfree_skb(skb);
++	return 0;
++}
++
++static int qca_recv_peri_event(struct hci_dev *hdev, struct sk_buff *skb)
++{
++	struct hci_uart *hu = hci_get_drvdata(hdev);
++	struct qca_data *qca = hu->priv;
++
++	bt_dev_dbg(hdev, "QCA peri event rx len=%d", skb->len);
++	if (skb->len >= 3)
++		bt_dev_dbg(hdev,
++			   "QCA peri evt: host_id=0x%02x evt_type=0x%02x plen=%d",
++			   skb->data[0], skb->data[1], skb->data[2]);
++
++	/* Inject a clone into the HCI monitor so btmon/hcidump can see it */
++	{
++		struct sk_buff *mon_skb = skb_clone(skb, GFP_ATOMIC);
++
++		if (mon_skb) {
++			hci_skb_pkt_type(mon_skb) = HCI_DIAG_PKT;
++			hci_recv_diag(hdev, mon_skb);
++		}
++	}
++
++	/* Queue the event (do not overwrite peri_evt_skb here - two events
++	 * can arrive back-to-back and the second would clobber the first
++	 * before it is consumed).
++	 */
++	skb_queue_tail(&qca->peri_evt_q, skb);
++	complete(&qca->peri_cmd_comp);
++
++	return 0;
++}
++
++/*
++ * Send a raw peripheral command packet directly to txq, bypassing the
++ * normal HCI enqueue path (which would prepend an HCI type byte).
++ *
++ * Packet format (type 0x31):
++ *   [0x31][host_id=0x00][opcode_lo][opcode_hi][plen][sub_cmd]
++ *   [ssid (if include_ssid)] [extra_data...]
++ */
++static int qca_send_peri_cmd(struct hci_uart *hu, u16 opcode, u8 sub_cmd,
++			      bool include_ssid, const u8 *extra,
++			      size_t extra_len)
++{
++	struct qca_data *qca = hu->priv;
++	struct sk_buff *skb;
++	u8 *buf;
++	size_t plen, total;
++
++	/* plen = sub_cmd(1) + [ssid(1)] + extra_len */
++	plen = 1 + (include_ssid ? 1 : 0) + extra_len;
++	/* total = type(1) + host_id(1) + opcode(2) + plen(1) + payload */
++	total = 5 + plen;
++
++	skb = bt_skb_alloc(total, GFP_KERNEL);
++	if (!skb)
++		return -ENOMEM;
++
++	buf = skb_put(skb, total);
++	buf[0] = HCI_PERI_CMD_PKT;	/* 0x31 */
++	buf[1] = 0x00;			/* BT_HOST_ID */
++	put_unaligned_le16(opcode, buf + 2);
++	buf[4] = (u8)plen;
++	buf[5] = sub_cmd;
++	if (include_ssid) {
++		buf[6] = PERI_SS_ID;
++		if (extra && extra_len)
++			memcpy(buf + 7, extra, extra_len);
++	} else {
++		if (extra && extra_len)
++			memcpy(buf + 6, extra, extra_len);
++	}
++
++	bt_dev_dbg(hu->hdev,
++		   "QCA peri cmd tx: opcode=0x%04x sub_cmd=0x%02x plen=%zu",
++		   opcode, sub_cmd, plen);
++
++	/* Inject a clone into the HCI monitor so btmon/hcidump can see it */
++	{
++		struct sk_buff *mon_skb = skb_clone(skb, GFP_KERNEL);
++
++		if (mon_skb) {
++			hci_skb_pkt_type(mon_skb) = HCI_DIAG_PKT;
++			hci_recv_diag(hu->hdev, mon_skb);
++		}
++	}
++
++	/* Add directly to txq - packet already contains the 0x31 type byte */
++	skb_queue_tail(&qca->txq, skb);
++	hci_uart_tx_wakeup(hu);
++
++	return 0;
++}
++
++/* Send a peripheral command and wait for the CMD_COMPLETE event */
++static int qca_send_peri_cmd_sync(struct hci_uart *hu, u16 opcode, u8 sub_cmd,
++				   bool include_ssid, const u8 *extra,
++				   size_t extra_len)
++{
++	struct qca_data *qca = hu->priv;
++	int ret;
++
++	skb_queue_purge(&qca->peri_evt_q);
++	reinit_completion(&qca->peri_cmd_comp);
++
++	ret = qca_send_peri_cmd(hu, opcode, sub_cmd, include_ssid,
++				extra, extra_len);
++	if (ret)
++		return ret;
++
++	if (!wait_for_completion_timeout(&qca->peri_cmd_comp,
++					 msecs_to_jiffies(HCI_INIT_TIMEOUT)))
++		return -ETIMEDOUT;
++
++	kfree_skb(qca->peri_evt_skb);
++	qca->peri_evt_skb = skb_dequeue(&qca->peri_evt_q);
++	if (!qca->peri_evt_skb)
++		return -EIO;
++
++	return 0;
++}
++
++/* Validate the CMD_COMPLETE response stored in qca->peri_evt_skb */
++static int qca_check_peri_evt_status(struct hci_dev *hdev, u8 expected_sub_opcode)
++{
++	struct hci_uart *hu = hci_get_drvdata(hdev);
++	struct qca_data *qca = hu->priv;
++	struct sk_buff *skb = qca->peri_evt_skb;
++	u8 evt_type, status, sub_opcode;
++
++	if (!skb || skb->len < PERI_EVT_SUBOPCODE_OFFSET + 1) {
++		bt_dev_err(hdev, "QCA peri: invalid event skb (len=%d)",
++			   skb ? skb->len : -1);
++		return -EIO;
++	}
++
++	evt_type = skb->data[1];
++	if (evt_type != HCI_PERI_EVT_CMD_COMPLETE) {
++		bt_dev_err(hdev,
++			   "QCA peri: unexpected evt_type 0x%02x", evt_type);
++		return -EIO;
++	}
++
++	status      = skb->data[PERI_EVT_STATUS_OFFSET];
++	sub_opcode  = skb->data[PERI_EVT_SUBOPCODE_OFFSET];
++
++	if (sub_opcode != expected_sub_opcode) {
++		bt_dev_err(hdev,
++			   "QCA peri: sub_opcode mismatch got=0x%02x exp=0x%02x",
++			   sub_opcode, expected_sub_opcode);
++		return -EIO;
++	}
++
++	/* SET_BAUDRATE uses 0x01 as success; all others use 0x00 */
++	if (expected_sub_opcode == PERI_EDL_CMD_SET_BAUDRATE) {
++		if (status != PERI_BAUDRATE_CHANGE_SUCCESS) {
++			bt_dev_err(hdev,
++				   "QCA peri: baudrate change failed status=0x%02x",
++				   status);
++			return -EIO;
++		}
++	} else {
++		if (status != 0x00) {
++			bt_dev_err(hdev,
++				   "QCA peri: cmd 0x%02x failed status=0x%02x",
++				   sub_opcode, status);
++			return -EIO;
++		}
++	}
++
++	return 0;
++}
++
++/*
++ * Download a firmware file to the peripheral subsystem in
++ * MAX_PERI_TLV_SEGMENT_SIZE-byte segments.
++ */
++static int qca_peri_download_fw(struct hci_dev *hdev, const char *fwname,
++				bool sync_all, struct qca_fw_config *config)
++{
++	struct hci_uart *hu = hci_get_drvdata(hdev);
++	struct qca_data *qca = hu->priv;
++	const struct firmware *fw;
++	u8 *data;
++	const u8 *segment;
++	int size, remain, ret, i = 0;
++
++	bt_dev_info(hdev, "QCA peri: downloading %s", fwname);
++
++	ret = request_firmware_direct(&fw, fwname, &hdev->dev);
++	if (ret) {
++		bt_dev_err(hdev, "QCA peri: failed to load %s (%d)",
++			   fwname, ret);
++		return ret;
++	}
++
++	size = fw->size;
++	data = vmalloc(fw->size);
++	if (!data) {
++		bt_dev_err(hdev, "QCA peri: failed to allocate memory for %s",
++			   fwname);
++		release_firmware(fw);
++		return -ENOMEM;
++	}
++
++	memcpy(data, fw->data, size);
++	release_firmware(fw);
++
++	ret = qca_peri_check_data(hdev, config, data, size);
++	if (ret) {
++		bt_dev_err(hdev, "QCA peri: %s check failed (%d)",
++			   config->type == TLV_TYPE_NVM ? "NVM" : "rampatch",
++			   ret);
++		vfree(data);
++		return ret;
++	}
++
++	segment = data;
++	remain  = size;
++
++	while (remain > 0) {
++		int segsize = min_t(int, MAX_PERI_TLV_SEGMENT_SIZE, remain);
++		bool last_segment;
++
++		remain -= segsize;
++		last_segment = (remain == 0) ||
++			       (segsize < MAX_PERI_TLV_SEGMENT_SIZE);
++
++		bt_dev_dbg(hdev, "QCA peri: fw segment %d size=%d last=%d",
++			   i++, segsize, last_segment);
++
++		/*
++		 * DOWNLOAD_FW packet format (per peri_patch_dl_manager.cpp):
++		 *   [pkt_type][host_id][opcode_lo][opcode_hi][plen=size+3]
++		 *   [sub_cmd][ssid][seg_size][data...]
++		 *
++		 * The seg_size field must be prepended to the firmware data so
++		 * that plen = sub_cmd(1) + ssid(1) + seg_size_field(1) + data
++		 *           = 3 + segsize.
++		 */
++		{
++			u8 *fw_buf = kmalloc(1 + segsize, GFP_KERNEL);
++
++			if (!fw_buf) {
++				vfree(data);
++				return -ENOMEM;
++			}
++			fw_buf[0] = (u8)segsize;	/* seg_size field */
++			memcpy(fw_buf + 1, segment, segsize);
++
++			if (sync_all || last_segment) {
++				/* Last rampatch segment or any NVM segment:
++				 * wait for CMD_COMPLETE.
++				 */
++				ret = qca_send_peri_cmd_sync(
++						hu, HCI_VS_PERI_DNLD_OPCODE,
++						PERI_EDL_CMD_DOWNLOAD_FW,
++						true, fw_buf, 1 + segsize);
++				if (ret) {
++					kfree(fw_buf);
++					bt_dev_err(hdev,
++				   	   "QCA peri: fw segment send failed (%d)",
++				   	   ret);
++					vfree(data);
++					return ret;
++				}
++
++				kfree(fw_buf);
++				ret = qca_check_peri_evt_status(
++						hdev,
++						PERI_EDL_CMD_DOWNLOAD_FW);
++				if (ret) {
++					vfree(data);
++					return ret;
++				}
++			} else {
++				/* Non-last rampatch segment: fire-and-forget */
++				ret = qca_send_peri_cmd(
++						hu, HCI_VS_PERI_DNLD_OPCODE,
++						PERI_EDL_CMD_DOWNLOAD_FW,
++						true, fw_buf, 1 + segsize);
++				kfree(fw_buf);
++				if (ret) {
++					bt_dev_err(hdev,
++						   "QCA peri: fw segment enqueue failed (%d)",
++						   ret);
++					vfree(data);
++					return ret;
++				}
++
++				while (!skb_queue_empty(&qca->txq))
++					usleep_range(100, 200);
++
++				if (hu->serdev)
++					serdev_device_wait_until_sent(hu->serdev,
++						msecs_to_jiffies(CMD_TRANS_TIMEOUT_MS));
++
++				/* Give the controller time to process this
++				 * segment before the next one is queued
++				 * (mirrors qca_set_baudrate/qca_peri_set_baudrate).
++				 */
++				usleep_range(8000, 9000);
++			}
++		}
++
++		segment += segsize;
++	}
++
++	vfree(data);
++	return 0;
++}
++
++/* Forward declarations needed by qca_peri_setup() */
++static int qca_set_speed(struct hci_uart *hu, enum qca_speed_type speed_type);
++static unsigned int qca_get_speed(struct hci_uart *hu,
++				  enum qca_speed_type speed_type);
++static uint8_t qca_get_baudrate_value(int speed);
++
++static int qca_peri_read_version(struct hci_dev *hdev,
++				  struct qca_btsoc_version *ver)
++{
++	struct hci_uart *hu = hci_get_drvdata(hdev);
++	struct qca_data *qca = hu->priv;
++	struct sk_buff *skb = qca->peri_evt_skb;
++
++	if (!skb || skb->len < PERI_EVT_VERSION_OFFSET + sizeof(*ver)) {
++		bt_dev_err(hdev, "QCA peri: GET_VERSION size mismatch len %d",
++			   skb ? skb->len : -1);
++		return -EILSEQ;
++	}
++
++	memcpy(ver, skb->data + PERI_EVT_VERSION_OFFSET, sizeof(*ver));
++
++	bt_dev_info(hdev, "QCA peri Product ID   :0x%08x",
++		    le32_to_cpu(ver->product_id));
++	bt_dev_info(hdev, "QCA peri SOC Version  :0x%08x",
++		    le32_to_cpu(ver->soc_id));
++	bt_dev_info(hdev, "QCA peri ROM Version  :0x%08x",
++		    le16_to_cpu(ver->rom_ver));
++	bt_dev_info(hdev, "QCA peri Patch Version:0x%08x",
++		    le16_to_cpu(ver->patch_ver));
++
++	if (ver->soc_id == 0 || ver->rom_ver == 0)
++		return -EILSEQ;
++
++	return 0;
++}
++
++/*
++ * qca_peri_read_board_id - Parse the board id out of the CMD_COMPLETE
++ * response stored in qca->peri_evt_skb after sending PERI_EDL_CMD_GET_BOARD_ID.
++ *
++ * Response layout (same convention as qca_check_peri_evt_status()):
++ *   data[PERI_EVT_BOARD_ID_OFFSET]   = board id high byte
++ *   data[PERI_EVT_BOARD_ID_OFFSET+1] = board id low byte
++ */
++static int qca_peri_read_board_id(struct hci_dev *hdev, u16 *bid)
++{
++	struct hci_uart *hu = hci_get_drvdata(hdev);
++	struct qca_data *qca = hu->priv;
++	struct sk_buff *skb = qca->peri_evt_skb;
++
++	if (!skb || skb->len < PERI_EVT_BOARD_ID_OFFSET + 2) {
++		bt_dev_err(hdev, "QCA peri: GET_BOARD_ID size mismatch len %d",
++			   skb ? skb->len : -1);
++		return -EILSEQ;
++	}
++
++	*bid = (skb->data[PERI_EVT_BOARD_ID_OFFSET] << 8) |
++		skb->data[PERI_EVT_BOARD_ID_OFFSET + 1];
++
++	bt_dev_info(hdev, "QCA peri Board ID      :0x%04x", *bid);
++
++	return 0;
++}
++
++/*
++ * qca_peri_setup - Bring up the peripheral subsystem.
++ *
++ * Sequence:
++ *   1. PERI_GET_VERSION  (determines rom_ver for fw file names)
++ *   [baudrate change: switch peri + host to oper_speed]
++ *   2. PERI_ARBITRATE
++ *   3. Download peri rampatch  (qca/cgoperifw<rom_ver>.mbn)
++ *   4. PERI_GET_BOARD_ID  (determines board id for NVM file name)
++ *   5. Download peri NVM       (qca/cgoperinv<rom_ver>.bin)
++ *   6. PERI_RESET  (triggers activation)
++ *   7. Wait for SS_PATCH_NTF or SS_ACT_CMPLT event
++ */
++int qca_peri_setup(struct hci_dev *hdev)
++{
++	struct hci_uart *hu = hci_get_drvdata(hdev);
++	struct qca_data *qca = hu->priv;
++	struct qca_btsoc_version ver;
++	struct qca_fw_config config = {};
++	char fwname[64];
++	u8 rom_ver = 0;	/* fallback if GET_VERSION parsing fails */
++	u16 boardid = 0;
++	u32 soc_ver;
++	int ret;
++
++	bt_dev_info(hdev, "QCA peripheral subsystem setup");
++
++	init_completion(&qca->peri_cmd_comp);
++
++	/* Step 1: PERI_GET_VERSION */
++	bt_dev_info(hdev, "QCA peri: GET_VERSION");
++	ret = qca_send_peri_cmd_sync(hu, HCI_VS_PERI_DNLD_OPCODE,
++				     PERI_EDL_CMD_GET_VERSION, true, NULL, 0);
++	if (ret) {
++		bt_dev_err(hdev, "QCA peri: GET_VERSION failed (%d)", ret);
++		return ret;
++	}
++	ret = qca_check_peri_evt_status(hdev, PERI_EDL_CMD_GET_VERSION);
++	if (ret)
++		return ret;
++
++	if (!qca_peri_read_version(hdev, &ver)) {
++		soc_ver = get_soc_ver(ver.soc_id, ver.rom_ver);
++		rom_ver = ((soc_ver & 0x00000f00) >> 0x04) | (soc_ver & 0x0000000f);
++	}
++
++	/* Baudrate change: switch peri subsystem and host to operating speed.
++	 * Per the reference implementation this must happen between
++	 * Step 1 (PERI_GET_VERSION) and Step 2 (PERI_ARBITRATE).
++	 * Step 1 is sent at init_speed; Step 2 onwards at oper_speed.
++	 */
++	ret = qca_set_speed(hu, QCA_OPER_SPEED);
++	if (ret) {
++		bt_dev_err(hdev, "QCA peri: baudrate change failed (%d)", ret);
++		return ret;
++	}
++
++	config.user_baud_rate =
++		qca_get_baudrate_value(qca_get_speed(hu, QCA_OPER_SPEED));
++
++	/* Step 2: PERI_ARBITRATE */
++	bt_dev_dbg(hdev, "QCA peri: ARBITRATE");
++	{
++		static const u8 arbitrate_timer_value = 0x00;
++
++		ret = qca_send_peri_cmd_sync(hu, HCI_VS_PERI_DNLD_OPCODE,
++					     PERI_EDL_CMD_ARBITRATE, true,
++					     &arbitrate_timer_value,
++					     sizeof(arbitrate_timer_value));
++	}
++	if (ret) {
++		bt_dev_err(hdev, "QCA peri: ARBITRATE failed (%d)", ret);
++		return ret;
++	}
++	ret = qca_check_peri_evt_status(hdev, PERI_EDL_CMD_ARBITRATE);
++	if (ret)
++		return ret;
++
++	/* Step 3: Download peri rampatch
++	 * Use fire-and-forget for non-last segments; only the last segment
++	 * waits for CMD_COMPLETE (sync_all=false).
++	 */
++	config.type = ELF_TYPE_PATCH;
++	snprintf(fwname, sizeof(fwname), "qca/cgoperifw%02x.mbn", rom_ver);
++	ret = qca_peri_download_fw(hdev, fwname, false, &config);
++	if (ret)
++		return ret;
++
++	/* Step 4: PERI_GET_BOARD_ID, mirroring how the main BT subsystem
++	 * selects its NVM file by board id.
++	 */
++	bt_dev_info(hdev, "QCA peri: GET_BOARD_ID");
++	ret = qca_send_peri_cmd_sync(hu, HCI_VS_PERI_DNLD_OPCODE,
++				     PERI_EDL_CMD_GET_BOARD_ID, true, NULL, 0);
++	if (ret) {
++		bt_dev_warn(hdev, "QCA peri: GET_BOARD_ID failed (%d), using default NVM",
++			    ret);
++	} else if (!qca_check_peri_evt_status(hdev, PERI_EDL_CMD_GET_BOARD_ID)) {
++		qca_peri_read_board_id(hdev, &boardid);
++	}
++
++	/* Step 5: Download peri NVM
++	 * Wait for CMD_COMPLETE on every segment (sync_all=true).
++	 */
++	if (boardid == 0x0 || boardid == 0xffff)
++		snprintf(fwname, sizeof(fwname), "qca/cgoperinv%02x.bin", rom_ver);
++	else
++		snprintf(fwname, sizeof(fwname), "qca/cgoperinv%02x.b%04x",
++			 rom_ver, boardid);
++	config.type = TLV_TYPE_NVM;
++	ret = qca_peri_download_fw(hdev, fwname, true, &config);
++	if (ret)
++		return ret;
++
++	/* Step 6: PERI_RESET to trigger activation */
++	bt_dev_info(hdev, "QCA peri: final RESET");
++	ret = qca_send_peri_cmd_sync(hu, HCI_VS_PERI_GENERAL_OPCODE,
++				     PERI_EDL_CMD_RESET, false, NULL, 0);
++	if (ret) {
++		bt_dev_err(hdev, "QCA peri: final RESET failed (%d)", ret);
++		return ret;
++	}
++	ret = qca_check_peri_evt_status(hdev, PERI_EDL_CMD_RESET);
++	if (ret)
++		return ret;
++
++	/* Step 7: Wait for SS_PATCH_NTF or SS_ACT_CMPLT
++	 *
++	 * The controller sends this notification immediately after the final
++	 * RESET CMD_COMPLETE (Step 6). It may arrive before we reach this
++	 * point, in which case qca_recv_peri_event() has already stored it
++	 * in peri_evt_skb and signalled peri_cmd_comp (counter = 1).
++	 *
++	 * Do NOT call reinit_completion() here: the counter is already 0
++	 * after Step 6 consumed it, and if the notification arrived early
++	 * the counter is already 1.  Calling reinit_completion() would
++	 * reset that 1 back to 0 and cause a spurious timeout.
++	 */
++	bt_dev_info(hdev, "QCA peri: waiting for activation");
++	if (!wait_for_completion_timeout(&qca->peri_cmd_comp,
++					 msecs_to_jiffies(HCI_INIT_TIMEOUT))) {
++		bt_dev_err(hdev, "QCA peri: activation timeout");
++		return -ETIMEDOUT;
++	}
++
++	kfree_skb(qca->peri_evt_skb);
++	qca->peri_evt_skb = skb_dequeue(&qca->peri_evt_q);
++
++	if (qca->peri_evt_skb && qca->peri_evt_skb->len >= 2) {
++		u8 evt_type = qca->peri_evt_skb->data[1];
++
++		/* The SS activation event (SS_PATCH_NTF / SS_ACT_CMPLT) is
++		 * delivered wrapped inside a CMD_COMPLETE (evt_type=0xFF).
++		 * The actual notification type sits in evt_sub_type at
++		 * data[PERI_EVT_SUB_TYPE_OFFSET] (offset 4).
++		 *
++		 * Example btmon dump: 34 00 ff 04 f0 03 00 00
++		 *   data[1]=0xFF (CMD_COMPLETE), data[4]=0x03 (SS_PATCH_NTF)
++		 *
++		 * The event may also arrive as a direct (non-wrapped) event
++		 * with evt_type=0x02 (SS_ACT_CMPLT) or 0x03 (SS_PATCH_NTF).
++		 */
++		if (evt_type == HCI_PERI_EVT_CMD_COMPLETE) {
++			u8 evt_sub_type;
++
++			if (qca->peri_evt_skb->len < PERI_EVT_SUB_TYPE_OFFSET + 1) {
++				bt_dev_err(hdev,
++					   "QCA peri: activation event too short (%d)",
++					   qca->peri_evt_skb->len);
++				return -EIO;
++			}
++			evt_sub_type = qca->peri_evt_skb->data[PERI_EVT_SUB_TYPE_OFFSET];
++			if (evt_sub_type != HCI_PERI_EVT_MT_SS_ACT_CMPLT &&
++			    evt_sub_type != HCI_PERI_EVT_MT_SS_PATCH_NTF) {
++				bt_dev_err(hdev,
++					   "QCA peri: unexpected activation evt_sub_type 0x%02x",
++					   evt_sub_type);
++				return -EIO;
++			}
++			bt_dev_info(hdev,
++				    "QCA peri: activated (evt_sub_type=0x%02x)",
++				    evt_sub_type);
++		} else if (evt_type == HCI_PERI_EVT_MT_SS_ACT_CMPLT ||
++			   evt_type == HCI_PERI_EVT_MT_SS_PATCH_NTF) {
++			/* Direct (non-wrapped) activation event */
++			bt_dev_info(hdev,
++				    "QCA peri: activated (evt_type=0x%02x)",
++				    evt_type);
++		} else {
++			bt_dev_err(hdev,
++				   "QCA peri: unexpected activation evt 0x%02x",
++				   evt_type);
++			return -EIO;
++		}
++	}
++
++	/* Free the last stored event */
++	kfree_skb(qca->peri_evt_skb);
++	qca->peri_evt_skb = NULL;
++
++	bt_dev_info(hdev, "QCA peripheral subsystem setup complete");
++	return 0;
++}
++EXPORT_SYMBOL_GPL(qca_peri_setup);
++
+ static const struct h4_recv_pkt qca_recv_pkts[] = {
+-	{ H4_RECV_ACL,             .recv = qca_recv_acl_data },
+-	{ H4_RECV_SCO,             .recv = hci_recv_frame    },
+-	{ H4_RECV_EVENT,           .recv = qca_recv_event    },
+-	{ QCA_IBS_WAKE_IND_EVENT,  .recv = qca_ibs_wake_ind  },
+-	{ QCA_IBS_WAKE_ACK_EVENT,  .recv = qca_ibs_wake_ack  },
+-	{ QCA_IBS_SLEEP_IND_EVENT, .recv = qca_ibs_sleep_ind },
++	{ H4_RECV_ACL,             .recv = qca_recv_acl_data   },
++	{ H4_RECV_SCO,             .recv = hci_recv_frame      },
++	{ H4_RECV_EVENT,           .recv = qca_recv_event      },
++	{ QCA_IBS_WAKE_IND_EVENT,  .recv = qca_ibs_wake_ind    },
++	{ QCA_IBS_WAKE_ACK_EVENT,  .recv = qca_ibs_wake_ack    },
++	{ QCA_IBS_SLEEP_IND_EVENT, .recv = qca_ibs_sleep_ind   },
++	{ QCA_PERI_EVT_EVENT,      .recv = qca_recv_peri_event },
++	{ QCA_THREAD_EVT_EVENT,    .recv = qca_recv_thread_event },
+ };
+ 
+ static int qca_recv(struct hci_uart *hu, const void *data, int count)
+@@ -1284,7 +1917,19 @@ static int qca_recv(struct hci_uart *hu, const void *data, int count)
+ 				  qca_recv_pkts, ARRAY_SIZE(qca_recv_pkts));
+ 	if (IS_ERR(qca->rx_skb)) {
+ 		int err = PTR_ERR(qca->rx_skb);
+-		bt_dev_err(hu->hdev, "Frame reassembly failed (%d)", err);
++		int dump_len = min_t(int, count, 16);
++
++		/* Log the offending bytes to help diagnose unknown packet types */
++		if (count > 0) {
++			bt_dev_err(hu->hdev,
++				   "Frame reassembly failed (%d), first_byte=0x%02x count=%d",
++				   err, *(const u8 *)data, count);
++			print_hex_dump(KERN_ERR, "qca_recv buf: ",
++					     DUMP_PREFIX_OFFSET,
++					     16, 1, data, dump_len, false);
++		} else {
++			bt_dev_err(hu->hdev, "Frame reassembly failed (%d)", err);
++		}
+ 		qca->rx_skb = NULL;
+ 		return err;
+ 	}
+@@ -1335,6 +1980,55 @@ static uint8_t qca_get_baudrate_value(int speed)
+ 	}
+ }
+ 
++/*
++ * qca_peri_set_baudrate - Send SET_BAUDRATE to the peripheral subsystem.
++ *
++ * Follows the same fire-and-forget pattern as qca_set_baudrate(): the command
++ * is queued to txq and we wait for it to be fully transmitted before returning.
++ * We do NOT wait for a CMD_COMPLETE event because the controller switches its
++ * baudrate immediately after receiving the command — the event would be sent
++ * at the new baudrate while the host is still at the old one, so it cannot be
++ * received correctly.
++ */
++static int qca_peri_set_baudrate(struct hci_dev *hdev, uint8_t baudrate)
++{
++	struct hci_uart *hu = hci_get_drvdata(hdev);
++	int ret;
++
++	bt_dev_info(hdev, "QCA peri: SET_BAUDRATE 0x%02x", baudrate);
++
++	/* Queue the SET_BAUDRATE command — fire-and-forget, no CMD_COMPLETE
++	 * wait (same rationale as qca_set_baudrate).
++	 */
++	ret = qca_send_peri_cmd(hu, HCI_VS_PERI_GENERAL_OPCODE,
++				PERI_EDL_CMD_SET_BAUDRATE,
++				false, &baudrate, sizeof(baudrate));
++	if (ret) {
++		bt_dev_err(hdev, "QCA peri: SET_BAUDRATE enqueue failed (%d)",
++			   ret);
++		return ret;
++	}
++
++	/* Wait for the command to be fully transmitted before the host
++	 * switches baudrate (mirrors qca_set_baudrate).
++	 */
++	{
++		struct qca_data *qca = hu->priv;
++
++		while (!skb_queue_empty(&qca->txq))
++			usleep_range(100, 200);
++	}
++
++	if (hu->serdev)
++		serdev_device_wait_until_sent(hu->serdev,
++					      msecs_to_jiffies(CMD_TRANS_TIMEOUT_MS));
++
++	/* Give the controller time to process the baudrate change */
++	msleep(300);
++
++	return 0;
++}
++
+ static int qca_set_baudrate(struct hci_dev *hdev, uint8_t baudrate)
+ {
+ 	struct hci_uart *hu = hci_get_drvdata(hdev);
+@@ -1525,7 +2219,14 @@ static int qca_set_speed(struct hci_uart *hu, enum qca_speed_type speed_type)
+ 
+ 		qca_baudrate = qca_get_baudrate_value(speed);
+ 		bt_dev_dbg(hu->hdev, "Set UART speed to %d", speed);
+-		ret = qca_set_baudrate(hu->hdev, qca_baudrate);
++		/* For chips with a peripheral subsystem, use the peri
++		 * SET_BAUDRATE command instead of the standard HCI vendor
++		 * command.
++		 */
++		if (soc_type == QCA_CONGO)
++			ret = qca_peri_set_baudrate(hu->hdev, qca_baudrate);
++		else
++			ret = qca_set_baudrate(hu->hdev, qca_baudrate);
+ 		if (ret)
+ 			goto error;
+ 
+@@ -1918,6 +2619,10 @@ static int qca_setup(struct hci_uart *hu)
+ 		soc_name = "QCA_AUTO_BT";
+ 		break;
+ 
++	case QCA_CONGO:
++		soc_name = "congo";
++		break;
++
+ 	default:
+ 		soc_name = "ROME/QCA6390";
+ 	}
+@@ -1950,21 +2655,45 @@ static int qca_setup(struct hci_uart *hu)
+ 		if (ret)
+ 			goto out;
+ 		break;
+-
+ 	default:
+ 		qca_set_speed(hu, QCA_INIT_SPEED);
+ 	}
+ 
+-	/* Setup user speed if needed */
+-	speed = qca_get_speed(hu, QCA_OPER_SPEED);
+-	if (speed) {
+-		ret = qca_set_speed(hu, QCA_OPER_SPEED);
+-		if (ret)
++	/* For chips with a peripheral subsystem, bring it up. The baudrate
++	 * change happens inside qca_peri_setup() between Step 1
++	 * (PERI_GET_VERSION) and Step 2 (PERI_ARBITRATE): Step 1 runs at
++	 * init_speed, then the peri SET_BAUDRATE command is sent and both
++	 * peri and host switch to oper_speed before Step 2 onwards.
++	 */
++	if (soc_type == QCA_CONGO) {
++		ret = qca_peri_setup(hdev);
++		if (ret) {
++			bt_dev_err(hdev, "QCA peri setup failed (%d)", ret);
+ 			goto out;
++		}
+ 
+-		qca_baudrate = qca_get_baudrate_value(speed);
+-	}
++#if QCA_SIBS_ENABLE
++		clear_bit(QCA_IBS_DISABLED, &qca->flags);
++#endif
++
++		/* Baudrate was already changed inside qca_peri_setup().
++		 * Update qca_baudrate so qca_uart_setup() programs the NVM
++		 * with the correct operating speed.
++		 */
++		speed = qca_get_speed(hu, QCA_OPER_SPEED);
++		if (speed)
++			qca_baudrate = qca_get_baudrate_value(speed);
++	} else {
++		 /* Setup user speed if needed */
++		speed = qca_get_speed(hu, QCA_OPER_SPEED);
++		if (speed) {
++			ret = qca_set_speed(hu, QCA_OPER_SPEED);
++			if (ret)
++			goto out;
+ 
++			qca_baudrate = qca_get_baudrate_value(speed);
++		}
++	}
+ 	switch (soc_type) {
+ 	case QCA_WCN3988:
+ 	case QCA_WCN3990:
+@@ -1986,7 +2715,10 @@ static int qca_setup(struct hci_uart *hu)
+ 	ret = qca_uart_setup(hdev, qca_baudrate, soc_type, ver,
+ 			firmware_name);
+ 	if (!ret) {
+-		clear_bit(QCA_IBS_DISABLED, &qca->flags);
++#if QCA_SIBS_ENABLE
++		if (soc_type != QCA_CONGO)
++			clear_bit(QCA_IBS_DISABLED, &qca->flags);
++#endif
+ 		qca_debugfs_init(hdev);
+ 		hu->hdev->hw_error = qca_hw_error;
+ 		hu->hdev->cmd_timeout = qca_cmd_timeout;
+@@ -2160,6 +2892,12 @@ static const struct qca_device_data qca_soc_data_wcn7850 __maybe_unused = {
+ 	.capabilities = QCA_CAP_WIDEBAND_SPEECH | QCA_CAP_VALID_LE_STATES,
+ };
+ 
++static const struct qca_device_data qca_soc_data_congo __maybe_unused = {
++	.soc_type = QCA_CONGO,
++	.num_vregs = 0,
++	.capabilities = QCA_CAP_WIDEBAND_SPEECH | QCA_CAP_VALID_LE_STATES,
++};
++
+ static void qca_power_shutdown(struct hci_uart *hu)
+ {
+ 	struct qca_serdev *qcadev;
+@@ -2733,6 +3471,7 @@ static const struct of_device_id qca_bluetooth_of_match[] = {
+ 	{ .compatible = "qcom,wcn6855-bt", .data = &qca_soc_data_wcn6855},
+ 	{ .compatible = "qcom,wcn7850-bt", .data = &qca_soc_data_wcn7850},
+ 	{ .compatible = "qcom,qca-auto-bt", .data = &qca_soc_data_qca_auto},
++	{ .compatible = "qcom,congo-bt", .data = &qca_soc_data_congo},
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, qca_bluetooth_of_match);
+-- 
+2.34.1
+

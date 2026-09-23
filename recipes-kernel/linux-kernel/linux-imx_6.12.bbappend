@@ -27,6 +27,7 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0011-msi-revert-code-genirq-msi-cache-the-latest-msi-msg.patch \
 	file://${PATCH_FOLDER}/0012-kernel-export-symbol-irq_to_desc.patch \
 	file://${PATCH_FOLDER}/0013-Bluetooth-hci_qca-Support-QCA-Auto-chips.patch \
+	file://${PATCH_FOLDER}/0015-Bluetooth-hci_qca-Add-bring-up-support-for-Congo.patch \
 "
 
 SRC_URI:append:imx95-19x19-lpddr5-evk = " \
