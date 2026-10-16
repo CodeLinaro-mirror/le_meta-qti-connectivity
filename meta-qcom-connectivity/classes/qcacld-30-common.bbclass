@@ -1,0 +1,50 @@
+# WLAN driver qcacld basic bbclass for version 3.0.
+
+inherit module kernel-arch
+
+PACKAGE_ARCH = "${MACHINE_ARCH}"
+
+LICENSE = "ISC"
+LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/${LICENSE};md5=f3b90e78ea0cffb20bf5cca7947a896d"
+
+WLAN_MODULE_NAME ?= "wlan"
+WLAN_CHIP_NAME ?= ""
+
+DEPENDS = "virtual/kernel"
+
+FILESPATH =+ "${LAYERDIR_qcom_connectivity}/../wlan-opensource:"
+SRC_URI = "file://qcacld-3.0/ \
+           file://qca-wifi-host-cmn/ \
+           file://fw-api/ \
+          "
+S = "${UNPACKDIR}/qcacld-3.0"
+
+FILES:${PN} += "${base_libdir}/modules/${KERNEL_VERSION}/extra/${WLAN_MODULE_NAME}.ko"
+
+EXTRA_OEMAKE += "CONFIG_WLAN_FEATURE_11W=y CONFIG_LINUX_QCMBR=y CONFIG_MULTI_IF_LOG=y"
+
+do_compile:prepend() {
+    sed -in '/Werror/d' ${S}/Kbuild
+    # Using default qcacld-3.0 absolute path, get compilation error:
+    # make[3]: execvp: /bin/sh: Argument list too long.
+    # Becasue the Makefile argument including the objects files
+    # paths is too long to complete the compilation.
+    # Create soft link to the directory above KERNEL_SRC to fix this issue.
+    # Need override the parameter M to use qcacld-3.0 relative path.
+    # Need use wlan-cnss-core extra symbols when generating module.
+    install -d ${STAGING_KERNEL_DIR}/../${PN}
+    ln -sf ${UNPACKDIR}/qcacld-3.0 ${STAGING_KERNEL_DIR}/../${PN}/qcacld-3.0
+    ln -sf ${UNPACKDIR}/qca-wifi-host-cmn ${STAGING_KERNEL_DIR}/../${PN}/qca-wifi-host-cmn
+    ln -sf ${UNPACKDIR}/fw-api ${STAGING_KERNEL_DIR}/../${PN}/fw-api
+    export M=../${PN}/qcacld-3.0
+}
+
+do_install () {
+    export M=../${PN}/qcacld-3.0
+    module_do_install
+}
+
+ERROR_QA:remove = "buildpaths"
+WARN_QA:append = " buildpaths"
+ERROR_QA:remove = "ldflags"
+WARN_QA:append = " ldflags"

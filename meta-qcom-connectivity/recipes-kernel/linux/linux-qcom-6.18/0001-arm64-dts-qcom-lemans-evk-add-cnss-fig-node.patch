@@ -1,0 +1,137 @@
+From e9292067e67d4a22b7b96a0120748d45c6ddd37d Mon Sep 17 00:00:00 2001
+From: Dongyuan Li <dongyuan@qti.qualcomm.com>
+Date: Thu, 29 Oct 2026 17:45:38 +0800
+Subject: [PATCH] linux-qcom: add cnss-fig node for Congo WLAN
+
+Add the qcom,cnss-fig platform node, the CMA pool and the endpoint node
+under pcieport0 that the downstream Congo (fig) cnss driver needs.
+
+Upstream-Status: Pending
+Change-Id: I49dce8a9e0210fd6836beec17c328d02b970c1d5
+Signed-off-by: Dongyuan Li <dongyuan@qti.qualcomm.com>
+---
+ .../boot/dts/qcom/lemans-evk-cnss-fig.dtsi    | 99 +++++++++++++++++++
+ arch/arm64/boot/dts/qcom/lemans-evk.dts       |  1 +
+ 2 files changed, 100 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/lemans-evk-cnss-fig.dtsi
+
+diff --git a/arch/arm64/boot/dts/qcom/lemans-evk-cnss-fig.dtsi b/arch/arm64/boot/dts/qcom/lemans-evk-cnss-fig.dtsi
+new file mode 100644
+index 000000000000..874e939eb9a3
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/lemans-evk-cnss-fig.dtsi
+@@ -0,0 +1,99 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++/ {
++	reserved-memory {
++		cnss_wlan_mem: cnss_wlan_region {
++			compatible = "shared-dma-pool";
++			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
++			reusable;
++			alignment = <0x0 0x400000>;
++			size = <0x0 0x2000000>;
++		};
++	};
++};
++
++&soc {
++	wlan_fig: qcom,cnss-fig {
++		compatible = "qcom,cnss-fig";
++		supported-ids = <0x1111>;
++		qcom,wlan;
++		qcom,wlan-rc-num = <0>;
++		qcom,wlan-ramdump-dynamic = <0x780000>;
++		cnss-enable-self-recovery;
++		use-pm-domain;
++		qcom,same-dt-multi-dev;
++		platform-name-required;
++		cx-mode = <0>;
++
++		/* WLAN power always on */
++		power-ctrl-mode = <2>;
++
++		interconnects =
++		<&pcie_anoc MASTER_PCIE_0 0 &pcie_anoc SLAVE_ANOC_PCIE_GEM_NOC 0>,
++		<&gem_noc MASTER_ANOC_PCIE_GEM_NOC 0 &mc_virt SLAVE_EBI1 0>;
++		interconnect-names = "pcie_to_memnoc", "memnoc_to_ddr";
++		qcom,icc-path-count = <2>;
++		qcom,bus-bw-cfg-count = <11>;
++		qcom,bus-bw-cfg =
++		/* ICC Path 1 (SNOC/ANOC) */
++		<0 0>, /* no vote */
++		/* idle: 0-18 Mbps snoc/anoc: 120 Mhz */
++		<2250 308000>,
++		/* low: 18-60 Mbps snoc/anoc: 120 Mhz */
++		<7500 308000>,
++		/* medium: 60-240 Mbps snoc/anoc: 120 Mhz */
++		<30000 308000>,
++		/* high: 240-1200 Mbps snoc/anoc: 120 Mhz */
++		<150000 308000>,
++		/* very high: > 1200 Mbps snoc/anoc: 403 Mhz */
++		<180000 2130000>,
++		/* ultra high: DBS mode snoc/anoc: 403 Mhz */
++		<325000 2130000>,
++		/* super high: DBS mode snoc/anoc: 533 Mhz */
++		<625000 6450000>,
++		/* fast: > 5000 Mbps snoc/anoc: 533 Mhz */
++		<937500 6450000>,
++		/* super fast: > 7500 Mbps snoc/anoc: 533 Mhz */
++		<1250000 6450000>,
++		/* low (latency critical): 18-60 Mbps snoc/anoc: 200 Mhz */
++		<7500 1610000>,
++
++		/* ICC Path 2 */
++		<0 0>,
++		/* idle: 0-18 Mbps ddr: 547.2 MHz */
++		<2250 2188800>,
++		/* low: 18-60 Mbps ddr: 547.2 MHz */
++		<7500 2188800>,
++		/* medium: 60-240 Mbps ddr: 547.2 MHz */
++		<30000 2188800>,
++		/* high: 240-1200 Mbps ddr: 547.2 MHz */
++		<150000 2188800>,
++		/* very high: > 1200 Mbps ddr: 1555 MHz */
++		<180000 6220000>,
++		/* ultra high: DBS mode ddr: 2092 MHz */
++		<325000 8368000>,
++		/* super high: DBS mode ddr: 3.2 GHz */
++		<625000 12800000>,
++		/* fast: > 5000 Mbps ddr: 3686 GHz */
++		<937500 14744000>,
++		/* super fast: > 7500 Mbps ddr: 4224 GHz */
++		<1250000 16896000>,
++		/* low (latency critical): 18-60 Mbps ddr: 547.2 MHz */
++		<7500 2188800>;
++	};
++};
++
++&pcieport0 {
++	cnss_pci0: pci@0,0 {
++		reg = <0x10000 0x0 0x0 0x0 0x0>;
++		memory-region = <&cnss_wlan_mem &cnss_pci0_iommu_region_partition>;
++
++		cnss_pci0_iommu_region_partition: cnss_pci0_iommu_region_partition {
++			iommu-addresses = <&cnss_pci0 0x0 0x0 0x0 0x0 0x18000000>,
++					  <&cnss_pci0 0x0 0x0 0xB0000000 0x0 0x50000000>;
++		};
++	};
++};
+diff --git a/arch/arm64/boot/dts/qcom/lemans-evk.dts b/arch/arm64/boot/dts/qcom/lemans-evk.dts
+index 4589f76ddc43..9b7a9f3709a6 100644
+--- a/arch/arm64/boot/dts/qcom/lemans-evk.dts
++++ b/arch/arm64/boot/dts/qcom/lemans-evk.dts
+@@ -12,6 +12,7 @@
+ 
+ #include "lemans.dtsi"
+ #include "lemans-pmics.dtsi"
++#include "lemans-evk-cnss-fig.dtsi"
+ 
+ / {
+ 	model = "Qualcomm Technologies, Inc. Lemans EVK";
+-- 
+2.34.1
+

@@ -1,0 +1,189 @@
+From 8cd130fd81a688595bea1cf643c3ac99ca12f917 Mon Sep 17 00:00:00 2001
+From: Dongyuan Li <dongyuan@qti.qualcomm.com>
+Date: Fri, 23 Oct 2026 09:47:45 +0800
+Subject: [PATCH] qcacld-3.0: Fix compiling issue for kernel 6.18.21
+
+Fix compiling issues on QLI kernel 6.18.21 with macro QLI_2_0_QCACLD
+
+Upstream-Status: Pending
+Change-Id: Ib0f2cfcfd7d922fe0d2b8c73c99a5a1e7783ba0b
+Signed-off-by: Dongyuan Li <dongyuan@qti.qualcomm.com>
+---
+ core/hdd/src/wlan_hdd_cfg80211.c | 20 ++++++++++++--------
+ core/hdd/src/wlan_hdd_cfg80211.h |  5 +++--
+ core/hdd/src/wlan_hdd_hostapd.c  |  5 +++--
+ core/hdd/src/wlan_hdd_main.c     |  5 +++--
+ core/hdd/src/wlan_hdd_stats.c    | 10 ++++++----
+ core/hdd/src/wlan_hdd_stats.h    | 10 ++++++----
+ 6 files changed, 33 insertions(+), 22 deletions(-)
+
+diff --git a/core/hdd/src/wlan_hdd_cfg80211.c b/core/hdd/src/wlan_hdd_cfg80211.c
+index e795d0f499..cc8630e604 100644
+--- a/core/hdd/src/wlan_hdd_cfg80211.c
++++ b/core/hdd/src/wlan_hdd_cfg80211.c
+@@ -33550,9 +33550,10 @@ static inline bool wlan_hdd_cfg80211_handle_nan_peer(
+ }
+ #endif
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++#if !defined(QLI_2_0_QCACLD) && \
++	((LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
+ 	(LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 21) && \
+-	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0))
++	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)))
+ /**
+  * wlan_hdd_change_station() - cfg80211 change station handler function
+  * @wiphy: Pointer to the wiphy structure
+@@ -37082,9 +37083,10 @@ static int _wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
+ }
+ 
+ #ifdef USE_CFG80211_DEL_STA_V2
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++#if !defined(QLI_2_0_QCACLD) && \
++	((LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
+ 	(LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 21) && \
+-	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0))
++	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)))
+ int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
+ 				  struct wireless_dev *wdev,
+ 				  struct station_del_parameters *param)
+@@ -37139,9 +37141,10 @@ int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev,
+ #endif
+ #endif
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++#if !defined(QLI_2_0_QCACLD) && \
++	((LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
+ 	(LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 21) && \
+-	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0))
++	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)))
+ static int _wlan_hdd_del_station(struct hdd_adapter *adapter,
+ 				 struct station_del_parameters *param)
+ {
+@@ -37246,9 +37249,10 @@ static int __wlan_hdd_cfg80211_add_station(struct wiphy *wiphy,
+ 	return status;
+ }
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++#if !defined(QLI_2_0_QCACLD) && \
++	((LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
+ 	(LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 21) && \
+-	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0))
++	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)))
+ /**
+  * wlan_hdd_cfg80211_add_station() - add station
+  * @wiphy: Pointer to wiphy
+diff --git a/core/hdd/src/wlan_hdd_cfg80211.h b/core/hdd/src/wlan_hdd_cfg80211.h
+index 0123acae35..fa76f579e9 100644
+--- a/core/hdd/src/wlan_hdd_cfg80211.h
++++ b/core/hdd/src/wlan_hdd_cfg80211.h
+@@ -590,9 +590,10 @@ bool wlan_hdd_is_ap_supports_immediate_power_save(uint8_t *ies, int length);
+ int wlan_hdd_del_station(struct hdd_adapter *adapter, const uint8_t *mac);
+ 
+ #if defined(USE_CFG80211_DEL_STA_V2)
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++#if !defined(QLI_2_0_QCACLD) && \
++	((LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
+ 	(LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 21) && \
+-	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0))
++	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)))
+ int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
+ 				  struct wireless_dev *wdev,
+ 				  struct station_del_parameters *param);
+diff --git a/core/hdd/src/wlan_hdd_hostapd.c b/core/hdd/src/wlan_hdd_hostapd.c
+index 68b2c8217a..f624dfc407 100644
+--- a/core/hdd/src/wlan_hdd_hostapd.c
++++ b/core/hdd/src/wlan_hdd_hostapd.c
+@@ -2586,9 +2586,10 @@ hdd_sap_is_recv_assoc_link(struct wlan_objmgr_psoc *psoc, uint8_t *peer_mac)
+ }
+ #endif
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++#if !defined(QLI_2_0_QCACLD) && \
++	((LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
+ 	(LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 21) && \
+-	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0))
++	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)))
+ static QDF_STATUS
+ wlan_hdd_cfg80211_new_sta(struct hdd_adapter *adapter,
+ 			  const u8 *mac, struct station_info *sinfo)
+diff --git a/core/hdd/src/wlan_hdd_main.c b/core/hdd/src/wlan_hdd_main.c
+index 95f608563a..3af7c8e519 100644
+--- a/core/hdd/src/wlan_hdd_main.c
++++ b/core/hdd/src/wlan_hdd_main.c
+@@ -12519,9 +12519,10 @@ int wlan_hdd_set_mon_chan(struct hdd_adapter *adapter)
+ }
+ #endif
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++#if !defined(QLI_2_0_QCACLD) && \
++	((LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
+ 	(LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 21) && \
+-	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0))
++	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)))
+ static void _hdd_delete_sta(struct hdd_adapter *adapter, const u8 *mac)
+ {
+ 	cfg80211_del_sta(&adapter->wdev, mac, GFP_KERNEL);
+diff --git a/core/hdd/src/wlan_hdd_stats.c b/core/hdd/src/wlan_hdd_stats.c
+index e57fbb2d39..97b737bda7 100644
+--- a/core/hdd/src/wlan_hdd_stats.c
++++ b/core/hdd/src/wlan_hdd_stats.c
+@@ -10186,9 +10186,10 @@ static int _wlan_hdd_cfg80211_get_station(struct wiphy *wiphy,
+ 	return errno;
+ }
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++#if !defined(QLI_2_0_QCACLD) && \
++	((LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
+ 	(LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 21) && \
+-	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0))
++	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)))
+ /**
+  * wlan_hdd_cfg80211_get_station() - get station statistics
+  * @wiphy: Pointer to wiphy
+@@ -10338,9 +10339,10 @@ static int __wlan_hdd_cfg80211_dump_station(struct wiphy *wiphy,
+ 	return errno;
+ }
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++#if !defined(QLI_2_0_QCACLD) && \
++	((LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
+ 	(LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 21) && \
+-	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0))
++	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)))
+ /**
+  * wlan_hdd_cfg80211_dump_station() - dump station statistics
+  * @wiphy: Pointer to wiphy
+diff --git a/core/hdd/src/wlan_hdd_stats.h b/core/hdd/src/wlan_hdd_stats.h
+index e76b489afc..d1aacf490c 100644
+--- a/core/hdd/src/wlan_hdd_stats.h
++++ b/core/hdd/src/wlan_hdd_stats.h
+@@ -503,9 +503,10 @@ int wlan_hdd_cfg80211_connected_chan_stats_req(struct wiphy *wiphy,
+ 					       const void *data,
+ 					       int data_len);
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++#if !defined(QLI_2_0_QCACLD) && \
++	((LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
+ 	(LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 21) && \
+-	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0))
++	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)))
+ /**
+  * wlan_hdd_cfg80211_get_station() - get station statistics
+  * @wiphy: Pointer to wiphy
+@@ -540,9 +541,10 @@ int wlan_hdd_cfg80211_get_station(struct wiphy *wiphy,
+ #endif
+ #endif
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++#if !defined(QLI_2_0_QCACLD) && \
++	((LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
+ 	(LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 21) && \
+-	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0))
++	LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)))
+ /**
+  * wlan_hdd_cfg80211_dump_station() - dump station statistics
+  * @wiphy: Pointer to wiphy
+-- 
+2.34.1
+

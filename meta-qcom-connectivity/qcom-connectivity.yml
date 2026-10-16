@@ -1,0 +1,6 @@
+header:
+  version: 14
+
+repos:
+  meta-qcom-connectivity:
+    path: meta-qcom-connectivity
