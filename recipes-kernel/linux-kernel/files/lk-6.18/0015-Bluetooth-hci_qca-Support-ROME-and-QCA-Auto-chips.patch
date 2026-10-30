@@ -1,0 +1,253 @@
+From 937cfd17f525e074d9dce5ed51422801fb014c77 Mon Sep 17 00:00:00 2001
+From: Jesson Li <feili@qti.qualcomm.com>
+Date: Tue, 20 Oct 2026 16:14:15 +0800
+Subject: [PATCH] Bluetooth: hci_qca: Support ROME and QCA Auto chips
+
+- Add support for ROME 3.2 and 3.4
+- Auto-detect ROME and QCA_AUTO_BT chipsets
+- Avoid requiring a BD_ADDR property for non-serdev devices
+- Use direct firmware loading to avoid userspace helper timeout delays
+
+Upstream-Status: Pending
+Signed-off-by: Jesson Li <feili@qti.qualcomm.com>
+---
+ drivers/bluetooth/btqca.c   | 68 +++++++++++++++++++++++++------------
+ drivers/bluetooth/btqca.h   | 12 +++++++
+ drivers/bluetooth/hci_qca.c | 17 +++++++++-
+ 3 files changed, 74 insertions(+), 23 deletions(-)
+
+diff --git a/drivers/bluetooth/btqca.c b/drivers/bluetooth/btqca.c
+index f373ea0e7064..9e484d8d45b5 100644
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -6,6 +6,7 @@
+  */
+ #include <linux/module.h>
+ #include <linux/firmware.h>
++#include <linux/property.h>
+ #include <linux/vmalloc.h>
+ 
+ #include <net/bluetooth/bluetooth.h>
+@@ -20,25 +21,13 @@ int qca_read_soc_version(struct hci_dev *hdev, struct qca_btsoc_version *ver,
+ 	struct edl_event_hdr *edl;
+ 	char cmd;
+ 	int err = 0;
+-	u8 event_type = HCI_EV_VENDOR;
+-	u8 rlen = sizeof(*edl) + sizeof(*ver);
+-	u8 rtype = EDL_APP_VER_RES_EVT;
++	u8 rtype;
+ 
+ 	bt_dev_dbg(hdev, "QCA Version Request");
+ 
+-	/* Unlike other SoC's sending version command response as payload to
+-	 * VSE event. WCN3991 sends version command response as a payload to
+-	 * command complete event.
+-	 */
+-	if (soc_type >= QCA_WCN3991) {
+-		event_type = 0;
+-		rlen += 1;
+-		rtype = EDL_PATCH_VER_REQ_CMD;
+-	}
+-
+ 	cmd = EDL_PATCH_VER_REQ_CMD;
+ 	skb = __hci_cmd_sync_ev(hdev, EDL_PATCH_CMD_OPCODE, EDL_PATCH_CMD_LEN,
+-				&cmd, event_type, HCI_INIT_TIMEOUT);
++				&cmd, HCI_EV_VENDOR, HCI_INIT_TIMEOUT);
+ 	if (IS_ERR(skb)) {
+ 		err = PTR_ERR(skb);
+ 		bt_dev_err(hdev, "Reading QCA version information failed (%d)",
+@@ -46,7 +35,8 @@ int qca_read_soc_version(struct hci_dev *hdev, struct qca_btsoc_version *ver,
+ 		return err;
+ 	}
+ 
+-	if (skb->len != rlen) {
++	if (skb->len != sizeof(*edl) + sizeof(*ver) &&
++	    skb->len != sizeof(*edl) + sizeof(*ver) + 1) {
+ 		bt_dev_err(hdev, "QCA Version size mismatch len %d", skb->len);
+ 		err = -EILSEQ;
+ 		goto out;
+@@ -54,18 +44,22 @@ int qca_read_soc_version(struct hci_dev *hdev, struct qca_btsoc_version *ver,
+ 
+ 	edl = (struct edl_event_hdr *)(skb->data);
+ 
++	rtype = edl->rtype;
+ 	if (edl->cresp != EDL_CMD_REQ_RES_EVT ||
+-	    edl->rtype != rtype) {
++	    (rtype != EDL_APP_VER_RES_EVT &&
++	     rtype != EDL_PATCH_VER_REQ_CMD)) {
+ 		bt_dev_err(hdev, "QCA Wrong packet received %d %d", edl->cresp,
+ 			   edl->rtype);
+ 		err = -EIO;
+ 		goto out;
+ 	}
+ 
+-	if (soc_type >= QCA_WCN3991)
++	if (rtype == EDL_PATCH_VER_REQ_CMD) {
+ 		memcpy(ver, edl->data + 1, sizeof(*ver));
+-	else
++	} else {
++		cancel_delayed_work(&hdev->cmd_timer);
+ 		memcpy(ver, &edl->data, sizeof(*ver));
++	}
+ 
+ 	bt_dev_info(hdev, "QCA Product ID   :0x%08x",
+ 		    le32_to_cpu(ver->product_id));
+@@ -579,7 +573,7 @@ static int qca_download_firmware(struct hci_dev *hdev,
+ 
+ 	bt_dev_info(hdev, "QCA Downloading %s", config->fwname);
+ 
+-	ret = request_firmware(&fw, config->fwname, &hdev->dev);
++	ret = request_firmware_direct(&fw, config->fwname, &hdev->dev);
+ 	if (ret) {
+ 		/* For WCN6750, if mbn file is not present then check for
+ 		 * tlv file.
+@@ -591,7 +585,7 @@ static int qca_download_firmware(struct hci_dev *hdev,
+ 			snprintf(config->fwname, sizeof(config->fwname),
+ 				 "qca/msbtfw%02x.tlv", rom_ver);
+ 			bt_dev_info(hdev, "QCA Downloading %s", config->fwname);
+-			ret = request_firmware(&fw, config->fwname, &hdev->dev);
++			ret = request_firmware_direct(&fw, config->fwname, &hdev->dev);
+ 			if (ret) {
+ 				bt_dev_err(hdev, "QCA Failed to request file: %s (%d)",
+ 					   config->fwname, ret);
+@@ -604,7 +598,7 @@ static int qca_download_firmware(struct hci_dev *hdev,
+ 		else if (config->type == TLV_TYPE_NVM &&
+ 			 qca_get_alt_nvm_file(config->fwname, sizeof(config->fwname))) {
+ 			bt_dev_info(hdev, "QCA Downloading %s", config->fwname);
+-			ret = request_firmware(&fw, config->fwname, &hdev->dev);
++			ret = request_firmware_direct(&fw, config->fwname, &hdev->dev);
+ 			if (ret) {
+ 				bt_dev_err(hdev, "QCA Failed to request file: %s (%d)",
+ 					   config->fwname, ret);
+@@ -739,7 +733,9 @@ static int qca_check_bdaddr(struct hci_dev *hdev, const struct qca_fw_config *co
+ 	}
+ 
+ 	bda = (struct hci_rp_read_bd_addr *)skb->data;
+-	if (!bacmp(&bda->bdaddr, &config->bdaddr))
++	if (!bacmp(&bda->bdaddr, &config->bdaddr) &&
++	    hdev->dev.parent &&
++	    device_property_present(hdev->dev.parent, "local-bd-address"))
+ 		hci_set_quirk(hdev, HCI_QUIRK_USE_BDADDR_PROPERTY);
+ 
+ 	kfree_skb(skb);
+@@ -791,10 +787,22 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 	u8 rom_ver = 0;
+ 	u32 soc_ver;
+ 	u16 boardid = 0;
++	u64 qca_version = 0;
+ 
+ 	bt_dev_dbg(hdev, "QCA setup on UART");
+ 
+ 	soc_ver = get_soc_ver(ver.soc_id, ver.rom_ver);
++	if (soc_type == QCA_ROME) {
++		qca_version = QCA_BT_VER(le32_to_cpu(ver.soc_id),
++					 le32_to_cpu(ver.product_id),
++					 le16_to_cpu(ver.rom_ver));
++		if (qca_version != QCA_ROME_VER_32 &&
++		    qca_version != QCA_ROME_VER_34) {
++			bt_dev_err(hdev, "Unsupported ROME version 0x%016llx",
++				   (unsigned long long)qca_version);
++			return -EOPNOTSUPP;
++		}
++	}
+ 
+ 	bt_dev_info(hdev, "QCA controller version 0x%08x", soc_ver);
+ 
+@@ -857,6 +865,14 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 			snprintf(config.fwname, sizeof(config.fwname),
+ 				 "qca/hmtbtfw%02x.tlv", rom_ver);
+ 			break;
++		case QCA_ROME:
++			if (qca_version == QCA_ROME_VER_34)
++				snprintf(config.fwname, sizeof(config.fwname),
++					 "qca_auto/btfw34.tlv");
++			else
++				snprintf(config.fwname, sizeof(config.fwname),
++					 "qca_auto/btfw32.tlv");
++			break;
+ 		case QCA_AUTO_BT:
+ 			switch (ver.soc_id) {
+ 			case QCA_QCA6595_SOC_ID:
+@@ -955,6 +971,14 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
+ 			qca_get_nvm_name_by_board(config.fwname, sizeof(config.fwname),
+ 				 "hmtnv", soc_type, ver, rom_ver, boardid);
+ 			break;
++		case QCA_ROME:
++			if (qca_version == QCA_ROME_VER_34)
++				snprintf(config.fwname, sizeof(config.fwname),
++					 "qca_auto/btnv34.bin");
++			else
++				snprintf(config.fwname, sizeof(config.fwname),
++					 "qca_auto/btnv32.bin");
++			break;
+ 		case QCA_AUTO_BT:
+ 			bt_dev_dbg(hdev, "QCA Board ID      :0x%04x", boardid);
+ 			switch (ver.soc_id) {
+diff --git a/drivers/bluetooth/btqca.h b/drivers/bluetooth/btqca.h
+index 28361880efb9..a69efb394907 100644
+--- a/drivers/bluetooth/btqca.h
++++ b/drivers/bluetooth/btqca.h
+@@ -49,6 +49,18 @@
+ #define QCA_QCA6698_SOC_ID		(0x400C0210)
+ #define QCA_QCA6797_SOC_ID		(0x40170200)
+ 
++#define QCA_BT_VER(soc_id, product_id, build_ver) \
++	(((u64)(soc_id) << 32) | \
++	 ((u64)((product_id) & 0xffff) << 16) | \
++	 ((u64)((build_ver) & 0xffff)))
++
++#define QCA_ROME_SOC_ID			0x00000044
++#define QCA_ROME_PRODUCT_ID		0x00000008
++#define QCA_ROME_VER_32			QCA_BT_VER(QCA_ROME_SOC_ID, \
++						 QCA_ROME_PRODUCT_ID, 0x0302)
++#define QCA_ROME_VER_34			QCA_BT_VER(QCA_ROME_SOC_ID, \
++						 QCA_ROME_PRODUCT_ID, 0x0304)
++
+ /* QCA chipset version can be decided by patch and SoC
+  * version, combination with upper 2 bytes from SoC
+  * and lower 2 bytes from patch will be used.
+diff --git a/drivers/bluetooth/hci_qca.c b/drivers/bluetooth/hci_qca.c
+index 349cc5593080..5c220d079c74 100644
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -258,6 +258,12 @@ static enum qca_btsoc_type qca_soc_type(struct hci_uart *hu)
+ 	return soc_type;
+ }
+ 
++static bool qca_is_rome(const struct qca_btsoc_version *ver)
++{
++	return le32_to_cpu(ver->soc_id) == QCA_ROME_SOC_ID &&
++	       le32_to_cpu(ver->product_id) == QCA_ROME_PRODUCT_ID;
++}
++
+ static const char *qca_get_firmware_name(struct hci_uart *hu)
+ {
+ 	if (hu->serdev) {
+@@ -2040,6 +2046,15 @@ static int qca_setup(struct hci_uart *hu)
+ 			goto out;
+ 	}
+ 
++	if (soc_type == QCA_AUTO_BT && qca_is_rome(&ver)) {
++		soc_type = QCA_ROME;
++		bt_dev_info(hdev, "QCA controller identified as ROME");
++		if (hu->serdev) {
++			qcadev = serdev_device_get_drvdata(hu->serdev);
++			qcadev->btsoc_type = soc_type;
++		}
++	}
++
+ 	/* Setup patch / NVM configurations */
+ 	ret = qca_uart_setup(hdev, qca_baudrate, soc_type, ver,
+ 			firmware_name, rampatch_name);
+@@ -2421,7 +2436,7 @@ static int qca_serdev_probe(struct serdev_device *serdev)
+ 	if (data)
+ 		qcadev->btsoc_type = data->soc_type;
+ 	else
+-		qcadev->btsoc_type = QCA_ROME;
++		qcadev->btsoc_type = QCA_AUTO_BT;
+ 
+ 	switch (qcadev->btsoc_type) {
+ 	case QCA_WCN3950:
+-- 
+2.34.1
+

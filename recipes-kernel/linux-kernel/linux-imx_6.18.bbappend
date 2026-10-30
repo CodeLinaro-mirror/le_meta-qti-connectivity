@@ -23,6 +23,7 @@ SRC_URI += " \
 	file://${PATCH_FOLDER}/0005-kernel-fix-the-issue-ttyLP1-is-missed-if-QC-BT-is-us.patch \
 	file://${PATCH_FOLDER}/0011-msi-revert-code-genirq-msi-cache-the-latest-msi-msg.patch \
 	file://${PATCH_FOLDER}/0013-Bluetooth-hci_qca-Support-QCA-Auto-chips.patch \
+	file://${PATCH_FOLDER}/0015-Bluetooth-hci_qca-Support-ROME-and-QCA-Auto-chips.patch \
 "
 
 SRC_URI:append:imx95-19x19-lpddr5-evk = " \
