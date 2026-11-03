@@ -10,5 +10,7 @@ WLAN_MODULE_NAME = "wlan-sdio"
 EXTRA_OEMAKE += "CONFIG_QCA_CLD_WLAN_PROFILE=qca6174 CONFIG_CLD_HL_SDIO_CORE=y CONFIG_MULTI_IF_LOG=y"
 EXTRA_OEMAKE += "CONFIG_WLAN_DISABLE_EXPORT_SYMBOL=y MODNAME=${WLAN_MODULE_NAME}"
 do_install:append () {
+    module_do_install
+    install -d ${DEPLOY_DIR_IMAGE}/wlan
     install -Dm0644 ${D}${nonarch_base_libdir}/modules/${KERNEL_VERSION}/updates/*.ko ${DEPLOY_DIR_IMAGE}/wlan/
 }

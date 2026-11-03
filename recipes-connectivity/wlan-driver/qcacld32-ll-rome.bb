@@ -9,5 +9,7 @@ EXTRA_OEMAKE += "CONFIG_WLAN_DISABLE_EXPORT_SYMBOL=y"
 #EXTRA_OEMAKE += "CONFIG_FEATURE_SINGLE_MSI=y"
 
 do_install:append () {
+    module_do_install
+    install -d ${DEPLOY_DIR_IMAGE}/wlan
     install -Dm0644 ${D}${nonarch_base_libdir}/modules/${KERNEL_VERSION}/updates/*.ko ${DEPLOY_DIR_IMAGE}/wlan/
 }
