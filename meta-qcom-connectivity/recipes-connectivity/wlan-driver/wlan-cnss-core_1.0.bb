@@ -6,6 +6,9 @@ inherit module kernel-arch
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 
+COMPATIBLE_MACHINE = "^$"
+COMPATIBLE_MACHINE:iq-9075-evk = "(.*)"
+
 FILESEXTRAPATHS:prepend = "${LAYERDIR_qcom_connectivity}/../wlan-opensource:"
 SRC_URI = "file://wlan-cnss-core/"
 
